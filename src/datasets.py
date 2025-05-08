@@ -14,11 +14,11 @@ def load_openml_dataset(id):
         id (integer): The unique identifier of the dataset on OpenML.
 
     Returns:
-        numpy.ndarray: A NumPy array containing the dataset's features.
+        pd.DataFrame: The dataset as a pandas DataFrame.
     """
     dataset = openml.datasets.get_dataset(id)
     df, *_ = dataset.get_data()
-    return df.select_dtypes(include='number').to_numpy()
+    return df
 
 ### Setup ###
 init_openml_api()
