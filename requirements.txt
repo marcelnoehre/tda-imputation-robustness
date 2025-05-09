@@ -5,3 +5,4 @@ gudhi
 matplotlib
 pot
 mdatagen
+statsmodels
