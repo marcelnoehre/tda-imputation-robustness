@@ -6,3 +6,4 @@ matplotlib
 pot
 mdatagen
 statsmodels
+tadasets
