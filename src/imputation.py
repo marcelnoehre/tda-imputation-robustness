@@ -1,6 +1,7 @@
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import SimpleImputer, KNNImputer, IterativeImputer
 from statsmodels.imputation.mice import MICEData
+from src.constants import SEED
 
 def impute_simple(data, strategy, value=None):
     # Simple (mean, median, most_frequent, constant)
@@ -14,7 +15,7 @@ def impute_knn(data, n_neighbors=5):
 
 def impute_iterative(data):
     # Iterative Imputer (similar to MICE)
-    iter_imp = IterativeImputer()
+    iter_imp = IterativeImputer(random_state=SEED)
     return iter_imp.fit_transform(data)
 
 def impute_mice(data):
