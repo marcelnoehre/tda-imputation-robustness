@@ -27,4 +27,4 @@ def multivariat_mar(df, target, missing_rate):
         y=numeric_target_mapping(target),
         n_xmiss=4
     )
-    return generator.random(missing_rate)
+    return generator.correlated(missing_rate)
