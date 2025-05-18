@@ -16,13 +16,19 @@ def _handle_infinite_deaths(diag):
     diag_fixed[~np.isfinite(diag_fixed[:,1]), 1] = replacement
     return diag_fixed
 
-def _dist_to_diagonal(diag):
-    return np.sum((diag[:,1] - diag[:,0]) / 2)
+def max_persistence(diag):
+    if diag.size == 0:
+        return 0.0
+    return np.max(diag[:,1] - diag[:,0])
 
-def compute_normalized_wasserstein_distance(X, Y):
+def compute_normalized_wasserstein_distance(X, Y, eps=1e-6):
     X, Y = _handle_infinite_deaths(X), _handle_infinite_deaths(Y)
-    return wasserstein(X, Y) / ((_dist_to_diagonal(X) + _dist_to_diagonal(Y)) / 2)
+    denom = (max_persistence(X) + max_persistence(Y)) / 2
+    denom = max(denom, eps)
+    return wasserstein(X, Y) / denom
 
-def compute_normalized_bottleneck_distance(X, Y):
+def compute_normalized_bottleneck_distance(X, Y, eps=1e-6):
     X, Y = _handle_infinite_deaths(X), _handle_infinite_deaths(Y)
-    return bottleneck(X, Y) / ((_dist_to_diagonal(_handle_infinite_deaths(X)) + _dist_to_diagonal(_handle_infinite_deaths(Y))) / 2)
+    denom = (max_persistence(X) + max_persistence(Y)) / 2
+    denom = max(denom, eps)
+    return bottleneck(X, Y) / denom
