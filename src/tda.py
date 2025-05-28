@@ -7,7 +7,7 @@ from src.utils import as_pointcloud
 def vietoris_rips_complex(maxdim=2):
     return VietorisRipsPersistence(homology_dimensions=list(range(maxdim+1)))
 
-def distance_to_a_measure(data, maxdim=2):
+def distance_to_a_measure(maxdim=2):
     return WeightedRipsPersistence(homology_dimensions=list(range(maxdim+1)))
 
 def kernel_density_estimation(data, maxdim=2):
