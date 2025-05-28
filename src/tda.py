@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.neighbors import KernelDensity
 from gtda.homology import VietorisRipsPersistence, WeightedRipsPersistence
-from gtda.diagrams import PersistenceLandscape
+from gtda.diagrams import PersistenceLandscape, PersistenceImage
 from src.utils import as_pointcloud
 
 def vietoris_rips_complex(maxdim=2):
@@ -31,3 +31,6 @@ def kernel_density_estimation(data, maxdim=2):
 
 def persistence_landscape():
     return PersistenceLandscape()
+
+def persistence_image():
+    return PersistenceImage()

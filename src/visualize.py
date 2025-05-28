@@ -24,6 +24,21 @@ def plot_persistence_landscape(diagrams, title=''):
     plt.grid(True)
     plt.show()
 
+def plot_persistence_image(persistent_images, sample_idx = 0, title=''):
+    n_dims = persistent_images.shape[1]
+    fig, axes = plt.subplots(1, n_dims, figsize=(5 * n_dims, 4))
+
+    for i in range(n_dims):
+        ax = axes[i] if n_dims > 1 else axes
+        ax.imshow(persistent_images[sample_idx, i])
+        ax.set_title(f'H{i}')
+        ax.axis('off')
+
+    if title:
+        fig.suptitle(title, fontsize=16)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])  # leave space for suptitle
+    plt.show()
 
 def plot_distance_over_missingrates(distances, distance_type):
     plt.figure(figsize=(8,5))
