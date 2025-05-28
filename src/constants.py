@@ -9,3 +9,6 @@ IRIS_DATASET_ID = 61
 
 ### Pipeline ###
 MISSING_RATES = np.arange(2, 50, 2)
+
+### Styles ###
+DIM_COLORS = ['red', 'blue', 'green']
