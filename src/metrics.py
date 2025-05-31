@@ -7,6 +7,16 @@ def compute_wasserstein_distance(X, Y):
 def compute_bottleneck_distance(X, Y):
     return bottleneck(X, Y)
 
+def landscape_l2_distance(landscape1: np.ndarray, landscape2: np.ndarray, delta_t=1.0) -> float:
+    if landscape1.shape != landscape2.shape:
+        raise ValueError("Landscapes must have the same shape")
+    return np.sqrt(np.sum((landscape1 - landscape2)**2) * delta_t)
+
+def persistence_image_l2_distance(img1: np.ndarray, img2: np.ndarray) -> float:
+    if img1.shape != img2.shape:
+        raise ValueError("Persistence images must have the same shape")
+    return np.linalg.norm(img1 / np.linalg.norm(img1) - img2 / np.linalg.norm(img2))
+
 # TODO: Check Normalization
 def _handle_infinite_deaths(diag):
     finite_deaths = diag[np.isfinite(diag[:,1]), 1]
