@@ -8,3 +8,4 @@ librosa
 mdatagen
 statsmodels
 giotto-tda
+persim
