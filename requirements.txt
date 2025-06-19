@@ -4,3 +4,4 @@ openml
 scikit-learn
 tabulate
 tadasets
+librosa
