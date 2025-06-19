@@ -40,5 +40,9 @@ TORUS = 'torus'
 ON_AND_ON = 'on_and_on'
 
 ### PIPELINE ###
+WORKERS = 8
 N_JOBS = 1
+ESTIMATORS = 30
+DEPTH = 15
+ITERATIONS = 5
 MEDIAN = 0.5
