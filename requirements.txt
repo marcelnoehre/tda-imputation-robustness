@@ -7,3 +7,4 @@ tadasets
 librosa
 mdatagen
 statsmodels
+giotto-tda
