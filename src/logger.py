@@ -12,6 +12,6 @@ def log(msg):
     """
     Log a information with timestamp
 
-    :param msg: The message to be logged
+    :param str msg: The message to be logged
     """
     print(f"\x1b[32;20m{_current_time()}\x1b[37;20m | \x1b[0m{msg}")
