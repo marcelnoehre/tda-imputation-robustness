@@ -38,3 +38,7 @@ HUNGARIAN_CHICKENPOX = 'hungarian-chickenpox'
 CNN_STOCK_PRED_DJI = 'cnn-stock-pred-dji'
 TORUS = 'torus'
 ON_AND_ON = 'on_and_on'
+
+### PIPELINE ###
+N_JOBS = 1
+MEDIAN = 0.5
