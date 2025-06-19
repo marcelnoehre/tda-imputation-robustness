@@ -4,8 +4,8 @@ import tadasets
 import librosa
 from sklearn.datasets import fetch_openml
 
-from constants import *
-from utils import numeric_target_mapping
+from src.constants import *
+from src.utils import numeric_target_mapping
 
 def torus():
     """
@@ -58,6 +58,9 @@ def preprocess(dataset, key):
         f'X{i}' if not str(c).isidentifier() else str(c).replace(' ', '_') 
         for i, c in enumerate(dataset[DATA].columns)
     ]
+
+    for col in dataset[DATA].select_dtypes(include='int').columns:
+        dataset[DATA][col] = dataset[DATA][col].astype(float)
 
     return dataset
             

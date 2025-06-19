@@ -3,14 +3,14 @@ import time
 import numpy as np
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from logger import log
-from data import get_all_datasets
-from missingness import MISSINGNESS
-from imputation import IMPUTATION
-from tda import TDA
-from normalize import normalize_by_diameter
-from metrics import METRICS
-from constants import *
+from src.logger import log
+from src.data import get_all_datasets
+from src.missingness import MISSINGNESS
+from src.imputation import IMPUTATION
+from src.tda import TDA
+from src.normalize import normalize_by_diameter
+from src.metrics import METRICS
+from src.constants import *
 
 def _normalize_persistence_intervals(pd, dataset):
     return normalize_by_diameter(pd, dataset)

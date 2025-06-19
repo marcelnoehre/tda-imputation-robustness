@@ -3,7 +3,7 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import SimpleImputer, KNNImputer, IterativeImputer
 from sklearn.ensemble import RandomForestRegressor
 from statsmodels.imputation.mice import MICEData
-from constants import *
+from src.constants import *
 
 import warnings
 warnings.filterwarnings('ignore')

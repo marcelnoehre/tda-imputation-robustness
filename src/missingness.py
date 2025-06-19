@@ -1,7 +1,7 @@
 from mdatagen.multivariate.mMCAR import mMCAR
 from mdatagen.multivariate.mMAR import mMAR
 from mdatagen.multivariate.mMNAR import mMNAR
-from constants import *
+from src.constants import *
 
 def multivariat_mcar(df, target, missing_rate, seed):
     return mMCAR(

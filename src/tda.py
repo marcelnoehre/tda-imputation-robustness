@@ -1,7 +1,7 @@
 from gtda.homology import VietorisRipsPersistence
 from gtda.diagrams import PersistenceLandscape, PersistenceImage
-from utils import as_batch, transform_pd
-from constants import *
+from src.utils import as_batch, transform_pd
+from src.constants import *
 
 def vietoris_rips_complex(data):
     return VietorisRipsPersistence(

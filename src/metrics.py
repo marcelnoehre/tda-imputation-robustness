@@ -1,8 +1,8 @@
 import numpy as np
 from persim import wasserstein, bottleneck
-from tda import persistence_landscape, persistence_image
-from utils import transform_pd
-from constants import *
+from src.tda import persistence_landscape, persistence_image
+from src.utils import transform_pd
+from src.constants import *
 
 def compute_wasserstein_distance(X, Y):
     return wasserstein(X, Y)
