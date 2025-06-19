@@ -4,3 +4,8 @@ MAX_NUM_FEATURES = 25
 MIN_SAMPLES = 500
 MAX_SAMPLES = 1500
 DATASET_KEYS = ['did', 'name', 'NumberOfInstances', 'NumberOfFeatures']
+
+# Torus
+TORUS_SAMPLES = 1000
+TORUS_AMBIENT = 20
+TORUS_SEED = 42

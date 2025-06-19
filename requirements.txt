@@ -3,3 +3,4 @@ pandas
 openml
 scikit-learn
 tabulate
+tadasets
