@@ -19,7 +19,7 @@ TORUS_AMBIENT = 20
 TORUS_SEED = 42
 
 # On an On (NCS)
-AUDIO_PATH = "../data/on_and_on_ncs.wav"
+AUDIO_PATH = 'data/on_and_on_ncs.wav'
 HOP_LENGTH = 512
 WINDOW_DURATION = 0.5 
 STEP_DURATION = 0.2
@@ -28,6 +28,7 @@ CHROMA_LABELS = ['C', 'Csharp', 'D', 'Dsharp', 'E', 'F', 'Fsharp', 'G', 'Gsharp'
 ### DATA ###
 DATA = 'data'
 TARGET = 'target'
+FUNCTION = 'function'
 CONCRETE_DATA = 'concrete_data'
 DIABETES = 'diabetes'
 STOCK = 'stock'
@@ -47,3 +48,27 @@ DEPTH = 15
 ITERATIONS = 5
 MEDIAN = 0.5
 DIMENSIONS = [0, 1, 2]
+DETERMINISTIC = 'deterministic'
+PD = 'persistence_diagram'
+PL = 'persistence_landscape'
+PI = 'persistence_image'
+COMPARISONS = [PD, PL, PI]
+
+### EXPERIMENTS ###
+SEEDS = [42, 123, 2025]
+MCAR = 'missing_completely_at_random'
+MAR = 'missing_at_random'
+MNAR = 'missing_not_at_random'
+CONSTANT = 'constant_imputation'
+MEAN = 'mean_imputation'
+MEDIAN = 'median_imputation'
+KNN = 'k_nearest_neighbors_imputation'
+RF = 'random_forest_imputation'
+MICE = 'mice_imputation'
+VR = 'vietoris_rips'
+DTM = 'distance_to_a_measure'
+KD = 'kernel_distance'
+WS = 'wasserstein_distance'
+BN = 'bottleneck_distance'
+L2PL = 'persistence_landscape_l2_distance'
+L2PI = 'persistence_image_l2_distance'

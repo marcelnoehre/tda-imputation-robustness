@@ -8,4 +8,4 @@ def table(data, headers):
     :param list[list] data: The data to be displayed in the table
     :param list[str] headers: The headers for the table
     """
-    display(Markdown(tabulate(data, headers=headers, tablefmt="github")))
+    display(Markdown(tabulate(data, headers=headers, tablefmt='github')))

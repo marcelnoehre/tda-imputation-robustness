@@ -4,15 +4,15 @@ import tadasets
 import librosa
 from sklearn.datasets import fetch_openml
 
-from src.constants import *
-from src.utils import numeric_target_mapping
+from constants import *
+from utils import numeric_target_mapping
 
 def torus():
     """
     Generate a torus dataset.
     """
     data = tadasets.torus(n=TORUS_SAMPLES, ambient=TORUS_AMBIENT, seed=TORUS_SEED)
-    return {DATA: pd.DataFrame(data, columns=[f"X{i}" for i in range(data.shape[1])])}
+    return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
 
 def on_and_on():
     """
@@ -55,7 +55,7 @@ def preprocess(dataset, key):
         dataset[TARGET] = numeric_target_mapping(dataset[TARGET])
 
     dataset[DATA].columns = [
-        f'X{i}' if not str(c).isidentifier() else str(c).replace(" ", "_") 
+        f'X{i}' if not str(c).isidentifier() else str(c).replace(' ', '_') 
         for i, c in enumerate(dataset[DATA].columns)
     ]
 
@@ -77,5 +77,5 @@ def get_all_datasets():
         HUNGARIAN_CHICKENPOX: preprocess(get_data(HUNGARIAN_CHICKENPOX_DATASET_ID), HUNGARIAN_CHICKENPOX),
         CNN_STOCK_PRED_DJI: preprocess(get_data(CNN_STOCK_PRED_DJI_DATASET_ID), CNN_STOCK_PRED_DJI),
         TORUS: preprocess(torus(), TORUS),
-        ON_AND_ON: preprocess(on_and_on(), ON_AND_ON),
+        ON_AND_ON: preprocess(on_and_on(), ON_AND_ON)
     }

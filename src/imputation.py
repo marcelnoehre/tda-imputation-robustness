@@ -3,7 +3,7 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import SimpleImputer, KNNImputer, IterativeImputer
 from sklearn.ensemble import RandomForestRegressor
 from statsmodels.imputation.mice import MICEData
-from src.constants import *
+from constants import *
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -37,11 +37,11 @@ def impute_mice(data, seed):
     mice_imp.update_all(n_iter=ITERATIONS)
     return mice_imp.data.values
 
-IMPUTATION_METHODS = {
-    'constant': {'fn': lambda data, seed: impute_simple(data, 'constant', 0), 'deterministic': True},
-    'mean': {'fn': lambda data, seed: impute_simple(data, 'mean'), 'deterministic': True},
-    'median': {'fn': lambda data, seed: impute_simple(data, 'median'), 'deterministic': True},
-    'knn': {'fn': lambda data, seed: impute_knn(data), 'deterministic': True},
-    'random_forest': {'fn': lambda data, seed: impute_random_forest(data, seed), 'deterministic': False},
-    'mice': {'fn': lambda data, seed: impute_mice(data, seed), 'deterministic': False}
+IMPUTATION = {
+    CONSTANT: {FUNCTION: lambda data, _: impute_simple(data, 'constant', 0), DETERMINISTIC: True},
+    MEAN: {FUNCTION: lambda data, _: impute_simple(data, 'mean'), DETERMINISTIC: True},
+    MEDIAN: {FUNCTION: lambda data, _: impute_simple(data, 'median'), DETERMINISTIC: True},
+    KNN: {FUNCTION: lambda data, _: impute_knn(data), DETERMINISTIC: True},
+    RF: {FUNCTION: lambda data, seed: impute_random_forest(data, seed), DETERMINISTIC: False},
+    MICE: {FUNCTION: lambda data, seed: impute_mice(data, seed), DETERMINISTIC: False}
 }
