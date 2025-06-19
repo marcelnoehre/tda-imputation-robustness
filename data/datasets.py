@@ -5,6 +5,7 @@ import librosa
 from sklearn.datasets import fetch_openml
 
 from src.constants import *
+from src.utils import numeric_target_mapping
 
 def torus():
     """
@@ -36,16 +37,6 @@ def get_data(id):
     :param int id: The OpenML dataset ID.
     """
     return fetch_openml(data_id=id, as_frame=True)
-
-def numeric_target_mapping(target):
-    """
-    Map target class labels to numeric values.
-
-    :param list target: List of class labels.
-
-    :return np.ndarray: Numeric mapping of class labels.
-    """
-    return np.array([{cls: id for id, cls in enumerate(target)}[cls] for cls in target])
 
 def preprocess(dataset, key):
     """
