@@ -337,5 +337,5 @@ def experiment(experiment, MISSINGNESS_TYPES, MISSING_RATES, IMPUTATION_METHODS,
     log(f'Calculated distances in {time.time() - start_time:.2f} seconds')
 
     os.makedirs('results', exist_ok=True)
-    store_results(results, f'{experiment}_results.csv')
+    store_results(results, f'{experiment}_results')
     log(f'Experiment {experiment} completed in {time.time() - initial_time:.2f} seconds')
