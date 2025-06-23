@@ -48,6 +48,7 @@ DEPTH = 15
 ITERATIONS = 5
 MEDIAN = 0.5
 DIMENSIONS = [0, 1, 2]
+EUCLIDEAN = 2
 DETERMINISTIC = 'deterministic'
 PD = 'persistence_diagram'
 PL = 'persistence_landscape'

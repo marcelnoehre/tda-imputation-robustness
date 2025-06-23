@@ -18,6 +18,14 @@ def main():
         [VR],
         [WS, BN, L2PL, L2PI]
     )
+    experiment(
+        'impact_tda_methods',
+        [MAR],
+        [5, 10, 25],
+        [KNN],
+        [VR, DTM, KD],
+        [WS, BN, L2PL, L2PI]
+    )
 
 if __name__ == '__main__':
     main()

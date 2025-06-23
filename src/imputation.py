@@ -13,7 +13,8 @@ def impute_simple(data, strategy, value=None):
     return simple_imp.fit_transform(data)
 
 def impute_knn(data):
-    k = int(np.sqrt(len(data)))
+    n = len(data)
+    k = min(int(np.sqrt(n)), n // 2)
     knn_imp = KNNImputer(n_neighbors=k)
     return knn_imp.fit_transform(data)
 
