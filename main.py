@@ -24,7 +24,7 @@ def main():
         [5, 10, 25],
         [KNN],
         [VR, DTM, KD],
-        [WS, BN, L2PL, L2PI]
+        [WS, BN]
     )
 
 if __name__ == '__main__':

@@ -286,11 +286,18 @@ def store_results(results, filename):
                 for imp, tda_methods in imputations.items():
                     for tda, dimensions in tda_methods.items():
                         for dim, metrics in dimensions.items():
-                            rows.append({k: v for k, v in [
-                                ('dataset', dataset), ('missingness_type', mt), ('missing_rate', mr),
-                                ('imputation_method', imp), ('tda_method', tda), ('dimension', dim),
-                                ('wasserstein_distance', metrics[WS]), ('bottleneck_distance', metrics[BN]),
-                                ('l2_distance_landscape', metrics[L2PL]), ('l2_distance_image', metrics[L2PI])]})
+                            row = {
+                                'dataset': dataset,
+                                'missingness_type': mt,
+                                'missing_rate': mr,
+                                'imputation_method': imp,
+                                'tda_method': tda,
+                                'dimension': dim
+                            }
+                            for metric in metrics.keys():
+                                row[metric] = metrics[metric]
+
+                            rows.append(row)
 
     pd.DataFrame(rows).to_csv(f'results/{filename}.csv', index=False)
 
@@ -307,7 +314,8 @@ def experiment(experiment, MISSINGNESS_TYPES, MISSING_RATES, IMPUTATION_METHODS,
     start_time = time.time()
     original_persistence_intervals = compute_original_persistence_intervals(DATA, TDA_METHODS)
     normalized_original_persistence_intervals = normalize_original_persistence_intervals(original_persistence_intervals, DATA)
-    original_comparable = prepare_original_data(normalized_original_persistence_intervals, COMPARISONS)
+    comparisons = [{WS: PD, BN: PD, L2PL: PL, L2PI: PI}.get(metric, '_') for metric in METRICS]
+    original_comparable = prepare_original_data(normalized_original_persistence_intervals, comparisons)
     log(f'Prepared original data in {time.time() - start_time:.2f} seconds')
 
     # Introduce missingness

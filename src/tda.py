@@ -25,7 +25,8 @@ def distance_to_a_measure(data):
     ).fit_transform(as_batch(data))
 
 def kernel_distance(data):
-    h = (data.shape[0] * (data.shape[1] + 2) / 4) ** (-1 / (data.shape[1] + 4))
+    n, d = data.shape
+    h = (n * (d + 2) / 4) ** (-1 / (d + 4))
     distances = pairwise_distances(data)
     K = np.exp(-distances**2 / (2 * h**2))
     D = np.sqrt(2 - 2 * K)

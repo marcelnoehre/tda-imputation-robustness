@@ -50,10 +50,6 @@ MEDIAN = 0.5
 DIMENSIONS = [0, 1, 2]
 EUCLIDEAN = 2
 DETERMINISTIC = 'deterministic'
-PD = 'persistence_diagram'
-PL = 'persistence_landscape'
-PI = 'persistence_image'
-COMPARISONS = [PD, PL, PI]
 
 ### EXPERIMENTS ###
 SEEDS = [42, 123, 2025]
@@ -69,6 +65,9 @@ MICE = 'mice_imputation'
 VR = 'vietoris_rips'
 DTM = 'distance_to_a_measure'
 KD = 'kernel_distance'
+PD = 'persistence_diagram'
+PL = 'persistence_landscape'
+PI = 'persistence_image'
 WS = 'wasserstein_distance'
 BN = 'bottleneck_distance'
 L2PL = 'persistence_landscape_l2_distance'
