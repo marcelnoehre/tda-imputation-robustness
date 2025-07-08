@@ -23,7 +23,7 @@ def multivariat_mnar(df, target, missing_rate):
     return mMNAR(
         X=df,
         y=target,
-        threshold=MEDIAN,
+        threshold=0.5,
         n_xmiss=df.shape[1] // 2,
         n_Threads=N_JOBS
     ).MBOV_median(missing_rate, df.columns.tolist())

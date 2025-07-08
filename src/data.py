@@ -20,7 +20,10 @@ def on_and_on():
     with sliding windows. The resulting sequence of chroma vectors forms a point cloud
     representing the harmonic structure over time.
     """
-    y, sr = librosa.load(AUDIO_PATH, sr=None)
+    try:
+        y, sr = librosa.load(AUDIO_PATH, sr=None)
+    except FileNotFoundError:
+        y, sr = librosa.load(f'../{AUDIO_PATH}', sr=None)
     chroma = librosa.feature.chroma_stft(y=y, sr=sr, hop_length=HOP_LENGTH)
 
     window_size = int(WINDOW_DURATION * sr / HOP_LENGTH)

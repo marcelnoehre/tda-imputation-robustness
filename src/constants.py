@@ -1,3 +1,5 @@
+from typing import Dict
+
 ### OpenML Data ###
 MIN_NUM_FEATURES = 8
 MAX_NUM_FEATURES = 25
@@ -19,7 +21,7 @@ TORUS_AMBIENT = 20
 TORUS_SEED = 42
 
 # On an On (NCS)
-AUDIO_PATH = 'data/on_and_on_ncs.wav'
+AUDIO_PATH = 'assets/on_and_on_ncs.wav'
 HOP_LENGTH = 512
 WINDOW_DURATION = 0.5 
 STEP_DURATION = 0.2
@@ -40,17 +42,6 @@ CNN_STOCK_PRED_DJI = 'cnn-stock-pred-dji'
 TORUS = 'torus'
 ON_AND_ON = 'on_and_on'
 
-### PIPELINE ###
-WORKERS = 8
-N_JOBS = 1
-ESTIMATORS = 30
-DEPTH = 15
-ITERATIONS = 5
-MEDIAN = 0.5
-DIMENSIONS = [0, 1, 2]
-EUCLIDEAN = 2
-DETERMINISTIC = 'deterministic'
-
 ### EXPERIMENTS ###
 SEEDS = [42, 123, 2025]
 MCAR = 'missing_completely_at_random'
@@ -70,5 +61,76 @@ PL = 'persistence_landscape'
 PI = 'persistence_image'
 WS = 'wasserstein_distance'
 BN = 'bottleneck_distance'
-L2PL = 'persistence_landscape_l2_distance'
-L2PI = 'persistence_image_l2_distance'
+L2PL = 'l2_distance_landscape'
+L2PI = 'l2_distance_image'
+RMSE = 'rmse'
+
+### PIPELINE ###
+WORKERS = 8
+N_JOBS = 1
+ESTIMATORS = 30
+DEPTH = 15
+ITERATIONS = 5
+DIMENSIONS = [0, 1, 2]
+EUCLIDEAN = 2
+DETERMINISTIC = 'deterministic'
+
+### IDENTIFIER ###
+DATASET = 'dataset'
+MISSINGNESS_TYPE = 'missingness_type'
+MISSING_RATE = 'missing_rate'
+IMPUTATION_METHOD = 'imputation_method'
+TDA_METHOD = 'tda_method'
+METRIC = 'metric'
+DIMENSION = 'dimension'
+
+### COLLECTIONS ###
+COLLECTIONS = {
+    MISSINGNESS_TYPE: [MCAR, MAR, MNAR],
+    IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE],
+    TDA_METHOD: [VR, DTM, KD],
+    METRIC: [WS, BN, L2PL, L2PI],
+}
+
+### RESULTS ###
+RMSE_RESULTS = '../results/rmse.csv'
+IMPACT_MISSINGNESS = '../results/impact_missingness_types_rates_results.csv'
+IMPACT_IMPUTATION = '../results/impact_imputation_methods_results.csv'
+IMPACT_TDA = '../results/impact_tda_methods_results.csv'
+
+### LABELS ###
+LABEL: Dict[str, str] = {
+    MCAR: 'Missing Completely At Random',
+    MAR: 'Missing At Random',
+    MNAR: 'Missing Not At Random',
+    CONSTANT: 'Constant Imputation',
+    MEAN: 'Mean Imputation',
+    MEDIAN: 'Median Imputation',
+    KNN: 'K Nearest Neighbors Imputation',
+    RF: 'Random Forest Imputation',
+    MICE: 'Multiple Imputation by Chained Equations',
+    VR: 'Vietoris Rips Complex',
+    DTM: 'Distance To a Measure',
+    KD: 'Kernel Distance',
+    PD: 'Persistence Diagram',
+    PL: 'Persistence Landscape',
+    PI: 'Persistence Image',
+    WS: 'Wasserstein Distance',
+    BN: 'Bottleneck Distance',
+    L2PL: 'L2 Distance (Persistence Landscape)',
+    L2PI: 'L2 Distance (Persistence Image)',
+    RMSE: 'Root Mean Square Error',
+    DATASET: 'Dataset',
+    MISSINGNESS_TYPE: 'Type of Missingness',
+    MISSING_RATE: 'Missing Rate [%]',
+    IMPUTATION_METHOD: 'Imputation Method',
+    TDA_METHOD: 'TDA Method',
+    DIMENSION: 'Dimension'
+}
+
+LABEL_SHORT: Dict[str, str] = {
+    MCAR: 'MCAR',
+    MAR: 'MAR',
+    MNAR: 'MNAR',
+    DIMENSION: 'Dim'
+}

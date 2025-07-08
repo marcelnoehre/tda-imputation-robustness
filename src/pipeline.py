@@ -287,63 +287,65 @@ def store_results(results, filename):
                     for tda, dimensions in tda_methods.items():
                         for dim, metrics in dimensions.items():
                             row = {
-                                'dataset': dataset,
-                                'missingness_type': mt,
-                                'missing_rate': mr,
-                                'imputation_method': imp,
-                                'tda_method': tda,
-                                'dimension': dim
+                                DATASET: dataset,
+                                MISSINGNESS_TYPE: mt,
+                                MISSING_RATE: mr,
+                                IMPUTATION_METHOD: imp,
+                                TDA_METHOD: tda,
+                                DIMENSION: dim
                             }
-                            for metric in metrics.keys():
+                            for metric in COLLECTIONS[METRIC]:
                                 row[metric] = metrics[metric]
 
                             rows.append(row)
 
     pd.DataFrame(rows).to_csv(f'results/{filename}.csv', index=False)
 
-def experiment(experiment, MISSINGNESS_TYPES, MISSING_RATES, IMPUTATION_METHODS, TDA_METHODS, METRICS):
+def experiment(experiment, missingness_types, missing_rates, imputation_methods, tda_methods, metrics):
     initial_time = start_time = time.time()
 
     # Load all datasets
-    log(f'Loading datasets...')
-    DATA = get_all_datasets()
-    log(f'Loaded {len(DATA)} datasets in {time.time() - start_time:.2f} seconds')
+    log('Loading datasets...')
+    datasets = get_all_datasets()
+    log(f'Loaded {len(datasets)} datasets in {time.time() - start_time:.2f} seconds')
 
     # Original datasets
-    log(f'Preparing original datasets...')
+    log('Preparing original datasets...')
     start_time = time.time()
-    original_persistence_intervals = compute_original_persistence_intervals(DATA, TDA_METHODS)
-    normalized_original_persistence_intervals = normalize_original_persistence_intervals(original_persistence_intervals, DATA)
-    comparisons = [{WS: PD, BN: PD, L2PL: PL, L2PI: PI}.get(metric, '_') for metric in METRICS]
+    original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods)
+    normalized_original_persistence_intervals = normalize_original_persistence_intervals(original_persistence_intervals, datasets)
+    comparisons = [{WS: PD, BN: PD, L2PL: PL, L2PI: PI}.get(metric, '_') for metric in metrics]
     original_comparable = prepare_original_data(normalized_original_persistence_intervals, comparisons)
     log(f'Prepared original data in {time.time() - start_time:.2f} seconds')
 
     # Introduce missingness
-    log(f'Introducing missingness...')
+    log('Introducing missingness...')
     start_time = time.time()
-    data_missing_values = introduce_missingness(DATA, MISSINGNESS_TYPES, MISSING_RATES)
+    data_missing_values = introduce_missingness(datasets, missingness_types, missing_rates)
     log(f'Introduced missingness in {time.time() - start_time:.2f} seconds')
 
     # Impute missing values
-    log(f'Imputing missing values...')
+    log('Imputing missing values...')
     start_time = time.time()
-    imputed_data = impute_missing_values(data_missing_values, IMPUTATION_METHODS)
+    imputed_data = impute_missing_values(data_missing_values, imputation_methods)
     log(f'Imputed missing values in {time.time() - start_time:.2f} seconds')
 
     # Compute persistence intervals
-    log(f'Computing persistence intervals...')
+    log('Computing persistence intervals...')
     start_time = time.time()
-    persistence_intervals = compute_persistence_intervals(imputed_data, TDA_METHODS)
-    normalized_persistence_intervals = normalize_persistence_intervals(persistence_intervals, DATA)
+    persistence_intervals = compute_persistence_intervals(imputed_data, tda_methods)
+    normalized_persistence_intervals = normalize_persistence_intervals(persistence_intervals, datasets)
     log(f'Computed persistence intervals in {time.time() - start_time:.2f} seconds')
 
     # Calculate distances
-    log(f'Calculating distances...')
+    log('Calculating distances...')
     start_time = time.time()
-    distances = compute_distances(original_comparable, normalized_persistence_intervals, METRICS)
+    distances = compute_distances(original_comparable, normalized_persistence_intervals, metrics)
     results = compute_seedwise_average(distances)
     log(f'Calculated distances in {time.time() - start_time:.2f} seconds')
 
+    # Store results
+    log('Storing results...')
     os.makedirs('results', exist_ok=True)
     store_results(results, f'{experiment}_results')
     log(f'Experiment {experiment} completed in {time.time() - initial_time:.2f} seconds')
