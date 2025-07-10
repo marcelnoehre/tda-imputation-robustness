@@ -21,7 +21,7 @@ BOSTON_WEATHER_DATASET_ID = 43623
 RED_WINE_QUALITY_DATASET_ID = 43695
 WHITE_WINE_QUALITY_DATASET_ID = 44971
 AIR_QUALITY_DATASET_ID = 46762
-FOOTBALL_PLAYER_POSITION_DATASET_ID = 46762
+FOOTBALL_PLAYER_POSITION_DATASET_ID = 46764
 
 
 # Torus
@@ -43,12 +43,19 @@ FUNCTION = 'function'
 STOCK = 'stock'
 RMFTSA_LADATA = 'rmftsa_ladata'
 CONCRETE_DATA = 'concrete_data'
+DEBUTANIZER = 'debutanizer'
 TREASURY = 'treasury'
 WEATHER_IZMIR = 'weather_izmir'
 HUNGARIAN_CHICKENPOX = 'hungarian-chickenpox'
 CNN_STOCK_PRED_DJI = 'cnn-stock-pred-dji'
 DIABETES = 'diabetes'
+INDIAN_STOCK_MARKET = 'indian_stock_market'
+GENDER_RECOGNITION = 'gender_recognition_by_voice'
+BOSTON_WEATHER = 'boston_weather_data'
 RED_WINE_QUALITY = 'red_wine_quality'
+WHITE_WINE_QUALITY = 'white_wine_quality'
+AIR_QUALITY = 'air_quality_and_pollution'
+FOOTBALL_PLAYER_POSITION = 'football_player_position'
 TORUS = 'torus'
 ON_AND_ON = 'on_and_on'
 

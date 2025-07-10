@@ -53,8 +53,13 @@ def preprocess(dataset, key):
     """
     if key == RED_WINE_QUALITY:
         dataset[TARGET] = dataset[DATA].pop('quality')
+    if key == BOSTON_WEATHER:
+        dataset[TARGET] = dataset[DATA].pop('Events')
+        dataset[DATA] = dataset[DATA].drop(columns=['Year', 'Month', 'Day'], errors='ignore')
+    if key == GENDER_RECOGNITION:
+        dataset[TARGET] = dataset[DATA].pop('label')
     if not hasattr(dataset, TARGET) or dataset[TARGET] is None:
-        if key in [CNN_STOCK_PRED_DJI, HUNGARIAN_CHICKENPOX]:
+        if key in [CNN_STOCK_PRED_DJI, HUNGARIAN_CHICKENPOX, INDIAN_STOCK_MARKET]:
             dataset[DATA] = dataset[DATA].drop(columns=['Date'], errors='ignore')
         dataset[TARGET] = np.array(len(dataset[DATA]) * [0])
     else:
@@ -85,12 +90,19 @@ def get_all_datasets():
         STOCK: preprocess(get_data(STOCK_DATASET_ID), STOCK),
         RMFTSA_LADATA: preprocess(get_data(RMFTSA_LADATA_DATASET_ID), RMFTSA_LADATA),
         CONCRETE_DATA: preprocess(get_data(CONCRETE_DATA_ID), CONCRETE_DATA),
+        DEBUTANIZER: preprocess(get_data(DEBUTANIZER_DATASET_ID), DEBUTANIZER),
         TREASURY: preprocess(get_data(TREASURY_DATASET_ID), TREASURY),
         WEATHER_IZMIR: preprocess(get_data(WEATHER_IZMIR_DATASET_ID), WEATHER_IZMIR),
         HUNGARIAN_CHICKENPOX: preprocess(get_data(HUNGARIAN_CHICKENPOX_DATASET_ID), HUNGARIAN_CHICKENPOX),
         CNN_STOCK_PRED_DJI: preprocess(get_data(CNN_STOCK_PRED_DJI_DATASET_ID), CNN_STOCK_PRED_DJI),
         DIABETES: preprocess(get_data(DIABETES_DATASET_ID), DIABETES),
+        INDIAN_STOCK_MARKET: preprocess(get_data(INDIAN_STOCK_MARKET_DATASET_ID), INDIAN_STOCK_MARKET),
+        GENDER_RECOGNITION: preprocess(get_data(GENDER_RECOGNITION_DATASET_ID), GENDER_RECOGNITION),
+        BOSTON_WEATHER: preprocess(get_data(BOSTON_WEATHER_DATASET_ID), BOSTON_WEATHER),
         RED_WINE_QUALITY: preprocess(get_data(RED_WINE_QUALITY_DATASET_ID), RED_WINE_QUALITY),
+        WHITE_WINE_QUALITY: preprocess(get_data(WHITE_WINE_QUALITY_DATASET_ID), WHITE_WINE_QUALITY),
+        AIR_QUALITY: preprocess(get_data(AIR_QUALITY_DATASET_ID), AIR_QUALITY),
+        FOOTBALL_PLAYER_POSITION: preprocess(get_data(FOOTBALL_PLAYER_POSITION_DATASET_ID), FOOTBALL_PLAYER_POSITION),
         TORUS: preprocess(torus(), TORUS),
         ON_AND_ON: preprocess(on_and_on(), ON_AND_ON)
     }
