@@ -133,7 +133,7 @@ def compute_seedwise_average(distance_data):
 
     return res
 
-def store_results(results):
+def store_results(results, filename):
     os.makedirs('results', exist_ok=True)
     rows = []
     for dataset, missingness_types in results.items():
@@ -151,15 +151,18 @@ def store_results(results):
 
                     rows.append(row)
 
-    pd.DataFrame(rows).to_csv(f'results/comparison_metrics.csv', index=False)
+    pd.DataFrame(rows).to_csv(f'results/{filename}.csv', index=False)
 
-def comparison_metrics(missingness_types, missing_rates, imputation_methods, reduced_missing_rates, reduced_imputation_methods, metrics):
+def comparison_metrics(comparison_metrics, missingness_types, missing_rates, imputation_methods, reduced_missing_rates, reduced_imputation_methods, metrics, datasets=None):
     initial_time = start_time = time.time()
 
-    # Load all datasets
-    log('Loading datasets...')
-    datasets = get_all_datasets()
-    log(f'Loaded {len(datasets)} datasets in {time.time() - start_time:.2f} seconds')
+    # Load datasets
+    if datasets is None:
+        log('Loading all datasets...')
+        datasets = get_all_datasets()
+        log(f'Loaded {len(datasets)} datasets in {time.time() - start_time:.2f} seconds')
+    else:
+        log(f'Loading provided datasets: {list(datasets.keys())}')
 
     # Introduce missingness
     log('Introducing missingness...')
@@ -188,5 +191,5 @@ def comparison_metrics(missingness_types, missing_rates, imputation_methods, red
     # Store results
     log('Storing results...')
     os.makedirs('results', exist_ok=True)
-    store_results(results)
-    log(f'RSMSE computed in {time.time() - initial_time:.2f} seconds')
+    store_results(results, f'{comparison_metrics}_results')
+    log(f'Distances computed in {time.time() - initial_time:.2f} seconds')

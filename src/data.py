@@ -40,6 +40,10 @@ def get_data(id):
 
     :param int id: The OpenML dataset ID.
     """
+    if id == -1:
+        return torus()
+    if id == -2:
+        return on_and_on()
     return fetch_openml(data_id=id, as_frame=True)
 
 def preprocess(dataset, key):
@@ -89,7 +93,7 @@ def get_all_datasets():
     return {
         STOCK: preprocess(get_data(STOCK_DATASET_ID), STOCK),
         RMFTSA_LADATA: preprocess(get_data(RMFTSA_LADATA_DATASET_ID), RMFTSA_LADATA),
-        CONCRETE_DATA: preprocess(get_data(CONCRETE_DATA_ID), CONCRETE_DATA),
+        CONCRETE_DATA: preprocess(get_data(CONCRETE_DATA_DATASET_ID), CONCRETE_DATA),
         DEBUTANIZER: preprocess(get_data(DEBUTANIZER_DATASET_ID), DEBUTANIZER),
         TREASURY: preprocess(get_data(TREASURY_DATASET_ID), TREASURY),
         WEATHER_IZMIR: preprocess(get_data(WEATHER_IZMIR_DATASET_ID), WEATHER_IZMIR),

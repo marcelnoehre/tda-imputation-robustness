@@ -301,13 +301,16 @@ def store_results(results, filename):
 
     pd.DataFrame(rows).to_csv(f'results/{filename}.csv', index=False)
 
-def experiment(experiment, missingness_types, missing_rates, imputation_methods, tda_methods, metrics):
+def experiment(experiment, missingness_types, missing_rates, imputation_methods, tda_methods, metrics, datasets = None):
     initial_time = start_time = time.time()
 
-    # Load all datasets
-    log('Loading datasets...')
-    datasets = get_all_datasets()
-    log(f'Loaded {len(datasets)} datasets in {time.time() - start_time:.2f} seconds')
+    # Load datasets
+    if datasets is None:
+        log('Loading all datasets...')
+        datasets = get_all_datasets()
+        log(f'Loaded {len(datasets)} datasets in {time.time() - start_time:.2f} seconds')
+    else:
+        log(f'Loading provided datasets: {list(datasets.keys())}')
 
     # Original datasets
     log('Preparing original datasets...')
