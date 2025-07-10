@@ -27,7 +27,6 @@ def impute_random_forest(data, seed):
     )
     rf_imp = IterativeImputer(
         estimator=rf,
-        max_iter=ITERATIONS,
         random_state=seed
     )
     return rf_imp.fit_transform(data)

@@ -2,14 +2,19 @@ from mdatagen.multivariate.mMCAR import mMCAR
 from mdatagen.multivariate.mMAR import mMAR
 from mdatagen.multivariate.mMNAR import mMNAR
 from src.constants import *
+import random
 
 def multivariat_mcar(df, target, missing_rate, seed):
-    return mMCAR(
-        X=df,
+    random.seed(seed)
+    columns = random.sample(df.columns.tolist(), df.shape[1] // 2)
+    df_miss = df.copy()
+    df_miss[columns] = mMCAR(
+        X=df[columns],
         y=target,
-        missing_rate=missing_rate,
+        missing_rate=missing_rate * (df.shape[1] / len(columns)),
         seed=seed
-    ).random()
+    ).random()[columns]
+    return df_miss
 
 def multivariat_mar(df, target, missing_rate):
     return mMAR(
@@ -23,10 +28,9 @@ def multivariat_mnar(df, target, missing_rate):
     return mMNAR(
         X=df,
         y=target,
-        threshold=0.5,
         n_xmiss=df.shape[1] // 2,
         n_Threads=N_JOBS
-    ).MBOV_median(missing_rate, df.columns.tolist())
+    ).random(missing_rate, deterministic=True).drop(columns=[TARGET])
 
 MISSINGNESS = {
     MCAR: {FUNCTION: lambda df, target, missing_rate, seed: multivariat_mcar(df, target, missing_rate, seed), DETERMINISTIC: False},

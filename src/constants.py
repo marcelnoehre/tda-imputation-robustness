@@ -2,9 +2,9 @@ from typing import Dict
 
 ### OpenML Data ###
 MIN_NUM_FEATURES = 8
-MAX_NUM_FEATURES = 25
+MAX_NUM_FEATURES = 30
 MIN_SAMPLES = 500
-MAX_SAMPLES = 1500
+MAX_SAMPLES = 2000
 DATASET_KEYS = ['did', 'name', 'NumberOfInstances', 'NumberOfFeatures']
 STOCK_DATASET_ID = 223
 RMFTSA_LADATA_DATASET_ID = 666
@@ -14,6 +14,7 @@ WEATHER_IZMIR_DATASET_ID = 42369
 HUNGARIAN_CHICKENPOX_DATASET_ID = 42999
 CNN_STOCK_PRED_DJI_DATASET_ID = 43000
 DIABETES_DATASET_ID = 43384
+RED_WINE_QUALITY_DATASET_ID = 43695
 
 # Torus
 TORUS_SAMPLES = 1000
@@ -31,14 +32,15 @@ CHROMA_LABELS = ['C', 'Csharp', 'D', 'Dsharp', 'E', 'F', 'Fsharp', 'G', 'Gsharp'
 DATA = 'data'
 TARGET = 'target'
 FUNCTION = 'function'
-CONCRETE_DATA = 'concrete_data'
-DIABETES = 'diabetes'
 STOCK = 'stock'
 RMFTSA_LADATA = 'rmftsa_ladata'
+CONCRETE_DATA = 'concrete_data'
 TREASURY = 'treasury'
 WEATHER_IZMIR = 'weather_izmir'
 HUNGARIAN_CHICKENPOX = 'hungarian-chickenpox'
 CNN_STOCK_PRED_DJI = 'cnn-stock-pred-dji'
+DIABETES = 'diabetes'
+RED_WINE_QUALITY = 'red_wine_quality'
 TORUS = 'torus'
 ON_AND_ON = 'on_and_on'
 
@@ -100,6 +102,17 @@ IMPACT_TDA = '../results/impact_tda_methods_results.csv'
 
 ### LABELS ###
 LABEL: Dict[str, str] = {
+    STOCK: 'Stock Dataset',
+    RMFTSA_LADATA: 'RMFTSA LA Data',
+    CONCRETE_DATA: 'Concrete Data',
+    TREASURY: 'Treasury',
+    WEATHER_IZMIR: 'Weather Izmir',
+    HUNGARIAN_CHICKENPOX: 'Hungarian Chickenpox',
+    CNN_STOCK_PRED_DJI: 'CNN Stock Prediction DJI',
+    DIABETES: 'Diabetes Dataset',
+    RED_WINE_QUALITY: 'Red Wine Quality',
+    TORUS: 'Torus (Synthetic)',
+    ON_AND_ON: 'On & On (NCS)',
     MCAR: 'Missing Completely At Random',
     MAR: 'Missing At Random',
     MNAR: 'Missing Not At Random',
