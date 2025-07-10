@@ -41,7 +41,7 @@ def plot_rmse_vs_missingrate():
     """
     Plot RMSE against missing rates for different types of missingness.
     """
-    df = pd.read_csv(RMSE_RESULTS)
+    df = pd.read_csv(COMPARISON_METRICS)
     df = df[df[IMPUTATION_METHOD] == KNN]
     agg_df = df.groupby([MISSINGNESS_TYPE, MISSING_RATE, IMPUTATION_METHOD]).agg(
         rmse_mean=(RMSE, 'mean'), rmse_se=(RMSE, 'sem')
@@ -92,7 +92,7 @@ def plot_distance_vs_missingrate_by_dim_and_type():
 
     _, axes = plt.subplots(2, 2, figsize=(14, 10))
     axes = axes.flatten()
-    for i, metric in enumerate(COLLECTIONS[METRIC]):
+    for i, metric in enumerate(COLLECTIONS[TDA_METRIC]):
         ax = axes[i]
         for _, dim in enumerate(DIMENSIONS):
             for mt_i, mt in enumerate(COLLECTIONS[MISSINGNESS_TYPE]):

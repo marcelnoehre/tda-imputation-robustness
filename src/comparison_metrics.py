@@ -3,11 +3,11 @@ import time
 import numpy as np
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor, as_completed
-import numpy as np
 from src.logger import log
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS
 from src.imputation import IMPUTATION
+from src.metrics import METRICS
 from src.constants import *
 
 def _apply_missingness(dataset, mt, mr, seed):
@@ -16,11 +16,8 @@ def _apply_missingness(dataset, mt, mr, seed):
 def _apply_imputation(dataset, imp, seed):
     return IMPUTATION[imp][FUNCTION](dataset, seed)
 
-def _rmse(X: np.ndarray, Y: np.ndarray):
-    if X.shape != Y.shape:
-        raise ValueError(f'Arrays must have same shape, got {X.shape} vs {Y.shape}')
-    diff = X - Y
-    return np.sqrt(np.mean(diff**2))
+def _compare(metric, original, imputed):
+    return METRICS[metric][FUNCTION](original, imputed)
 
 def introduce_missingness(datasets, missingness_types, missing_rates):
     res = {
@@ -64,11 +61,11 @@ def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduc
             for key, mt_dict in key_dict.items():
                 for mt, mr_dict in mt_dict.items():
                     if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
-                        for mr in mr_dict.keys():
+                        for mr, imp_dict in mr_dict.items():
                             for imp in imputation_methods:
                                 if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
                                     if mr in reduced_missing_rates or imp in reduced_imputation_methods:
-                                        fut = executor.submit(_apply_imputation, data[seed][key][mt][mr], imp, seed)
+                                        fut = executor.submit(_apply_imputation, imp_dict, imp, seed)
                                         futures[fut] = (seed, key, mt, mr, imp)
 
         for fut in as_completed(futures):
@@ -77,7 +74,7 @@ def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduc
 
     return res
 
-def compute_rmse(datasets, data):
+def compute_distances(datasets, imputed_data, metrics):
     res = {
         seed: {
             key: {
@@ -87,50 +84,52 @@ def compute_rmse(datasets, data):
                     } for mr, imp_dict in mr_dict.items()
                 } for mt, mr_dict in mt_dict.items()
             } for key, mt_dict in key_dict.items()
-        } for seed, key_dict in data.items()
+        } for seed, key_dict in imputed_data.items()
     }
 
     futures = {}
     with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        for seed, key_dict in data.items():
+        for seed, key_dict in imputed_data.items():
             for key, mt_dict in key_dict.items():
                 for mt, mr_dict in mt_dict.items():
                     if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
                         for mr, imp_dict in mr_dict.items():
                             for imp in imp_dict.keys():
                                 if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
-                                    fut = executor.submit(_rmse, np.asarray(datasets[key][DATA]), data[seed][key][mt][mr][imp])
-                                    futures[fut] = (seed, key, mt, mr, imp)
+                                    for metric in metrics:
+                                        fut = executor.submit(_compare, metric, np.asarray(datasets[key][DATA]), imputed_data[seed][key][mt][mr][imp])
+                                        futures[fut] = (seed, key, mt, mr, imp, metric)
 
         for fut in as_completed(futures):
-            seed, key, mt, mr, imp = futures[fut]
-            res[seed][key][mt][mr][imp][RMSE] = fut.result()
+            seed, key, mt, mr, imp, metric = futures[fut]
+            res[seed][key][mt][mr][imp][metric] = fut.result()
 
     return res
 
-def compute_seedwise_average(imputed_data, rmse_data):
+def compute_seedwise_average(distance_data):
     res = {
         key: {
             mt: {
                 mr: {
                     imp: {
-                        RMSE: 0.0
-                    } for imp in imp_dict.keys()
+                        metric: 0.0 for metric in metrics
+                    } for imp, metrics in imp_dict.items()
                 } for mr, imp_dict in mr_dict.items()
             } for mt, mr_dict in mt_dict.items()
-        } for key, mt_dict in next(iter(imputed_data.values())).items()
+        } for key, mt_dict in next(iter(distance_data.values())).items()
     }
 
-    for seed, key_dict in imputed_data.items():
+    for seed, key_dict in distance_data.items():
         for key, mt_dict in key_dict.items():
             for mt, mr_dict in mt_dict.items():
                 if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
                     for mr, imp_dict in mr_dict.items():
-                        for imp in imp_dict.keys():
+                        for imp, metrics in imp_dict.items():
                             if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
-                                res[key][mt][mr][imp][RMSE] += rmse_data[seed][key][mt][mr][imp][RMSE]
+                                for metric in metrics:
+                                    res[key][mt][mr][imp][metric] += distance_data[seed][key][mt][mr][imp][metric]
                                 if seed == SEEDS[-1]:
-                                    res[key][mt][mr][imp][RMSE] /= len(SEEDS)
+                                    res[key][mt][mr][imp][metric] /= len(SEEDS)
 
     return res
 
@@ -140,17 +139,21 @@ def store_results(results):
     for dataset, missingness_types in results.items():
         for mt, missing_rates in missingness_types.items():
             for mr, imputations in missing_rates.items():
-                for imp in imputations.keys():
-                    rows.append({
+                for imp, metrics in imputations.items():
+                    row = {
                         DATASET: dataset,
                         MISSINGNESS_TYPE: mt,
                         MISSING_RATE: mr,
-                        IMPUTATION_METHOD: imp,
-                        RMSE: results[dataset][mt][mr][imp][RMSE]
-                    })
-    pd.DataFrame(rows).to_csv(f'results/rmse.csv', index=False)
+                        IMPUTATION_METHOD: imp
+                    }
+                    for metric in metrics:
+                        row[metric] = metrics[metric]
 
-def rmse(MISSINGNESS_TYPES, MISSING_RATES, IMPUTATION_METHODS, REDUCED_MISSING_RATE, REDUCED_IMPUTATION_METHODS):
+                    rows.append(row)
+
+    pd.DataFrame(rows).to_csv(f'results/comparison_metrics.csv', index=False)
+
+def comparison_metrics(missingness_types, missing_rates, imputation_methods, reduced_missing_rates, reduced_imputation_methods, metrics):
     initial_time = start_time = time.time()
 
     # Load all datasets
@@ -161,26 +164,26 @@ def rmse(MISSINGNESS_TYPES, MISSING_RATES, IMPUTATION_METHODS, REDUCED_MISSING_R
     # Introduce missingness
     log('Introducing missingness...')
     start_time = time.time()
-    data_missing_values = introduce_missingness(datasets, MISSINGNESS_TYPES, MISSING_RATES)
+    data_missing_values = introduce_missingness(datasets, missingness_types, missing_rates)
     log(f'Introduced missingness in {time.time() - start_time:.2f} seconds')
 
     # Impute missing values
     log('Imputing missing values...')
     start_time = time.time()
-    imputed_data = impute_missing_values(data_missing_values, IMPUTATION_METHODS, REDUCED_MISSING_RATE, REDUCED_IMPUTATION_METHODS)
+    imputed_data = impute_missing_values(data_missing_values, imputation_methods, reduced_missing_rates, reduced_imputation_methods)
     log(f'Imputed missing values in {time.time() - start_time:.2f} seconds')
 
-    # Compute RMSE
-    log('Computing RMSE...')
+    # Compute Distances
+    log('Computing Distances...')
     start_time = time.time()
-    rmse_data = compute_rmse(datasets, imputed_data)
-    log(f'Computed RMSE in {time.time() - start_time:.2f} seconds')
+    distance_data = compute_distances(datasets, imputed_data, metrics)
+    log(f'Computed distances in {time.time() - start_time:.2f} seconds')
 
-    # Compute seedwise average RMSE
-    log('Computing seedwise average RMSE...')
+    # Compute seedwise average distances
+    log('Computing seedwise average distances...')
     start_time = time.time()
-    results = compute_seedwise_average(imputed_data, rmse_data)
-    log(f'Computed seedwise average RMSE in {time.time() - start_time:.2f} seconds')
+    results = compute_seedwise_average(distance_data)
+    log(f'Computed seedwise average distances in {time.time() - start_time:.2f} seconds')
 
     # Store results
     log('Storing results...')

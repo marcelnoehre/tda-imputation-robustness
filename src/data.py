@@ -3,6 +3,7 @@ import pandas as pd
 import tadasets
 import librosa
 from sklearn.datasets import fetch_openml
+from sklearn.preprocessing import StandardScaler
 
 from src.constants import *
 from src.utils import numeric_target_mapping
@@ -66,6 +67,11 @@ def preprocess(dataset, key):
 
     for col in dataset[DATA].select_dtypes(include='int').columns:
         dataset[DATA][col] = dataset[DATA][col].astype(float)
+
+    dataset[DATA] = pd.DataFrame(
+        StandardScaler().fit_transform(dataset[DATA]), 
+        columns=dataset[DATA].columns, index=dataset[DATA].index
+    )
 
     return dataset
             

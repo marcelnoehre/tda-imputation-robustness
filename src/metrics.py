@@ -4,6 +4,24 @@ from src.tda import persistence_landscape, persistence_image
 from src.utils import transform_pd
 from src.constants import *
 
+def compute_rmse(X: np.ndarray, Y: np.ndarray):
+    if X.shape != Y.shape:
+        raise ValueError(f'Arrays must have same shape, got {X.shape} vs {Y.shape}')
+    diff = X - Y
+    return np.sqrt(np.mean(diff**2))
+
+def compute_mae(X: np.ndarray, Y: np.ndarray):
+    if X.shape != Y.shape:
+        raise ValueError(f'Arrays must have same shape, got {X.shape} vs {Y.shape}')
+    diff = np.abs(X - Y)
+    return np.mean(diff)
+
+def compute_frobenius_norm(X: np.ndarray, Y: np.ndarray):
+    if X.shape != Y.shape:
+        raise ValueError(f'Arrays must have same shape, got {X.shape} vs {Y.shape}')
+    diff = X - Y
+    return np.linalg.norm(diff, ord='fro')
+
 def compute_wasserstein_distance(X, Y):
     return wasserstein(X, Y)
 
@@ -26,6 +44,9 @@ def persistence_image_l2_distance(X: np.ndarray, Y: np.ndarray):
     return np.linalg.norm(X - Y)
 
 METRICS = {
+    RMSE: {FUNCTION: lambda X, Y: compute_rmse(X, Y)},
+    MAE: {FUNCTION: lambda X, Y: compute_mae(X, Y)},
+    FROBENIUS: {FUNCTION: lambda X, Y: compute_frobenius_norm(X, Y)},
     WS: {FUNCTION: lambda X, Y, dim: compute_wasserstein_distance(X[PD][dim], transform_pd(Y)[dim])},
     BN: {FUNCTION: lambda X, Y, dim: compute_bottleneck_distance(X[PD][dim], transform_pd(Y)[dim])},
     L2PL: {FUNCTION: lambda X, Y, dim: landscape_l2_distance(X[PL][dim], persistence_landscape(Y)[dim], X[PD])},

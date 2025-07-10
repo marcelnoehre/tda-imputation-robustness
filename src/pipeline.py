@@ -294,7 +294,7 @@ def store_results(results, filename):
                                 TDA_METHOD: tda,
                                 DIMENSION: dim
                             }
-                            for metric in COLLECTIONS[METRIC]:
+                            for metric in metrics:
                                 row[metric] = metrics[metric]
 
                             rows.append(row)

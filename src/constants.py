@@ -2,19 +2,27 @@ from typing import Dict
 
 ### OpenML Data ###
 MIN_NUM_FEATURES = 8
-MAX_NUM_FEATURES = 30
+MAX_NUM_FEATURES = 50
 MIN_SAMPLES = 500
-MAX_SAMPLES = 2000
+MAX_SAMPLES = 5000
 DATASET_KEYS = ['did', 'name', 'NumberOfInstances', 'NumberOfFeatures']
 STOCK_DATASET_ID = 223
 RMFTSA_LADATA_DATASET_ID = 666
 CONCRETE_DATA_ID = 4353
+DEBUTANIZER_DATASET_ID = 23516
 TREASURY_DATASET_ID = 42367
 WEATHER_IZMIR_DATASET_ID = 42369
 HUNGARIAN_CHICKENPOX_DATASET_ID = 42999
 CNN_STOCK_PRED_DJI_DATASET_ID = 43000
 DIABETES_DATASET_ID = 43384
+INDIAN_STOCK_MARKET_DATASET_ID = 43402
+GENDER_RECOGNITION_DATASET_ID = 43437
+BOSTON_WEATHER_DATASET_ID = 43623
 RED_WINE_QUALITY_DATASET_ID = 43695
+WHITE_WINE_QUALITY_DATASET_ID = 44971
+AIR_QUALITY_DATASET_ID = 46762
+FOOTBALL_PLAYER_POSITION_DATASET_ID = 46762
+
 
 # Torus
 TORUS_SAMPLES = 1000
@@ -65,7 +73,9 @@ WS = 'wasserstein_distance'
 BN = 'bottleneck_distance'
 L2PL = 'l2_distance_landscape'
 L2PI = 'l2_distance_image'
-RMSE = 'rmse'
+RMSE = 'root_mean_square_error'
+MAE = 'mean_absolute_error'
+FROBENIUS = 'frobenius_norm'
 
 ### PIPELINE ###
 WORKERS = 8
@@ -84,18 +94,20 @@ MISSING_RATE = 'missing_rate'
 IMPUTATION_METHOD = 'imputation_method'
 TDA_METHOD = 'tda_method'
 METRIC = 'metric'
+TDA_METRIC = 'tda_metric'
 DIMENSION = 'dimension'
 
 ### COLLECTIONS ###
 COLLECTIONS = {
+    METRIC: [RMSE, MAE, FROBENIUS],
     MISSINGNESS_TYPE: [MCAR, MAR, MNAR],
     IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE],
     TDA_METHOD: [VR, DTM, KD],
-    METRIC: [WS, BN, L2PL, L2PI],
+    TDA_METRIC: [WS, BN, L2PL, L2PI],
 }
 
 ### RESULTS ###
-RMSE_RESULTS = '../results/rmse.csv'
+COMPARISON_METRICS = '../results/comparison_metrics.csv'
 IMPACT_MISSINGNESS = '../results/impact_missingness_types_rates_results.csv'
 IMPACT_IMPUTATION = '../results/impact_imputation_methods_results.csv'
 IMPACT_TDA = '../results/impact_tda_methods_results.csv'
@@ -105,12 +117,19 @@ LABEL: Dict[str, str] = {
     STOCK: 'Stock Dataset',
     RMFTSA_LADATA: 'RMFTSA LA Data',
     CONCRETE_DATA: 'Concrete Data',
+    DEBUTANIZER_DATASET_ID: 'Debutanizer',
     TREASURY: 'Treasury',
     WEATHER_IZMIR: 'Weather Izmir',
     HUNGARIAN_CHICKENPOX: 'Hungarian Chickenpox',
     CNN_STOCK_PRED_DJI: 'CNN Stock Prediction DJI',
     DIABETES: 'Diabetes Dataset',
+    INDIAN_STOCK_MARKET_DATASET_ID: 'Indian Stock Market',
+    GENDER_RECOGNITION_DATASET_ID: 'Gender Recognition by Voice',
+    BOSTON_WEATHER_DATASET_ID: 'Boston Weather Data',
     RED_WINE_QUALITY: 'Red Wine Quality',
+    WHITE_WINE_QUALITY_DATASET_ID: 'White Wine Quality',
+    AIR_QUALITY_DATASET_ID: 'Air Quality and Pollution',
+    FOOTBALL_PLAYER_POSITION_DATASET_ID: 'Football Player Position',
     TORUS: 'Torus (Synthetic)',
     ON_AND_ON: 'On & On (NCS)',
     MCAR: 'Missing Completely At Random',
@@ -133,6 +152,8 @@ LABEL: Dict[str, str] = {
     L2PL: 'L2 Distance (Persistence Landscape)',
     L2PI: 'L2 Distance (Persistence Image)',
     RMSE: 'Root Mean Square Error',
+    MAE: 'Mean Absolute Error',
+    FROBENIUS: 'Frobenius Norm',
     DATASET: 'Dataset',
     MISSINGNESS_TYPE: 'Type of Missingness',
     MISSING_RATE: 'Missing Rate [%]',
