@@ -20,9 +20,9 @@ def process_args():
 
 def main():
     datasets = process_args()
-    prefix = '_'.join(datasets.keys())
+    prefix = f'{"_".join(datasets.keys())}_' if datasets else ''
     comparison_metrics(
-        f'{prefix}_comparison_metrics',
+        f'{prefix}comparison_metrics',
         [MCAR, MAR, MNAR],
         [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
         [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE],
@@ -32,7 +32,7 @@ def main():
         datasets
     )
     experiment(
-        f'{prefix}_impact_missingness_types_rates',
+        f'{prefix}impact_missingness_types_rates',
         [MCAR, MAR, MNAR],
         [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
         [KNN],
@@ -41,7 +41,7 @@ def main():
         datasets
     )
     experiment(
-        f'{prefix}_impact_imputation_methods',
+        f'{prefix}impact_imputation_methods',
         [MAR],
         [5, 10, 25], 
         [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE], 
@@ -50,7 +50,7 @@ def main():
         datasets
     )
     experiment(
-        f'{prefix}_impact_tda_methods',
+        f'{prefix}impact_tda_methods',
         [MAR],
         [5, 10, 25],
         [KNN],
