@@ -23,10 +23,10 @@ WHITE_WINE_QUALITY_DATASET_ID = 44971
 AIR_QUALITY_DATASET_ID = 46762
 FOOTBALL_PLAYER_POSITION_DATASET_ID = 46764
 
-# Torus
-TORUS_SAMPLES = 1000
-TORUS_AMBIENT = 20
-TORUS_SEED = 42
+# Manifold Data
+MANIFOLD_SAMPLES = 1000
+MANIFOLD_AMBIENT = 20
+MANIFOLD_SEED = 42
 
 # On an On (NCS)
 AUDIO_PATH = 'assets/on_and_on_ncs.wav'
@@ -56,6 +56,8 @@ WHITE_WINE_QUALITY = 'white_wine_quality'
 AIR_QUALITY = 'air_quality_and_pollution'
 FOOTBALL_PLAYER_POSITION = 'football_player_position'
 TORUS = 'torus'
+SWISS_ROLL = 'swiss_roll'
+TWO_SPHERE = 'two_sphere'
 ON_AND_ON = 'on_and_on'
 
 DATASETS = {
@@ -76,7 +78,9 @@ DATASETS = {
     AIR_QUALITY_DATASET_ID: AIR_QUALITY,
     FOOTBALL_PLAYER_POSITION_DATASET_ID: FOOTBALL_PLAYER_POSITION,
     -1: TORUS,
-    -2: ON_AND_ON
+    -2: SWISS_ROLL,
+    -3: TWO_SPHERE,
+    -4: ON_AND_ON
 }
 
 ### EXPERIMENTS ###
@@ -122,22 +126,32 @@ IMPUTATION_METHOD = 'imputation_method'
 TDA_METHOD = 'tda_method'
 METRIC = 'metric'
 TDA_METRIC = 'tda_metric'
+TDA_METRIC_SHORT = 'tda_metric_short'
 DIMENSION = 'dimension'
+DISTANCE = 'distance'
+SCALED_DISTANCE = 'scaled_distance'
+NORMALIZED_DISTANCE = 'normalized_distance'
+RESULT = 'result'
+
+### RESULTS ###
+COMPARISON_METRICS = '../results/comparison_metrics_results.csv'
+IMPACT_MISSINGNESS = '../results/impact_missingness_types_rates_results.csv'
+IMPACT_IMPUTATION = '../results/impact_imputation_methods_results.csv'
+IMPACT_TDA = '../results/impact_tda_methods_results.csv'
 
 ### COLLECTIONS ###
 COLLECTIONS = {
-    METRIC: [RMSE, MAE, FROBENIUS],
+    DATA: [STOCK, RMFTSA_LADATA, CONCRETE_DATA, DEBUTANIZER, TREASURY, WEATHER_IZMIR, HUNGARIAN_CHICKENPOX,
+        CNN_STOCK_PRED_DJI, DIABETES, INDIAN_STOCK_MARKET, GENDER_RECOGNITION, BOSTON_WEATHER, RED_WINE_QUALITY, 
+        WHITE_WINE_QUALITY, AIR_QUALITY, FOOTBALL_PLAYER_POSITION, TORUS, SWISS_ROLL, TWO_SPHERE, ON_AND_ON],
+    METRIC: [MAE, RMSE, FROBENIUS],
     MISSINGNESS_TYPE: [MCAR, MAR, MNAR],
     IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE],
     TDA_METHOD: [VR, DTM, KD],
     TDA_METRIC: [WS, BN, L2PL, L2PI],
+    TDA_METRIC_SHORT: [WS, BN],
+    RESULT: [COMPARISON_METRICS, IMPACT_MISSINGNESS, IMPACT_IMPUTATION, IMPACT_TDA]
 }
-
-### RESULTS ###
-COMPARISON_METRICS = '../results/comparison_metrics.csv'
-IMPACT_MISSINGNESS = '../results/impact_missingness_types_rates_results.csv'
-IMPACT_IMPUTATION = '../results/impact_imputation_methods_results.csv'
-IMPACT_TDA = '../results/impact_tda_methods_results.csv'
 
 ### LABELS ###
 LABEL: Dict[str, str] = {
@@ -158,6 +172,8 @@ LABEL: Dict[str, str] = {
     AIR_QUALITY: 'Air Quality and Pollution',
     FOOTBALL_PLAYER_POSITION: 'Football Player Position',
     TORUS: 'Torus (Synthetic)',
+    SWISS_ROLL: 'Swiss Roll (Synthetic)',
+    TWO_SPHERE: 'Two Sphere (Synthetic)',
     ON_AND_ON: 'On & On (NCS)',
     MCAR: 'Missing Completely At Random',
     MAR: 'Missing At Random',
@@ -176,8 +192,8 @@ LABEL: Dict[str, str] = {
     PI: 'Persistence Image',
     WS: 'Wasserstein Distance',
     BN: 'Bottleneck Distance',
-    L2PL: 'L2 Distance (Persistence Landscape)',
-    L2PI: 'L2 Distance (Persistence Image)',
+    L2PL: r'L$^2$ Distance (Persistence Landscape)',
+    L2PI: r'L$^2$ Distance (Persistence Image)',
     RMSE: 'Root Mean Square Error',
     MAE: 'Mean Absolute Error',
     FROBENIUS: 'Frobenius Norm',

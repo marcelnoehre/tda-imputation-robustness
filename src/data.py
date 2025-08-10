@@ -12,9 +12,23 @@ def torus():
     """
     Generate a torus dataset.
     """
-    data = tadasets.torus(n=TORUS_SAMPLES, ambient=TORUS_AMBIENT, seed=TORUS_SEED)
+    data = tadasets.torus(n=MANIFOLD_SAMPLES, ambient=MANIFOLD_AMBIENT, seed=MANIFOLD_SEED)
     return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
 
+def swiss_roll():
+    """
+    Generate a Swiss roll dataset.
+    """
+    data = tadasets.swiss_roll(n=MANIFOLD_SAMPLES, ambient=MANIFOLD_AMBIENT, seed=MANIFOLD_SEED)
+    return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
+
+def two_sphere():
+    """
+    Generate a two-sphere dataset.
+    """
+    data = tadasets.dsphere(n = MANIFOLD_SAMPLES, d=2, ambient=MANIFOLD_AMBIENT, seed=MANIFOLD_SEED)
+    return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
+    
 def on_and_on():
     """
     Generate a dataset from the 'On and On' audio file by computing chroma features
