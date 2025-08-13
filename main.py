@@ -54,7 +54,7 @@ def main():
         [MAR],
         [5, 10, 25],
         [KNN],
-        [VR, DTM, KD],
+        [VR, DTMS, DTMC, KD],
         [WS, BN],
         datasets
     )

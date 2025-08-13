@@ -57,7 +57,7 @@ AIR_QUALITY = 'air_quality_and_pollution'
 FOOTBALL_PLAYER_POSITION = 'football_player_position'
 TORUS = 'torus'
 SWISS_ROLL = 'swiss_roll'
-TWO_SPHERE = 'two_sphere'
+SPHERE = 'sphere'
 ON_AND_ON = 'on_and_on'
 
 DATASETS = {
@@ -79,7 +79,7 @@ DATASETS = {
     FOOTBALL_PLAYER_POSITION_DATASET_ID: FOOTBALL_PLAYER_POSITION,
     -1: TORUS,
     -2: SWISS_ROLL,
-    -3: TWO_SPHERE,
+    -3: SPHERE,
     -4: ON_AND_ON
 }
 
@@ -95,7 +95,8 @@ KNN = 'k_nearest_neighbors_imputation'
 RF = 'random_forest_imputation'
 MICE = 'mice_imputation'
 VR = 'vietoris_rips'
-DTM = 'distance_to_a_measure'
+DTMS = 'distance_to_a_measure_sqrt'
+DTMC = 'distance_to_a_measure_chazal'
 KD = 'kernel_distance'
 PD = 'persistence_diagram'
 PL = 'persistence_landscape'
@@ -143,11 +144,11 @@ IMPACT_TDA = '../results/impact_tda_methods_results.csv'
 COLLECTIONS = {
     DATA: [STOCK, RMFTSA_LADATA, CONCRETE_DATA, DEBUTANIZER, TREASURY, WEATHER_IZMIR, HUNGARIAN_CHICKENPOX,
         CNN_STOCK_PRED_DJI, DIABETES, INDIAN_STOCK_MARKET, GENDER_RECOGNITION, BOSTON_WEATHER, RED_WINE_QUALITY, 
-        WHITE_WINE_QUALITY, AIR_QUALITY, FOOTBALL_PLAYER_POSITION, TORUS, SWISS_ROLL, TWO_SPHERE, ON_AND_ON],
+        WHITE_WINE_QUALITY, AIR_QUALITY, FOOTBALL_PLAYER_POSITION, TORUS, SWISS_ROLL, SPHERE, ON_AND_ON],
     METRIC: [MAE, RMSE, FROBENIUS],
     MISSINGNESS_TYPE: [MCAR, MAR, MNAR],
     IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE],
-    TDA_METHOD: [VR, DTM, KD],
+    TDA_METHOD: [VR, DTMS, DTMC, KD],
     TDA_METRIC: [WS, BN, L2PL, L2PI],
     TDA_METRIC_SHORT: [WS, BN],
     RESULT: [COMPARISON_METRICS, IMPACT_MISSINGNESS, IMPACT_IMPUTATION, IMPACT_TDA]
@@ -173,7 +174,7 @@ LABEL: Dict[str, str] = {
     FOOTBALL_PLAYER_POSITION: 'Football Player Position',
     TORUS: 'Torus (Synthetic)',
     SWISS_ROLL: 'Swiss Roll (Synthetic)',
-    TWO_SPHERE: 'Two Sphere (Synthetic)',
+    SPHERE: 'Sphere (Synthetic)',
     ON_AND_ON: 'On & On (NCS)',
     MCAR: 'Missing Completely At Random',
     MAR: 'Missing At Random',
@@ -185,7 +186,8 @@ LABEL: Dict[str, str] = {
     RF: 'Random Forest Imputation',
     MICE: 'Multiple Imputation by Chained Equations',
     VR: 'Vietoris Rips Complex',
-    DTM: 'Distance To a Measure',
+    DTMS: 'Distance To a Measure (Sqrt)',
+    DTMC: 'Distance To a Measure (Chazal)',
     KD: 'Kernel Distance',
     PD: 'Persistence Diagram',
     PL: 'Persistence Landscape',

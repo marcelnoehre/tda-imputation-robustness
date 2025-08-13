@@ -22,11 +22,11 @@ def swiss_roll():
     data = tadasets.swiss_roll(n=MANIFOLD_SAMPLES, ambient=MANIFOLD_AMBIENT, seed=MANIFOLD_SEED)
     return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
 
-def two_sphere():
+def sphere():
     """
-    Generate a two-sphere dataset.
+    Generate a sphere dataset.
     """
-    data = tadasets.dsphere(n = MANIFOLD_SAMPLES, d=2, ambient=MANIFOLD_AMBIENT, seed=MANIFOLD_SEED)
+    data = tadasets.sphere(n = MANIFOLD_SAMPLES, ambient=MANIFOLD_AMBIENT, seed=MANIFOLD_SEED)
     return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
     
 def on_and_on():
@@ -57,6 +57,10 @@ def get_data(id):
     if id == -1:
         return torus()
     if id == -2:
+        return swiss_roll()
+    if id == -3:
+        return sphere()
+    if id == -4:
         return on_and_on()
     return fetch_openml(data_id=id, as_frame=True)
 

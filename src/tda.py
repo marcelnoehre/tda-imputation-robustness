@@ -11,9 +11,13 @@ def vietoris_rips_complex(data):
         n_jobs=N_JOBS
     ).fit_transform(as_batch(data))
 
-def distance_to_a_measure(data):
+def distance_to_a_measure(data, chazal):
     n = len(data)
-    k = min(int(np.sqrt(n)), n // 2)
+    if chazal:
+        m = 0.05
+        k = m * n
+    else:
+        k = min(int(np.sqrt(n)), n // 2)
     return WeightedRipsPersistence(
         homology_dimensions=DIMENSIONS,
         weights='DTM',
@@ -47,7 +51,8 @@ def persistence_image(pd):
 
 TDA = {
     VR: {FUNCTION: lambda data: vietoris_rips_complex(data)},
-    DTM: {FUNCTION: lambda data: distance_to_a_measure(data)},
+    DTMS: {FUNCTION: lambda data: distance_to_a_measure(data, False)},
+    DTMC: {FUNCTION: lambda data: distance_to_a_measure(data, True)},
     KD: {FUNCTION: lambda data: kernel_distance(data)},
     PD: {FUNCTION: lambda data: transform_pd(data)},
     PL: {FUNCTION: lambda data: persistence_landscape(data)},
