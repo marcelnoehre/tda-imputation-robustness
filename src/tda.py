@@ -15,7 +15,7 @@ def distance_to_a_measure(data, chazal):
     n = len(data)
     if chazal:
         m = 0.05
-        k = m * n
+        k = int(m * n)
     else:
         k = min(int(np.sqrt(n)), n // 2)
     return WeightedRipsPersistence(

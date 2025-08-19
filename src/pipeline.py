@@ -31,65 +31,100 @@ def _compare(metric, original, imputed, dim):
     return METRICS[metric][FUNCTION](original, imputed, dim)
 
 def compute_original_persistence_intervals(datasets, tda_methods):
+    def _iter(datasets, tda_methods):
+        for key, dataset in datasets.items():
+            for tda in tda_methods:
+                yield key, tda, dataset
+
     res = {
         key: {} for key in datasets.keys()
     }
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        for key, dataset in datasets.items():
-            for tda in tda_methods:
-                fut = executor.submit(_apply_persistent_homology, np.array(dataset[DATA]), tda)
-                futures[fut] = (key, tda)
+    tasks = list(_iter(datasets, tda_methods))
 
-        for fut in as_completed(futures):
-            key, tda = futures[fut]
-            res[key][tda] = fut.result()
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_apply_persistent_homology, np.array(dataset[DATA]), tda): (key, tda) 
+                for key, tda, dataset in tasks
+            }
+            for fut in as_completed(futures):
+                key, tda = futures[fut]
+                res[key][tda] = fut.result()
+    else:
+        for key, tda, dataset in tasks:
+            res[key][tda] = _apply_persistent_homology(np.array(dataset[DATA]), tda)
 
     return res
 
 def normalize_original_persistence_intervals(original, datasets):
+    def _iter(original):
+        for key, tda_dict in original.items():
+            for tda, pd_dict in tda_dict.items():
+                yield key, tda, pd_dict
+
     res = {
         key: {
             tda: {} for tda in original[key].keys()
         } for key in original.keys()
     }
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        for key, tda_dict in original.items():
-            for tda, pd_dict in tda_dict.items():
-                fut = executor.submit(_normalize_persistence_intervals, pd_dict, datasets[key][DATA])
-                futures[fut] = (key, tda)
-    
-        for fut in as_completed(futures):
-            key, tda = futures[fut]
-            res[key][tda] = fut.result()
+    tasks = list(_iter(original, datasets))
+
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_normalize_persistence_intervals, pd_dict, datasets[key][DATA]): (key, tda) 
+                for key, tda, pd_dict in tasks
+            }
+            for fut in as_completed(futures):
+                key, tda = futures[fut]
+                res[key][tda] = fut.result()
+    else:
+        for key, tda, pd_dict in tasks:
+            res[key][tda] = _normalize_persistence_intervals(pd_dict, datasets[key][DATA])
     
     return res
 
 def prepare_original_data(original, comparison_types):
+    def _iter(original, comparison_types):
+        for key, tda_dict in original.items():
+            for tda, pd_dict in tda_dict.items():
+                for ct in comparison_types:
+                    yield key, tda, tda_dict, ct
+
     res = {
         key: {
             tda: {} for tda in original[key].keys()
         } for key in original.keys()
     }
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        for key, tda_dict in original.items():
-            for tda in tda_dict.keys():
-                for ct in comparison_types:
-                    fut = executor.submit(_prepare_for_comparison, tda_dict[tda], ct)
-                    futures[fut] = (key, tda, ct)
+    tasks = list(_iter(original, comparison_types))
 
-        for fut in as_completed(futures):
-            key, tda, ct = futures[fut]
-            res[key][tda][ct] = fut.result()
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_prepare_for_comparison, tda_dict[tda], ct): (key, tda, ct) 
+                for key, tda, tda_dict, ct in tasks
+            }
+            for fut in as_completed(futures):
+                key, tda, ct = futures[fut]
+                res[key][tda][ct] = fut.result()
+    else:
+        for key, tda, tda_dict, ct in tasks:
+            res[key][tda][ct] = _prepare_for_comparison(tda_dict[tda], ct)
 
     return res
 
 def introduce_missingness(datasets, missingness_types, missing_rates):
+    def _iter(datasets, missingness_types, missing_rates):
+        for seed in SEEDS:
+            for key, dataset in datasets.items():
+                for mt in missingness_types:
+                    if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
+                        for mr in missing_rates:
+                            yield seed, key, mt, mr, dataset
+
     res = {
         seed: {
             key: {
@@ -98,23 +133,35 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
         } for seed in SEEDS
     }
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        for seed in SEEDS:
-            for key, dataset in datasets.items():
-                for mt in missingness_types:
-                    if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
-                        for mr in missing_rates:
-                            fut = executor.submit(_apply_missingness, dataset, mt, mr, seed)
-                            futures[fut] = (seed, key, mt, mr)
+    tasks = list(_iter(datasets, missingness_types, missing_rates))
 
-        for fut in as_completed(futures):
-            seed, key, mt, mr = futures[fut]
-            res[seed][key][mt][mr] = fut.result()
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr) 
+                for seed, key, mt, mr, dataset in tasks
+            }
+            for fut in as_completed(futures):
+                seed, key, mt, mr = futures[fut]
+                res[seed][key][mt][mr] = fut.result()
+    else:
+        for seed, key, mt, mr, dataset in tasks:
+            res[seed][key][mt][mr] = _apply_missingness(dataset, mt, mr, seed)
 
     return res
 
-def impute_missing_values(data, imputation_methods):
+def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods):
+    def _iter(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods):
+        for seed, key_dict in data.items():
+            for key, mt_dict in key_dict.items():
+                for mt, mr_dict in mt_dict.items():
+                    if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
+                        for mr, imp_dict in mr_dict.items():
+                            for imp in imputation_methods:
+                                if not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]:
+                                    if mr in reduced_missing_rates or imp in reduced_imputation_methods:
+                                        yield seed, key, mt, mr, imp, imp_dict
+
     res = {
         seed: {
             key: {
@@ -125,39 +172,25 @@ def impute_missing_values(data, imputation_methods):
         } for seed, key_dict in data.items()
     }
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        for seed, key_dict in data.items():
-            for key, mt_dict in key_dict.items():
-                for mt, mr_dict in mt_dict.items():
-                    if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
-                        for mr, imp_dict in mr_dict.items():
-                            for imp in imputation_methods:
-                                if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
-                                    fut = executor.submit(_apply_imputation, imp_dict, imp, seed)
-                                    futures[fut] = (seed, key, mt, mr, imp)
+    tasks = list(_iter(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods))
 
-        for fut in as_completed(futures):
-            seed, key, mt, mr, imp = futures[fut]
-            res[seed][key][mt][mr][imp] = fut.result()
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
+                for seed, key, mt, mr, imp, imp_dict in tasks
+            }
+            for fut in as_completed(futures):
+                seed, key, mt, mr, imp = futures[fut]
+                res[seed][key][mt][mr][imp] = fut.result()
+    else:
+        for seed, key, mt, mr, imp, imp_dict in tasks:
+            res[seed][key][mt][mr][imp] = _apply_imputation(imp_dict, imp, seed)
 
     return res
 
 def compute_persistence_intervals(data, tda_methods):
-    res = {
-        seed: {
-            key: {
-                mt: {
-                    mr: {
-                        imp: {} for imp in imp_dict.keys()
-                    } for mr, imp_dict in mr_dict.items()
-                } for mt, mr_dict in mt_dict.items()
-            } for key, mt_dict in key_dict.items()
-        } for seed, key_dict in data.items()
-    }
-
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+    def _iter(data, tda_methods):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
                 for mt, mr_dict in mt_dict.items():
@@ -166,16 +199,8 @@ def compute_persistence_intervals(data, tda_methods):
                             for imp, tda_dict in imp_dict.items():
                                 if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
                                     for tda in tda_methods:
-                                        fut = executor.submit(_apply_persistent_homology, tda_dict, tda)
-                                        futures[fut] = (seed, key, mt, mr, imp, tda)
+                                        yield seed, key, mt, mr, imp, tda, tda_dict
 
-        for fut in as_completed(futures):
-            seed, key, mt, mr, imp, tda = futures[fut]
-            res[seed][key][mt][mr][imp][tda] = fut.result()
-                            
-    return res
-
-def normalize_persistence_intervals(data, datasets):
     res = {
         seed: {
             key: {
@@ -188,8 +213,25 @@ def normalize_persistence_intervals(data, datasets):
         } for seed, key_dict in data.items()
     }
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+    tasks = list(_iter(data, tda_methods))
+
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_apply_persistent_homology, tda_dict, tda): (seed, key, mt, mr, imp, tda)
+                for seed, key, mt, mr, imp, tda, tda_dict in tasks
+            }
+            for fut in as_completed(futures):
+                seed, key, mt, mr, imp, tda = futures[fut]
+                res[seed][key][mt][mr][imp][tda] = fut.result()
+    else:
+        for seed, key, mt, mr, imp, tda, tda_dict in tasks:
+            res[seed][key][mt][mr][imp][tda] = _apply_persistent_homology(tda_dict, tda)
+
+    return res
+
+def normalize_persistence_intervals(data, datasets):
+    def _iter(data):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
                 for mt, mr_dict in mt_dict.items():
@@ -198,16 +240,51 @@ def normalize_persistence_intervals(data, datasets):
                             for imp, tda_dict in imp_dict.items():
                                 if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
                                     for tda, normalize_dict in tda_dict.items():
-                                        fut = executor.submit(_normalize_persistence_intervals, normalize_dict, datasets[key][DATA])
-                                        futures[fut] = (seed, key, mt, mr, imp, tda)
+                                        yield seed, key, mt, mr, imp, tda, normalize_dict
 
-        for fut in as_completed(futures):
-            seed, key, mt, mr, imp, tda = futures[fut]
-            res[seed][key][mt][mr][imp][tda] = fut.result()
+    res = {
+        seed: {
+            key: {
+                mt: {
+                    mr: {
+                        imp: {} for imp in imp_dict.keys()
+                    } for mr, imp_dict in mr_dict.items()
+                } for mt, mr_dict in mt_dict.items()
+            } for key, mt_dict in key_dict.items()
+        } for seed, key_dict in data.items()
+    }
+
+    tasks = list(_iter(data))
+
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_normalize_persistence_intervals, normalize_dict, datasets[key][DATA]): (seed, key, mt, mr, imp, tda)
+                for seed, key, mt, mr, imp, tda, normalize_dict in tasks
+            }
+            for fut in as_completed(futures):
+                seed, key, mt, mr, imp, tda = futures[fut]
+                res[seed][key][mt][mr][imp][tda] = fut.result()
+    else:
+        for seed, key, mt, mr, imp, tda, normalize_dict in tasks:
+            res[seed][key][mt][mr][imp][tda] = _normalize_persistence_intervals(normalize_dict, datasets[key][DATA])
 
     return res
 
 def compute_distances(original, data, metrics):
+    def _iter(data, metrics):
+        for seed, key_dict in data.items():
+            for key, mt_dict in key_dict.items():
+                for mt, mr_dict in mt_dict.items():
+                    if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
+                        for mr, imp_dict in mr_dict.items():
+                            for imp, tda_dict in imp_dict.items():
+                                if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
+                                    for tda, dim_dict in tda_dict.items():
+                                        for dim in DIMENSIONS:
+                                            for metric in metrics:
+                                                yield seed, key, mt, mr, imp, tda, dim, metric, dim_dict
+
     res = {
         seed: {
             key: {
@@ -224,24 +301,20 @@ def compute_distances(original, data, metrics):
         } for seed, key_dict in data.items()
     }
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        for seed, key_dict in data.items():
-            for key, mt_dict in key_dict.items():
-                for mt, mr_dict in mt_dict.items():
-                    if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
-                        for mr, imp_dict in mr_dict.items():
-                            for imp, tda_dict in imp_dict.items():
-                                if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
-                                    for tda, dim_dict in tda_dict.items():
-                                        for dim in DIMENSIONS:
-                                            for metric in metrics:
-                                                fut = executor.submit(_compare, metric, original[key][tda], dim_dict, dim)
-                                                futures[fut] = (seed, key, mt, mr, imp, tda, dim, metric)
+    tasks = list(_iter(data, metrics))
 
-        for fut in as_completed(futures):
-            seed, key, mt, mr, imp, tda, dim, metric = futures[fut]
-            res[seed][key][mt][mr][imp][tda][dim][metric] = fut.result()
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_compare, metric, original[key][tda], dim_dict, dim): (seed, key, mt, mr, imp, tda, dim, metric)
+                for seed, key, mt, mr, imp, tda, dim, metric, dim_dict in tasks
+            }
+            for fut in as_completed(futures):
+                seed, key, mt, mr, imp, tda, dim, metric = futures[fut]
+                res[seed][key][mt][mr][imp][tda][dim][metric] = fut.result()
+    else:
+        for seed, key, mt, mr, imp, tda, dim, metric, dim_dict in tasks:
+            res[seed][key][mt][mr][imp][tda][dim][metric] = _compare(metric, original[key][tda], dim_dict, dim)
 
     return res
 

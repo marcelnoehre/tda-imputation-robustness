@@ -20,6 +20,14 @@ def _compare(metric, original, imputed):
     return METRICS[metric][FUNCTION](original, imputed)
 
 def introduce_missingness(datasets, missingness_types, missing_rates):
+    def _iter(datasets, missingness_types, missing_rates):
+        for seed in SEEDS:
+            for key, dataset in datasets.items():
+                for mt in missingness_types:
+                    if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
+                        for mr in missing_rates:
+                            yield seed, key, mt, mr, dataset
+
     res = {
         seed: {
             key: {
@@ -28,23 +36,35 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
         } for seed in SEEDS
     }
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        for seed in SEEDS:
-            for key, dataset in datasets.items():
-                for mt in missingness_types:
-                    if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
-                        for mr in missing_rates:
-                            fut = executor.submit(_apply_missingness, dataset, mt, mr, seed)
-                            futures[fut] = (seed, key, mt, mr)
+    tasks = list(_iter(datasets, missingness_types, missing_rates))
 
-        for fut in as_completed(futures):
-            seed, key, mt, mr = futures[fut]
-            res[seed][key][mt][mr] = fut.result()
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr) 
+                for seed, key, mt, mr, dataset in tasks
+            }
+            for fut in as_completed(futures):
+                seed, key, mt, mr = futures[fut]
+                res[seed][key][mt][mr] = fut.result()
+    else:
+        for seed, key, mt, mr, dataset in tasks:
+            res[seed][key][mt][mr] = _apply_missingness(dataset, mt, mr, seed)
 
     return res
 
 def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods):
+    def _iter(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods):
+        for seed, key_dict in data.items():
+            for key, mt_dict in key_dict.items():
+                for mt, mr_dict in mt_dict.items():
+                    if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
+                        for mr, imp_dict in mr_dict.items():
+                            for imp in imputation_methods:
+                                if not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]:
+                                    if mr in reduced_missing_rates or imp in reduced_imputation_methods:
+                                        yield seed, key, mt, mr, imp, imp_dict
+
     res = {
         seed: {
             key: {
@@ -55,26 +75,35 @@ def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduc
         } for seed, key_dict in data.items()
     }
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        for seed, key_dict in data.items():
-            for key, mt_dict in key_dict.items():
-                for mt, mr_dict in mt_dict.items():
-                    if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
-                        for mr, imp_dict in mr_dict.items():
-                            for imp in imputation_methods:
-                                if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
-                                    if mr in reduced_missing_rates or imp in reduced_imputation_methods:
-                                        fut = executor.submit(_apply_imputation, imp_dict, imp, seed)
-                                        futures[fut] = (seed, key, mt, mr, imp)
+    tasks = list(_iter(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods))
 
-        for fut in as_completed(futures):
-            seed, key, mt, mr, imp = futures[fut]
-            res[seed][key][mt][mr][imp] = fut.result()
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
+                for seed, key, mt, mr, imp, imp_dict in tasks
+            }
+            for fut in as_completed(futures):
+                seed, key, mt, mr, imp = futures[fut]
+                res[seed][key][mt][mr][imp] = fut.result()
+    else:
+        for seed, key, mt, mr, imp, imp_dict in tasks:
+            res[seed][key][mt][mr][imp] = _apply_imputation(imp_dict, imp, seed)
 
     return res
 
 def compute_distances(datasets, imputed_data, metrics):
+    def _iter(imputed_data, metrics):
+        for seed, key_dict in imputed_data.items():
+            for key, mt_dict in key_dict.items():
+                for mt, mr_dict in mt_dict.items():
+                    if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
+                        for mr, imp_dict in mr_dict.items():
+                            for imp, arr in imp_dict.items():
+                                if not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]:
+                                    for metric in metrics:
+                                        yield seed, key, mt, mr, imp, metric, arr
+
     res = {
         seed: {
             key: {
@@ -87,22 +116,20 @@ def compute_distances(datasets, imputed_data, metrics):
         } for seed, key_dict in imputed_data.items()
     }
 
-    futures = {}
-    with ProcessPoolExecutor(max_workers=WORKERS) as executor:
-        for seed, key_dict in imputed_data.items():
-            for key, mt_dict in key_dict.items():
-                for mt, mr_dict in mt_dict.items():
-                    if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
-                        for mr, imp_dict in mr_dict.items():
-                            for imp in imp_dict.keys():
-                                if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
-                                    for metric in metrics:
-                                        fut = executor.submit(_compare, metric, np.asarray(datasets[key][DATA]), imputed_data[seed][key][mt][mr][imp])
-                                        futures[fut] = (seed, key, mt, mr, imp, metric)
+    tasks = list(_iter(imputed_data, metrics))
 
-        for fut in as_completed(futures):
-            seed, key, mt, mr, imp, metric = futures[fut]
-            res[seed][key][mt][mr][imp][metric] = fut.result()
+    if WORKERS > 1:
+        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+            futures = {
+                executor.submit(_compare, metric, np.asarray(datasets[key][DATA]), arr): (seed, key, mt, mr, imp, metric)
+                for seed, key, mt, mr, imp, metric, arr in tasks
+            }
+            for fut in as_completed(futures):
+                seed, key, mt, mr, imp, metric = futures[fut]
+                res[seed][key][mt][mr][imp][metric] = fut.result()
+    else:
+        for seed, key, mt, mr, imp, metric, arr in tasks:
+            res[seed][key][mt][mr][imp][metric] = _compare(metric, np.asarray(datasets[key][DATA]), arr)
 
     return res
 

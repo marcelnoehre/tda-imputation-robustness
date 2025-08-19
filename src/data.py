@@ -126,5 +126,7 @@ def get_all_datasets():
         AIR_QUALITY: preprocess(get_data(AIR_QUALITY_DATASET_ID), AIR_QUALITY),
         FOOTBALL_PLAYER_POSITION: preprocess(get_data(FOOTBALL_PLAYER_POSITION_DATASET_ID), FOOTBALL_PLAYER_POSITION),
         TORUS: preprocess(torus(), TORUS),
+        SWISS_ROLL: preprocess(swiss_roll(), SWISS_ROLL),
+        SPHERE: preprocess(sphere(), SPHERE),
         ON_AND_ON: preprocess(on_and_on(), ON_AND_ON)
     }

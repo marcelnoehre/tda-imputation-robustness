@@ -19,6 +19,8 @@ def process_args():
         return datasets
 
 def main():
+    if WORKERS > 1 and N_JOBS != 1:
+        raise ValueError('Parallelization of the inner loop will cause a pickle error.')
     datasets = process_args()
     prefix = f'{"_".join(datasets.keys())}_' if datasets else ''
     comparison_metrics(
