@@ -117,7 +117,7 @@ TDA_ERROR = 'tda_error'
 COMP_ERROR = 'comparison_error'
 
 ### PIPELINE ###
-WORKERS = 8
+WORKERS = 1
 N_JOBS = 1
 ESTIMATORS = 30
 DEPTH = 15
