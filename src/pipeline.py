@@ -69,7 +69,7 @@ def normalize_original_persistence_intervals(original, datasets):
         } for key in original.keys()
     }
 
-    tasks = list(_iter(original, datasets))
+    tasks = list(_iter(original))
 
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
@@ -150,8 +150,8 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
 
     return res
 
-def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods):
-    def _iter(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods):
+def impute_missing_values(data, imputation_methods):
+    def _iter(data, imputation_methods):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
                 for mt, mr_dict in mt_dict.items():
@@ -159,8 +159,7 @@ def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduc
                         for mr, imp_dict in mr_dict.items():
                             for imp in imputation_methods:
                                 if not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]:
-                                    if mr in reduced_missing_rates or imp in reduced_imputation_methods:
-                                        yield seed, key, mt, mr, imp, imp_dict
+                                    yield seed, key, mt, mr, imp, imp_dict
 
     res = {
         seed: {
@@ -172,7 +171,7 @@ def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduc
         } for seed, key_dict in data.items()
     }
 
-    tasks = list(_iter(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods))
+    tasks = list(_iter(data, imputation_methods))
 
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:

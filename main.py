@@ -23,40 +23,41 @@ def main():
         raise ValueError('Parallelization of the inner loop will cause a pickle error.')
     datasets = process_args()
     prefix = f'{"_".join(datasets.keys())}_' if datasets else ''
-    comparison_metrics(
-        f'{prefix}comparison_metrics',
-        [MCAR, MAR, MNAR],
-        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
-        [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE],
-        [5, 10, 25],
-        [KNN],
-        [RMSE, MAE, FROBENIUS],
-        datasets
-    )
-    experiment(
-        f'{prefix}impact_missingness_types_rates',
-        [MCAR, MAR, MNAR],
-        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
-        [KNN],
-        [VR],
-        [WS, BN, L2PL, L2PI],
-        datasets
-    )
-    experiment(
-        f'{prefix}impact_imputation_methods',
-        [MAR],
-        [5, 10, 25], 
-        [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE], 
-        [VR],
-        [WS, BN, L2PL, L2PI],
-        datasets
-    )
+    # comparison_metrics(
+    #     f'{prefix}comparison_metrics',
+    #     [MCAR, MAR, MNAR],
+    #     [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
+    #     [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE],
+    #     [5, 10, 25],
+    #     [KNN],
+    #     [RMSE, MAE],
+    #     datasets
+    # )
+    # experiment(
+    #     f'{prefix}impact_missingness_types_rates',
+    #     [MCAR, MAR, MNAR],
+    #     [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
+    #     [KNN],
+    #     [VR],
+    #     [WS, BN, L2PL, L2PI],
+    #     datasets
+    # )
+    # experiment(
+    #     f'{prefix}impact_imputation_methods',
+    #     [MAR],
+    #     [5, 10, 25], 
+    #     [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE], 
+    #     [VR],
+    #     [WS, BN, L2PL, L2PI],
+    #     datasets
+    # )
     experiment(
         f'{prefix}impact_tda_methods',
         [MAR],
         [5, 10, 25],
         [KNN],
-        [VR, DTMS, DTMC, KD],
+        [KD],
+        # [VR, DTMS, DTMC, KD],
         [WS, BN],
         datasets
     )
