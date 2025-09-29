@@ -1,7 +1,9 @@
 import gudhi
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from tabulate import tabulate
 from IPython.display import display, Markdown
 from mdatagen.plots import PlotMissingData
@@ -24,7 +26,144 @@ def table(data, headers):
     """
     display(Markdown(tabulate(data, headers=headers, tablefmt='github')))
 
-def plot_missing_data(missing_data, original_data, title=''):
+def setup_figure(cells=None, rows=None, cols=None):
+    if cells:
+        rows, cols = int(cells * 0.5), int(cells * 0.5)
+    return plt.subplots(rows, cols, figsize=(ASPECT * HEIGHT * cols, HEIGHT * rows), sharex=False, sharey=False)
+
+def group_results(csv, group, metrics, filter=None, zeros=False):
+    df = pd.read_csv(csv)
+    if filter is not None:
+        df = df[df[filter[0]] == filter[1]]
+    
+    if zeros:
+        new_rows = []
+        for dataset in df[DATASET].unique():
+            for mt in df[MISSINGNESS_TYPE].unique():
+                for imp in df[IMPUTATION_METHOD].unique():
+                    if DIMENSION in df.columns:
+                        for dim in df[DIMENSION].unique():
+                            row = {
+                                DATASET: dataset,
+                                MISSING_RATE: 0,
+                                MISSINGNESS_TYPE: mt,
+                                IMPUTATION_METHOD: imp,
+                                DIMENSION: dim,
+                            }
+                            for metric in metrics:
+                                row[metric] = 0.0
+                            new_rows.append(row)
+                    else:
+                        row = {
+                            DATASET: dataset,
+                            MISSING_RATE: mr,
+                            MISSINGNESS_TYPE: mt,
+                            IMPUTATION_METHOD: imp,
+                        }
+                        for metric in metrics:
+                            row[metric] = 0.0
+                        new_rows.append(row)
+
+        df = pd.concat([df, pd.DataFrame(new_rows)], ignore_index=True)
+    return df.groupby(group)[metrics].mean().reset_index()
+
+def boxplot_stats(df, group, metric, steps, ticks, filter=None):
+    if filter is not None:
+        df_stats = (
+            df[filter]
+            .groupby(group)[metric]
+            .agg(['mean', 'sem'])
+            .reset_index()
+        )
+    else:
+        df_stats = (
+            df
+            .groupby(group)[metric]
+            .agg(['mean', 'sem'])
+            .reset_index()
+        )
+    return df_stats, np.arange(len(steps)), 0.8 / len(ticks)
+
+def compute_mean_sem(type, data, group, metric=None, filter=None):
+    if type == MISSING_RATE or type == MISSINGNESS_TYPE:
+        if filter is not None:
+            data = data[filter]
+        return data.groupby(group)[metric].mean(), data.groupby(group)[metric].sem()
+    elif type == IMPUTATION_METHOD or type == TDA_METHOD:
+        return (data[filter]
+                .set_index(group)
+                .reindex(COLLECTIONS[group])[['mean', 'sem']]
+                .to_numpy().T
+            )
+
+def plot_data(type, ax, mean, sem, label, color, x=None, width=None, linestyle='-'):
+    if type == MISSING_RATE or type == MISSINGNESS_TYPE:
+        ax.errorbar(
+            mean.index, mean.values, yerr=sem.values, 
+            label=label , marker='o', capsize=5, 
+            color=color, linestyle=linestyle
+        )
+    elif type == IMPUTATION_METHOD or type == TDA_METHOD:
+        ax.bar(x, mean, width, yerr=sem, capsize=5, label=label, color=color)
+
+def format_axes(type, ax, x_label, y_label, legend=False, title=False, title_label=None, ticks=None, tick_labels=None):
+    if type == MISSING_RATE or type == MISSINGNESS_TYPE:
+        if legend:
+            ax.legend(fontsize=12)
+    elif type == IMPUTATION_METHOD or type == TDA_METHOD:
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(tick_labels, fontsize=12)
+
+    if title:
+            ax.set_title(title_label, fontsize=16, weight='bold')
+    ax.set_xlabel(x_label, fontsize=14)
+    ax.set_ylabel(y_label, fontsize=14)
+    ax.grid(True)
+
+def legend(axes, fig, cols, bbox):
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(
+        handles, labels,
+        loc='lower center',
+        ncol=cols,
+        fontsize=12,
+        bbox_to_anchor=bbox
+    )
+
+def multi_legend(fig):
+    fig.legend(
+        handles=[
+            Line2D([0], [0], color=plt.get_cmap(COLOR_MAP[DIMENSION])(dim), lw=2) 
+            for dim in DIMENSIONS
+        ],
+        labels=[f'{LABEL[DIMENSION]} {dim}' for dim in DIMENSIONS],
+        loc='lower center',
+        ncol=len(DIMENSIONS),
+        frameon=False,
+        fontsize=12,
+        bbox_to_anchor=(0.5, -0.04)
+    )
+
+    fig.legend(
+        handles=[
+            Line2D([0], [0], color='black', lw=2, linestyle=COLLECTIONS[LINESTYLE][j % len(COLLECTIONS[LINESTYLE])])
+            for j, mt in enumerate(COLLECTIONS[MISSINGNESS_TYPE])
+        ],
+        labels=[LABEL[mt] for mt in COLLECTIONS[MISSINGNESS_TYPE]],
+        loc='lower center',
+        ncol=len(COLLECTIONS[MISSINGNESS_TYPE]),
+        frameon=False,
+        fontsize=12,
+        bbox_to_anchor=(0.5, -0.07)
+    )
+
+def plot(title=''):
+    plt.title(title)
+    plt.tight_layout(h_pad=2, w_pad=3)
+    plt.show()
+    plt.close()
+
+def plot_missing_data(missing_data, original_data, type, title=''):
     """
     Visualize the correlation of missing data using a heatmap.
 
@@ -32,91 +171,61 @@ def plot_missing_data(missing_data, original_data, title=''):
     :param original_data: Original data without missing values
     """
     miss_plot = PlotMissingData(data_missing=missing_data, data_original=original_data)
-    miss_plot.visualize_miss('heatmap')
-    plt.title(title)
-    plt.tight_layout()
-    plt.show()
+    miss_plot.visualize_miss(type, save=False)
+    plot(title)
 
-def plot_rmse_vs_missingrate():
-    """
-    Plot RMSE against missing rates for different types of missingness.
-    """
-    df = pd.read_csv(COMPARISON_METRICS)
-    df = df[df[IMPUTATION_METHOD] == KNN]
-    agg_df = df.groupby([MISSINGNESS_TYPE, MISSING_RATE, IMPUTATION_METHOD]).agg(
-        rmse_mean=(RMSE, 'mean'), rmse_se=(RMSE, 'sem')
-    ).reset_index()
+def plot_persistence_diagram(data, title='', band=0.0, xlim=None, ylim=None, file=False):
+    if file:
+        ax = gudhi.plot_persistence_diagram(persistence_file=data, band=band)
+    else:
+        max_dim = int(max(item[2] for item in data[0]))
+        persistence_intervals = [
+            [item[0:2] for item in data[0] if item[2] == dim]
+            for dim in range(max_dim + 1)
+        ]
+        ax = gudhi.plot_persistence_diagram(persistence_intervals, band=band)
 
-    color_palette = sns.color_palette('Set2', n_colors=len(COLLECTIONS[IMPUTATION_METHOD]))
-    colors = {
-        mt: color_palette[i]
-        for i, mt in enumerate(COLLECTIONS[MISSINGNESS_TYPE])
-    }
-
-    plt.figure(figsize=(10, 6))
-    for mt in COLLECTIONS[MISSINGNESS_TYPE]:
-        sub = agg_df[agg_df[MISSINGNESS_TYPE] == mt]
-        plt.errorbar(
-            sub[MISSING_RATE], sub['rmse_mean'], yerr=sub['rmse_se'],
-            label=LABEL_SHORT[mt], color=colors[mt], marker='o', capsize=3, linewidth=1.8
-        )
-
-    plt.title(LABEL[RMSE])
-    plt.xlabel(LABEL[MISSING_RATE])
-    plt.ylabel(LABEL[RMSE])
-    plt.legend(fontsize=8)
-    plt.tight_layout()
-    plt.show()
-
-def plot_distance_vs_missingrate_by_dim_and_type():
-    """
-    Plot the impact of missingness types and rates on various distance metrics across different dimensions.
-    """
-    df = pd.read_csv(IMPACT_MISSINGNESS)
-    agg_df = df.groupby([MISSINGNESS_TYPE, MISSING_RATE, IMPUTATION_METHOD, TDA_METHOD, DIMENSION]).agg(
-        wasserstein_distance_mean=(WS, 'mean'), wasserstein_distance_se=(WS, 'sem'),
-        bottleneck_distance_mean=(BN, 'mean'), bottleneck_distance_se=(BN, 'sem'),
-        l2_distance_landscape_mean=(L2PL, 'mean'), l2_distance_landscape_se=(L2PL, 'sem'),
-        l2_distance_image_mean=(L2PI, 'mean'), l2_distance_image_se=(L2PI, 'sem'),
-    ).reset_index()
-
-    color_palette = sns.color_palette('Set1', n_colors=len(DIMENSIONS))
-    colors = {
-        dim: color_palette[i]
-        for i, dim in enumerate(DIMENSIONS)
-    }
-    linestyle = {
-        mt: ['-', '--', ':'][i % len(COLLECTIONS[MISSINGNESS_TYPE])]
-        for i, mt in enumerate(COLLECTIONS[MISSINGNESS_TYPE])
-    }
-
-    _, axes = plt.subplots(2, 2, figsize=(14, 10))
-    axes = axes.flatten()
-    for i, metric in enumerate(COLLECTIONS[TDA_METRIC]):
-        ax = axes[i]
-        for _, dim in enumerate(DIMENSIONS):
-            for mt_i, mt in enumerate(COLLECTIONS[MISSINGNESS_TYPE]):
-                sub = agg_df[(agg_df[DIMENSION] == dim) & (agg_df[MISSINGNESS_TYPE] == mt)]
-                if sub.empty:
-                    continue
-                ax.errorbar(
-                    sub[MISSING_RATE], sub[f'{metric}_mean'], yerr=sub[f'{metric}_se'],
-                    label=f'{LABEL_SHORT[DIMENSION]}={dim}, {LABEL_SHORT[mt]}', color=colors[dim], linestyle=linestyle[mt],
-                    marker=['o', 's', '^'][mt_i % len(COLLECTIONS[MISSINGNESS_TYPE])], capsize=3, linewidth=1.8
-                )
-        ax.set_title(LABEL[metric])
-        ax.set_xlabel(LABEL[MISSING_RATE])
-        ax.set_ylabel(LABEL[metric])
-        ax.legend(fontsize=8)
-
-    plt.tight_layout()
-    plt.show()
-
-def plot_persistence_diagram(diagrams, title=''):
-    max_dim = int(max(item[2] for item in diagrams[0]))
-    persistence_intervals = [
-        [item[0:2] for item in diagrams[0] if item[2] == dim]
-        for dim in range(max_dim + 1)
-    ]
-    ax = gudhi.plot_persistence_diagram(persistence_intervals)
     ax.set_title(title)
+    ax.grid(True)
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
+
+def plot_barcode_diagram(data, title_0, title_1_2):
+    H0 = [(int(row[0]), (row[1], row[2])) for row in data if int(row[0]) == 0]
+    H1_H2 = [(int(row[0]), (row[1], row[2])) for row in data if int(row[0]) in [1, 2]]
+    gudhi.plot_persistence_barcode(H0, legend=True)
+    plt.title(title_0)
+    plt.grid(True)
+    gudhi.plot_persistence_barcode(H1_H2, legend=True)
+    plt.ylim(len(H1_H2) + 2)
+    plt.title(title_1_2)
+    plt.grid(True)
+
+def plot_persistence_landscape(diagrams, title=''):
+    for k, l in enumerate(diagrams):
+        plt.plot(l, color=['red', 'blue', 'green'][k], label=f'$\\lambda_{{{k+1}}}$')
+
+    plt.title(title)
+    plt.xlabel('$\\varepsilon$')
+    plt.ylabel('$\\lambda_k(\\varepsilon)$')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+def plot_persistence_image(persistent_images, sample_idx = 0, title=''):
+    n_dims = persistent_images.shape[1]
+    fig, axes = plt.subplots(1, n_dims, figsize=(5 * n_dims, 4))
+
+    for i in range(n_dims):
+        ax = axes[i] if n_dims > 1 else axes
+        ax.imshow(persistent_images[sample_idx, i])
+        ax.set_title(f'H{i}')
+        ax.axis('off')
+
+    if title:
+        fig.suptitle(title, fontsize=16)
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
