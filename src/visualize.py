@@ -8,6 +8,10 @@ from tabulate import tabulate
 from IPython.display import display, Markdown
 from mdatagen.plots import PlotMissingData
 from src.constants import *
+from src.missingness import MISSINGNESS
+from src.imputation import IMPUTATION
+from src.tda import TDA
+from src.normalize import normalize_by_diameter
 
 def markdown(text):
     """
@@ -56,7 +60,6 @@ def group_results(csv, group, metrics, filter=None, zeros=False):
                     else:
                         row = {
                             DATASET: dataset,
-                            MISSING_RATE: mr,
                             MISSINGNESS_TYPE: mt,
                             IMPUTATION_METHOD: imp,
                         }
@@ -229,3 +232,25 @@ def plot_persistence_image(persistent_images, sample_idx = 0, title=''):
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
+
+def persistence_diagram_missing_rate(dataset):
+    dataset_mr = {}
+    dataset_mr[0] = dataset[DATA]
+    for mr in [5, 10, 25]:
+        dataset_mr[mr] = IMPUTATION[KNN][FUNCTION](MISSINGNESS[MAR][FUNCTION](dataset[DATA], dataset[TARGET], mr, None), None)
+
+    diagrams_mr = {}
+    for mr, data in dataset_mr.items():
+        diagrams_mr[mr] = normalize_by_diameter(TDA[VR][FUNCTION](data), dataset[DATA])
+
+    births, deaths = [], []
+    for diagrams in diagrams_mr.values():
+        for pt in diagrams[0]:
+            births.append(pt[0])
+            deaths.append(pt[1])
+
+    padding = 0.05 * (max(deaths) - min(births))
+    xlim = (min(births) - padding, max(deaths) + padding)
+    ylim = (min(births) - padding, max(deaths) + padding)
+    for mr, diagrams in diagrams_mr.items():
+        plot_persistence_diagram(diagrams, band=0.075, xlim=xlim, ylim=ylim)
