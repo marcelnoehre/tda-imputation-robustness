@@ -161,13 +161,14 @@ def multi_legend(fig):
         bbox_to_anchor=(0.5, -0.07)
     )
 
-def plot(title=''):
+def plot(fig, filename, title=''):
     plt.title(title)
     plt.tight_layout(h_pad=2, w_pad=2)
     plt.show()
     plt.close()
+    fig.savefig(filename, format='svg', bbox_inches='tight')
 
-def plot_missing_data(missing_data, original_data, type, title=''):
+def plot_missing_data(missing_data, original_data, type, filename):
     """
     Visualize the correlation of missing data using a heatmap.
 
@@ -175,63 +176,79 @@ def plot_missing_data(missing_data, original_data, type, title=''):
     :param original_data: Original data without missing values
     """
     miss_plot = PlotMissingData(data_missing=missing_data, data_original=original_data)
-    miss_plot.visualize_miss(type, save=False)
-    plot(title)
+    miss_plot.visualize_miss(type, path_save_fig=filename)
 
-def plot_persistence_diagram(data, fontsize, legend=True, title='', band=0.0, xlim=None, ylim=None, file=False):
+def plot_persistence_diagram(data, fontsize, legend=True, title='', band=0.0, xlim=None, ylim=None, file=False, filename='image.svg'):
+    fig, ax = setup_figure(rows=1, cols=1)
+    
     if file:
-        gudhi.plot_persistence_diagram(persistence_file=data, band=band)
+        gudhi.plot_persistence_diagram(persistence_file=data, band=band, axes=ax)
     else:
         max_dim = int(max(item[2] for item in data[0]))
         persistence_intervals = [
             [item[0:2] for item in data[0] if item[2] == dim]
             for dim in range(max_dim + 1)
         ]
-        gudhi.plot_persistence_diagram(persistence_intervals, band=band)
+        gudhi.plot_persistence_diagram(persistence_intervals, band=band, axes=ax)
 
     if not legend:
-        plt.legend().remove()
+        ax.get_legend().remove()
     else:
         cmap = cm.get_cmap("Set1")
         colors = [cmap(0), cmap(1), cmap(2)]
-        plt.legend(handles=[
+        ax.legend(handles=[
             Patch(color=colors[0], label=r"$H_{0}$"),
             Patch(color=colors[1], label=r"$H_{1}$"),
             Patch(color=colors[2], label=r"$H_{2}$")
         ], title="Dimension", fontsize=fontsize, title_fontsize=fontsize)
     
-    plt.xlabel("Birth", fontsize=fontsize + 2)
-    plt.ylabel("Death", fontsize=fontsize + 2)
-    plt.title(title)
-    plt.grid(True, alpha=0.7)
+    ax.set_xlabel("Birth", fontsize=fontsize + 2)
+    ax.set_ylabel("Death", fontsize=fontsize + 2)
+    ax.set_title(title)
+    ax.grid(True, alpha=0.7)
     
     
     if xlim is not None:
-        plt.xlim(xlim)
+        ax.set_xlim(xlim)
     if ylim is not None:
-        plt.ylim(ylim)
+        ax.set_ylim(ylim)
+    plt.savefig(filename, format='svg', bbox_inches='tight')
 
-def plot_barcode_diagram(data, title_0, title_1_2, fontsize):
+def plot_barcode_diagram(data, title_0, title_1_2, fontsize, filename_0, filename_1_2):
     H0 = [(int(row[0]), (row[1], row[2])) for row in data if int(row[0]) == 0]
     H1_H2 = [(int(row[0]), (row[1], row[2])) for row in data if int(row[0]) in [1, 2]]
     cmap = cm.get_cmap("Set1")
     colors = [cmap(0), cmap(1), cmap(2)]
-    gudhi.plot_persistence_barcode(H0, legend=True, fontsize=fontsize)
-    plt.legend(handles=[
-        Patch(color=colors[0], label=r"$H_{0}$")
-    ], title="Dimension", fontsize=fontsize, title_fontsize=fontsize)
-    plt.title(title_0)
-    plt.grid(True, alpha=0.7)
-    gudhi.plot_persistence_barcode(H1_H2, legend=True, fontsize=fontsize)
-    plt.legend(handles=[
-        Patch(color=colors[1], label=r"$H_{1}$"),
-        Patch(color=colors[2], label=r"$H_{2}$")
-    ], title="Dimension", fontsize=fontsize, title_fontsize=fontsize)
-    plt.ylim(len(H1_H2) + 2)
-    plt.title(title_1_2)
-    plt.grid(True, alpha=0.7)
 
-def plot_persistence_landscape(diagrams, layers=1, title=''):
+    fig0, ax0 = setup_figure(rows=1, cols=1)
+    gudhi.plot_persistence_barcode(H0, legend=True, fontsize=fontsize, axes=ax0)
+    ax0.legend(
+        handles=[Patch(color=colors[0], label=r"$H_{0}$")],
+        title="Dimension", fontsize=fontsize, title_fontsize=fontsize
+    )
+    ax0.set_title(title_0, fontsize=fontsize + 2)
+    ax0.grid(True, alpha=0.7)
+    plt.tight_layout()
+    plt.savefig(filename_0, format='svg', bbox_inches='tight')
+
+    fig1, ax1 = setup_figure(rows=1, cols=1)
+    gudhi.plot_persistence_barcode(H1_H2, legend=False, axes=ax1)
+    ax1.legend(
+        handles=[
+            Patch(color=colors[1], label=r"$H_{1}$"),
+            Patch(color=colors[2], label=r"$H_{2}$")
+        ],
+        title="Dimension", fontsize=fontsize, title_fontsize=fontsize
+    )
+    ax1.set_title(title_1_2, fontsize=fontsize + 2)
+    ax1.grid(True, alpha=0.7)
+    ax1.set_ylim(len(H1_H2) + 2)
+    plt.tight_layout()
+    plt.savefig(filename_1_2, format='svg', bbox_inches='tight')
+
+def plot_persistence_landscape(diagrams, layers=1, title='', filename=''):
+    fig, ax = setup_figure(rows=1, cols=1)
+
     colors = [c for c in ['red', 'blue', 'green'] for _ in range(layers)]
     for k, l in enumerate(diagrams):
         if layers == 1:
@@ -242,32 +259,36 @@ def plot_persistence_landscape(diagrams, layers=1, title=''):
             else:
                 label = None
 
-        plt.plot(l, color=colors[k], label=label)
+        ax.plot(l, color=colors[k], label=label)
 
-    plt.title(title)
-    plt.xlabel('$\\varepsilon$', fontsize=16)
-    plt.ylabel('$\\lambda_k(\\varepsilon)$', fontsize=16)
-    plt.legend(fontsize=14)
-    plt.grid(True, alpha=0.7)
-    plt.show()
+    ax.set_title(title)
+    ax.set_xlabel('$\\varepsilon$', fontsize=16)
+    ax.set_ylabel('$\\lambda_k(\\varepsilon)$', fontsize=16)
+    ax.legend(fontsize=14)
+    ax.grid(True, alpha=0.7)
+    plt.tight_layout()
+    plt.savefig(filename, format='svg', bbox_inches='tight')
 
-def plot_persistence_image(persistent_images, title=''):
+def plot_persistence_image(persistent_images, title='', filename=''):
     n_dims = persistent_images.shape[0]
     fig, axes = plt.subplots(1, n_dims, figsize=(4 * n_dims, 4))
     plt.subplots_adjust(wspace=0.05, hspace=0)
 
-    for i in range(n_dims):
-        ax = axes[i] if n_dims > 1 else axes
-        ax.imshow(persistent_images[i])
+    if n_dims == 1:
+        axes = [axes]
+
+    for i, ax in enumerate(axes):
+        ax.imshow(persistent_images[i], cmap='viridis', origin='lower')
         ax.axis('off')
-        ax.text(0.5, -0.025, f'$H_{i}$', fontsize=14, ha='center', va='top', transform=ax.transAxes)
+        ax.text(0.5, -0.03, f'$H_{i}$', fontsize=22, ha='center', va='top', transform=ax.transAxes)
 
     if title:
         fig.suptitle(title, fontsize=20)
 
-    plt.show()
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.savefig(filename, format='svg', bbox_inches='tight')
 
-def persistence_diagram_missing_rate(dataset, band):
+def persistence_diagram_missing_rate(dataset, band, category):
     dataset_mr = {}
     dataset_mr[0] = dataset[DATA]
     for mr in [5, 10, 25]:
@@ -287,4 +308,4 @@ def persistence_diagram_missing_rate(dataset, band):
     xlim = (min(births) - padding, max(deaths) + padding)
     ylim = (min(births) - padding, max(deaths) + padding)
     for mr, diagrams in diagrams_mr.items():
-        plot_persistence_diagram(diagrams, fontsize=14, legend=mr == 0, band=band, xlim=xlim, ylim=ylim)
+        plot_persistence_diagram(diagrams, fontsize=14, legend=mr == 0, band=band, xlim=xlim, ylim=ylim, filename=f'{category}_{mr}.svg')
