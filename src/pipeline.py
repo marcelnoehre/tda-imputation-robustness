@@ -7,30 +7,30 @@ from src.logger import log
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS
 from src.imputation import IMPUTATION
-from src.tda import TDA
-from src.normalize import normalize_by_diameter
 from src.metrics import METRICS
 from src.constants import *
-
-def _normalize_persistence_intervals(pd, dataset):
-    return normalize_by_diameter(pd, dataset)
-
-def _prepare_for_comparison(pd, ct):
-    return TDA[ct][FUNCTION](pd)
-
-def _apply_missingness(dataset, mt, mr, seed):
-    return MISSINGNESS[mt][FUNCTION](dataset[DATA], dataset[TARGET], mr, seed)
-
-def _apply_imputation(dataset, imp, seed):
-    return IMPUTATION[imp][FUNCTION](dataset, seed)
-
-def _apply_persistent_homology(dataset, tda):
-    return TDA[tda][FUNCTION](dataset)
+from src.compute import (
+    get_max_edge_length,
+    apply_persistent_homology,
+    apply_missingness,
+    apply_imputation,
+    apply_normalize,
+    apply_prepare_for_comparison,
+)
     
 def _compare(metric, original, imputed, dim):
     return METRICS[metric][FUNCTION](original, imputed, dim)
 
-def compute_original_persistence_intervals(datasets, tda_methods):
+def compute_mel_dict(datasets, tda_methods):
+    return {
+        key: {
+            tda: get_max_edge_length(np.array(dataset[DATA]), tda)
+            for tda in tda_methods
+        }
+        for key, dataset in datasets.items()
+    }
+
+def compute_original_persistence_intervals(datasets, tda_methods, mel_dict):
     def _iter(datasets, tda_methods):
         for key, dataset in datasets.items():
             for tda in tda_methods:
@@ -45,7 +45,7 @@ def compute_original_persistence_intervals(datasets, tda_methods):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_apply_persistent_homology, np.array(dataset[DATA]), tda): (key, tda) 
+                executor.submit(apply_persistent_homology, np.array(dataset[DATA]), tda, mel_dict[key][tda]): (key, tda)
                 for key, tda, dataset in tasks
             }
             for fut in as_completed(futures):
@@ -53,7 +53,7 @@ def compute_original_persistence_intervals(datasets, tda_methods):
                 res[key][tda] = fut.result()
     else:
         for key, tda, dataset in tasks:
-            res[key][tda] = _apply_persistent_homology(np.array(dataset[DATA]), tda)
+            res[key][tda] = apply_persistent_homology(np.array(dataset[DATA]), tda, mel_dict[key][tda])
 
     return res
 
@@ -74,7 +74,7 @@ def normalize_original_persistence_intervals(original, datasets):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_normalize_persistence_intervals, pd_dict, datasets[key][DATA]): (key, tda) 
+                executor.submit(apply_normalize, pd_dict, datasets[key][DATA]): (key, tda)
                 for key, tda, pd_dict in tasks
             }
             for fut in as_completed(futures):
@@ -82,7 +82,7 @@ def normalize_original_persistence_intervals(original, datasets):
                 res[key][tda] = fut.result()
     else:
         for key, tda, pd_dict in tasks:
-            res[key][tda] = _normalize_persistence_intervals(pd_dict, datasets[key][DATA])
+            res[key][tda] = apply_normalize(pd_dict, datasets[key][DATA])
     
     return res
 
@@ -104,7 +104,7 @@ def prepare_original_data(original, comparison_types):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_prepare_for_comparison, tda_dict[tda], ct): (key, tda, ct) 
+                executor.submit(apply_prepare_for_comparison, tda_dict[tda], ct): (key, tda, ct)
                 for key, tda, tda_dict, ct in tasks
             }
             for fut in as_completed(futures):
@@ -112,7 +112,7 @@ def prepare_original_data(original, comparison_types):
                 res[key][tda][ct] = fut.result()
     else:
         for key, tda, tda_dict, ct in tasks:
-            res[key][tda][ct] = _prepare_for_comparison(tda_dict[tda], ct)
+            res[key][tda][ct] = apply_prepare_for_comparison(tda_dict[tda], ct)
 
     return res
 
@@ -138,7 +138,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr) 
+                executor.submit(apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr)
                 for seed, key, mt, mr, dataset in tasks
             }
             for fut in as_completed(futures):
@@ -146,7 +146,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
                 res[seed][key][mt][mr] = fut.result()
     else:
         for seed, key, mt, mr, dataset in tasks:
-            res[seed][key][mt][mr] = _apply_missingness(dataset, mt, mr, seed)
+            res[seed][key][mt][mr] = apply_missingness(dataset, mt, mr, seed)
 
     return res
 
@@ -176,7 +176,7 @@ def impute_missing_values(data, imputation_methods):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
+                executor.submit(apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
                 for seed, key, mt, mr, imp, imp_dict in tasks
             }
             for fut in as_completed(futures):
@@ -184,11 +184,11 @@ def impute_missing_values(data, imputation_methods):
                 res[seed][key][mt][mr][imp] = fut.result()
     else:
         for seed, key, mt, mr, imp, imp_dict in tasks:
-            res[seed][key][mt][mr][imp] = _apply_imputation(imp_dict, imp, seed)
+            res[seed][key][mt][mr][imp] = apply_imputation(imp_dict, imp, seed)
 
     return res
 
-def compute_persistence_intervals(data, tda_methods):
+def compute_persistence_intervals(data, tda_methods, mel_dict):
     def _iter(data, tda_methods):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
@@ -217,7 +217,7 @@ def compute_persistence_intervals(data, tda_methods):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_apply_persistent_homology, tda_dict, tda): (seed, key, mt, mr, imp, tda)
+                executor.submit(apply_persistent_homology, tda_dict, tda, mel_dict[key][tda]): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, tda_dict in tasks
             }
             for fut in as_completed(futures):
@@ -225,7 +225,7 @@ def compute_persistence_intervals(data, tda_methods):
                 res[seed][key][mt][mr][imp][tda] = fut.result()
     else:
         for seed, key, mt, mr, imp, tda, tda_dict in tasks:
-            res[seed][key][mt][mr][imp][tda] = _apply_persistent_homology(tda_dict, tda)
+            res[seed][key][mt][mr][imp][tda] = apply_persistent_homology(tda_dict, tda, mel_dict[key][tda])
 
     return res
 
@@ -258,7 +258,7 @@ def normalize_persistence_intervals(data, datasets):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_normalize_persistence_intervals, normalize_dict, datasets[key][DATA]): (seed, key, mt, mr, imp, tda)
+                executor.submit(apply_normalize, normalize_dict, datasets[key][DATA]): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, normalize_dict in tasks
             }
             for fut in as_completed(futures):
@@ -266,7 +266,7 @@ def normalize_persistence_intervals(data, datasets):
                 res[seed][key][mt][mr][imp][tda] = fut.result()
     else:
         for seed, key, mt, mr, imp, tda, normalize_dict in tasks:
-            res[seed][key][mt][mr][imp][tda] = _normalize_persistence_intervals(normalize_dict, datasets[key][DATA])
+            res[seed][key][mt][mr][imp][tda] = apply_normalize(normalize_dict, datasets[key][DATA])
 
     return res
 
@@ -387,7 +387,8 @@ def experiment(experiment, missingness_types, missing_rates, imputation_methods,
     # Original datasets
     log('Preparing original datasets...')
     start_time = time.time()
-    original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods)
+    mel_dict = compute_mel_dict(datasets, tda_methods)
+    original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods, mel_dict)
     normalized_original_persistence_intervals = normalize_original_persistence_intervals(original_persistence_intervals, datasets)
     comparisons = [{WS: PD, BN: PD, L2PL: PL, L2PI: PI}.get(metric, '_') for metric in metrics]
     original_comparable = prepare_original_data(normalized_original_persistence_intervals, comparisons)
@@ -408,7 +409,7 @@ def experiment(experiment, missingness_types, missing_rates, imputation_methods,
     # Compute persistence intervals
     log('Computing persistence intervals...')
     start_time = time.time()
-    persistence_intervals = compute_persistence_intervals(imputed_data, tda_methods)
+    persistence_intervals = compute_persistence_intervals(imputed_data, tda_methods, mel_dict)
     normalized_persistence_intervals = normalize_persistence_intervals(persistence_intervals, datasets)
     log(f'Computed persistence intervals in {time.time() - start_time:.2f} seconds')
 

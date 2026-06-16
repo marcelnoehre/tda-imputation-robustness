@@ -9,12 +9,7 @@ from src.missingness import MISSINGNESS
 from src.imputation import IMPUTATION
 from src.metrics import METRICS
 from src.constants import *
-
-def _apply_missingness(dataset, mt, mr, seed):
-    return MISSINGNESS[mt][FUNCTION](dataset[DATA], dataset[TARGET], mr, seed)
-
-def _apply_imputation(dataset, imp, seed):
-    return IMPUTATION[imp][FUNCTION](dataset, seed)
+from src.compute import apply_missingness, apply_imputation
 
 def _compare(metric, original, imputed):
     return METRICS[metric][FUNCTION](original, imputed)
@@ -41,7 +36,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr) 
+                executor.submit(apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr)
                 for seed, key, mt, mr, dataset in tasks
             }
             for fut in as_completed(futures):
@@ -49,7 +44,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
                 res[seed][key][mt][mr] = fut.result()
     else:
         for seed, key, mt, mr, dataset in tasks:
-            res[seed][key][mt][mr] = _apply_missingness(dataset, mt, mr, seed)
+            res[seed][key][mt][mr] = apply_missingness(dataset, mt, mr, seed)
 
     return res
 
@@ -80,7 +75,7 @@ def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduc
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
+                executor.submit(apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
                 for seed, key, mt, mr, imp, imp_dict in tasks
             }
             for fut in as_completed(futures):
@@ -88,7 +83,7 @@ def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduc
                 res[seed][key][mt][mr][imp] = fut.result()
     else:
         for seed, key, mt, mr, imp, imp_dict in tasks:
-            res[seed][key][mt][mr][imp] = _apply_imputation(imp_dict, imp, seed)
+            res[seed][key][mt][mr][imp] = apply_imputation(imp_dict, imp, seed)
 
     return res
 
