@@ -89,7 +89,7 @@ DATASETS = {
 }
 
 ### EXPERIMENTS ###
-SEEDS = [42, 123, 2025]
+SEEDS = list(range(1, 30))
 MCAR = 'missing_completely_at_random'
 MAR = 'missing_at_random'
 MNAR = 'missing_not_at_random'
@@ -99,6 +99,9 @@ MEDIAN = 'median_imputation'
 KNN = 'k_nearest_neighbors_imputation'
 RF = 'random_forest_imputation'
 MICE = 'mice_imputation'
+GAIN = 'gain_imputation'
+TABCSDI = 'tabcsdi_imputation'
+OTIMPUTE = 'otimpute_imputation'
 VR = 'vietoris_rips'
 DTMS = 'distance_to_a_measure_sqrt'
 DTMC = 'distance_to_a_measure_chazal'
@@ -122,6 +125,9 @@ N_JOBS = 1
 ESTIMATORS = 30
 DEPTH = 15
 ITERATIONS = 5
+GAIN_ITERATIONS = 10000
+TABCSDI_EPOCHS = 100
+OT_ITERATIONS = 500
 DIMENSIONS = [0, 1, 2]
 EUCLIDEAN = 2
 DETERMINISTIC = 'deterministic'
@@ -171,7 +177,7 @@ COLLECTIONS = {
     METRIC: [MAE, RMSE],
     MISSINGNESS_TYPE: [MCAR, MAR, MNAR],
     MISSING_RATE: [5, 10, 25],
-    IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE],
+    IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
     TDA_METHOD: [VR, DTMS, DTMC, KD],
     TDA_METRIC: [WS, BN, L2PL, L2PI],
     TDA_METRIC_SHORT: [WS, BN],
@@ -241,6 +247,9 @@ LABEL: Dict[str, str] = {
     KNN: 'k-Nearest Neighbors',
     RF: 'Random Forest',
     MICE: 'MICE',
+    GAIN: 'GAIN',
+    TABCSDI: 'TabCSDI',
+    OTIMPUTE: 'OTImpute',
     VR: 'Vietoris-Rips Filtration',
     DTMS: r'Distance To a Measure ($k = \sqrt{n}$)',
     DTMC: r'Distance To a Measure ($k = \lceil m n \rceil,\, m = 0.05$)',

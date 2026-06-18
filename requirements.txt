@@ -16,3 +16,4 @@ tabulate
 tadasets
 shapely
 anywidget
+torch

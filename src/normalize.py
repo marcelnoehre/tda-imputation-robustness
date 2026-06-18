@@ -1,9 +1,8 @@
 import numpy as np
+from scipy.spatial.distance import pdist
 
 def diameter(points):
-    pts = np.asarray(points)
-    dist_matrix = np.linalg.norm(pts[:, None, :] - pts[None, :, :], axis=-1)
-    return dist_matrix.max()
+    return pdist(np.asarray(points)).max()
 
 def normalize_by_diameter(X, points_x):
     X0 = np.asarray(X[0])

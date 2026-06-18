@@ -1,5 +1,6 @@
 import numpy as np
-from persim import wasserstein, bottleneck
+import gudhi
+from persim import wasserstein
 from src.tda import persistence_landscape, persistence_image
 from src.utils import transform_pd
 from src.constants import *
@@ -20,7 +21,7 @@ def compute_wasserstein_distance(X, Y):
     return wasserstein(X, Y)
 
 def compute_bottleneck_distance(X, Y):
-    return bottleneck(X, Y)
+    return gudhi.bottleneck_distance(X, Y)
 
 def landscape_l2_distance(X: np.ndarray, Y: np.ndarray, pd):
     if X.shape != Y.shape:

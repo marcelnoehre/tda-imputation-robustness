@@ -7,7 +7,15 @@ from src.logger import log
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS
 from src.imputation import IMPUTATION
-from src.metrics import METRICS
+from src.metrics import (
+    METRICS,
+    compute_wasserstein_distance,
+    compute_bottleneck_distance,
+    landscape_l2_distance,
+    persistence_image_l2_distance,
+)
+from src.tda import persistence_landscape, persistence_image
+from src.utils import transform_pd
 from src.constants import *
 from src.compute import (
     get_max_edge_length,
@@ -18,8 +26,39 @@ from src.compute import (
     apply_prepare_for_comparison,
 )
     
-def _compare(metric, original, imputed, dim):
-    return METRICS[metric][FUNCTION](original, imputed, dim)
+def _compare_all(metrics, orig, imputed):
+    pd_Y = transform_pd(imputed) if WS in metrics or BN in metrics else None
+    pl_Y = persistence_landscape(imputed) if L2PL in metrics else None
+    pi_Y = persistence_image(imputed) if L2PI in metrics else None
+    results = {dim: {} for dim in DIMENSIONS}
+    for dim in DIMENSIONS:
+        for metric in metrics:
+            if metric == WS:
+                results[dim][metric] = compute_wasserstein_distance(orig[PD][dim], pd_Y[dim])
+            elif metric == BN:
+                results[dim][metric] = compute_bottleneck_distance(orig[PD][dim], pd_Y[dim])
+            elif metric == L2PL:
+                results[dim][metric] = landscape_l2_distance(orig[PL][dim], pl_Y[dim], orig[PD])
+            elif metric == L2PI:
+                results[dim][metric] = persistence_image_l2_distance(orig[PI][dim], pi_Y[dim])
+            else:
+                results[dim][metric] = METRICS[metric][FUNCTION](orig, imputed, dim)
+    return results
+
+def _ph_worker(data, tda, max_edge_length):
+    return apply_persistent_homology(data, tda, max_edge_length)
+
+def _normalize_worker(pd_data, dataset_data):
+    return apply_normalize(pd_data, dataset_data)
+
+def _prepare_worker(pd_data, ct):
+    return apply_prepare_for_comparison(pd_data, ct)
+
+def _missingness_worker(dataset, mt, mr, seed):
+    return apply_missingness(dataset, mt, mr, seed)
+
+def _imputation_worker(dataset, imp, seed):
+    return apply_imputation(dataset, imp, seed)
 
 def compute_mel_dict(datasets, tda_methods):
     return {
@@ -45,7 +84,7 @@ def compute_original_persistence_intervals(datasets, tda_methods, mel_dict):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(apply_persistent_homology, np.array(dataset[DATA]), tda, mel_dict[key][tda]): (key, tda)
+                executor.submit(_ph_worker, np.array(dataset[DATA]), tda, mel_dict[key][tda]): (key, tda)
                 for key, tda, dataset in tasks
             }
             for fut in as_completed(futures):
@@ -74,7 +113,7 @@ def normalize_original_persistence_intervals(original, datasets):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(apply_normalize, pd_dict, datasets[key][DATA]): (key, tda)
+                executor.submit(_normalize_worker, pd_dict, datasets[key][DATA]): (key, tda)
                 for key, tda, pd_dict in tasks
             }
             for fut in as_completed(futures):
@@ -104,7 +143,7 @@ def prepare_original_data(original, comparison_types):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(apply_prepare_for_comparison, tda_dict[tda], ct): (key, tda, ct)
+                executor.submit(_prepare_worker, tda_dict[tda], ct): (key, tda, ct)
                 for key, tda, tda_dict, ct in tasks
             }
             for fut in as_completed(futures):
@@ -138,7 +177,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr)
+                executor.submit(_missingness_worker, dataset, mt, mr, seed): (seed, key, mt, mr)
                 for seed, key, mt, mr, dataset in tasks
             }
             for fut in as_completed(futures):
@@ -176,7 +215,7 @@ def impute_missing_values(data, imputation_methods):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
+                executor.submit(_imputation_worker, imp_dict, imp, seed): (seed, key, mt, mr, imp)
                 for seed, key, mt, mr, imp, imp_dict in tasks
             }
             for fut in as_completed(futures):
@@ -217,7 +256,7 @@ def compute_persistence_intervals(data, tda_methods, mel_dict):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(apply_persistent_homology, tda_dict, tda, mel_dict[key][tda]): (seed, key, mt, mr, imp, tda)
+                executor.submit(_ph_worker, tda_dict, tda, mel_dict[key][tda]): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, tda_dict in tasks
             }
             for fut in as_completed(futures):
@@ -258,7 +297,7 @@ def normalize_persistence_intervals(data, datasets):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(apply_normalize, normalize_dict, datasets[key][DATA]): (seed, key, mt, mr, imp, tda)
+                executor.submit(_normalize_worker, normalize_dict, datasets[key][DATA]): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, normalize_dict in tasks
             }
             for fut in as_completed(futures):
@@ -271,7 +310,7 @@ def normalize_persistence_intervals(data, datasets):
     return res
 
 def compute_distances(original, data, metrics):
-    def _iter(data, metrics):
+    def _iter(data):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
                 for mt, mr_dict in mt_dict.items():
@@ -280,9 +319,7 @@ def compute_distances(original, data, metrics):
                             for imp, tda_dict in imp_dict.items():
                                 if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
                                     for tda, dim_dict in tda_dict.items():
-                                        for dim in DIMENSIONS:
-                                            for metric in metrics:
-                                                yield seed, key, mt, mr, imp, tda, dim, metric, dim_dict
+                                        yield seed, key, mt, mr, imp, tda, dim_dict
 
     res = {
         seed: {
@@ -300,20 +337,24 @@ def compute_distances(original, data, metrics):
         } for seed, key_dict in data.items()
     }
 
-    tasks = list(_iter(data, metrics))
+    tasks = list(_iter(data))
 
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_compare, metric, original[key][tda], dim_dict, dim): (seed, key, mt, mr, imp, tda, dim, metric)
-                for seed, key, mt, mr, imp, tda, dim, metric, dim_dict in tasks
+                executor.submit(_compare_all, metrics, original[key][tda], dim_dict): (seed, key, mt, mr, imp, tda)
+                for seed, key, mt, mr, imp, tda, dim_dict in tasks
             }
             for fut in as_completed(futures):
-                seed, key, mt, mr, imp, tda, dim, metric = futures[fut]
-                res[seed][key][mt][mr][imp][tda][dim][metric] = fut.result()
+                seed, key, mt, mr, imp, tda = futures[fut]
+                for dim, metric_dict in fut.result().items():
+                    for metric, value in metric_dict.items():
+                        res[seed][key][mt][mr][imp][tda][dim][metric] = value
     else:
-        for seed, key, mt, mr, imp, tda, dim, metric, dim_dict in tasks:
-            res[seed][key][mt][mr][imp][tda][dim][metric] = _compare(metric, original[key][tda], dim_dict, dim)
+        for seed, key, mt, mr, imp, tda, dim_dict in tasks:
+            for dim, metric_dict in _compare_all(metrics, original[key][tda], dim_dict).items():
+                for metric, value in metric_dict.items():
+                    res[seed][key][mt][mr][imp][tda][dim][metric] = value
 
     return res
 
