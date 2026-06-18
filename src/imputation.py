@@ -95,10 +95,10 @@ def impute_mice(data, seed):
     return mice_imp.data.values
 
 def impute_gain(data, seed, batch_size=128, hint_rate=0.9, alpha=100.0):
-    
     torch.manual_seed(seed)
     np.random.seed(seed)
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     X = np.asarray(data, dtype=np.float64).copy()
     n, dim = X.shape
 
@@ -111,42 +111,40 @@ def impute_gain(data, seed, batch_size=128, hint_rate=0.9, alpha=100.0):
     col_range[col_range == 0] = 1e-6
     Xn = np.nan_to_num((X - col_min) / col_range, nan=0.0)
 
-    Xn = torch.tensor(Xn, dtype=torch.float32)
-    M = torch.tensor(mask, dtype=torch.float32)
+    Xn = torch.tensor(Xn, dtype=torch.float32, device=device)
+    M  = torch.tensor(mask, dtype=torch.float32, device=device)
 
-    G = _GAINNet(dim)
-    D = _GAINNet(dim)
+    G = _GAINNet(dim).to(device)
+    D = _GAINNet(dim).to(device)
     opt_G = torch.optim.Adam(G.parameters())
     opt_D = torch.optim.Adam(D.parameters())
     bce = nn.BCELoss()
     eps = 1e-8
-
-    def sample_batch():
-        idx = np.random.choice(n, min(batch_size, n), replace=False)
-        x, m = Xn[idx], M[idx]
-        z = torch.rand_like(x) * 0.01                 # noise for missing slots
-        x_in = m * x + (1 - m) * z
-        b = (torch.rand_like(x) < hint_rate).float()  # hint mask
-        h = b * m + 0.5 * (1 - b)
-        return x, m, x_in, h
-    
-    iterations = int(np.clip(300 * max(1, n // batch_size), 2000, GAIN_ITERATIONS))
+    bs  = min(batch_size, n)
+    iterations = int(np.clip(300 * max(1, n // bs), 2000, GAIN_ITERATIONS))
 
     for _ in range(iterations):
-        # --- Discriminator step ---
-        x, m, x_in, h = sample_batch()
-        g = G(x_in, m)
-        x_hat = (x * m + g * (1 - m)).detach()
+        # Sample once; reuse for both D and G steps
+        idx  = torch.randperm(n, device=device)[:bs]
+        x, m = Xn[idx], M[idx]
+        z    = torch.rand_like(x)          # U(0,1) noise as in the GAIN paper
+        x_in = m * x + (1 - m) * z
+        b    = (torch.rand_like(x) < hint_rate).float()
+        h    = b * m + 0.5 * (1 - b)
+
+        # --- Discriminator step (G runs without grad) ---
+        with torch.no_grad():
+            g = G(x_in, m)
+        x_hat = x * m + g * (1 - m)
         d = D(x_hat, h)
         opt_D.zero_grad()
         bce(d, m).backward()
         opt_D.step()
 
         # --- Generator step ---
-        x, m, x_in, h = sample_batch()
-        g = G(x_in, m)
+        g     = G(x_in, m)
         x_hat = x * m + g * (1 - m)
-        d = D(x_hat, h)
+        d     = D(x_hat, h)
         g_adv = -torch.mean((1 - m) * torch.log(d + eps))
         g_mse = torch.sum((m * x - m * g) ** 2) / (torch.sum(m) + eps)
         opt_G.zero_grad()
@@ -155,10 +153,10 @@ def impute_gain(data, seed, batch_size=128, hint_rate=0.9, alpha=100.0):
 
     # Final imputation over the whole dataset
     with torch.no_grad():
-        z = torch.rand_like(Xn) * 0.01
+        z    = torch.rand_like(Xn)
         x_in = M * Xn + (1 - M) * z
-        g = G(x_in, M)
-        out = (M * Xn + (1 - M) * g).numpy()
+        g    = G(x_in, M)
+        out  = (M * Xn + (1 - M) * g).cpu().numpy()
 
     # Denormalize and restore observed values exactly
     out = out * col_range + col_min
@@ -171,6 +169,7 @@ def impute_tabcsdi(data, seed, num_steps=20, epochs=TABCSDI_EPOCHS,
     torch.manual_seed(seed)
     np.random.seed(seed)
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     X = np.asarray(data, dtype=np.float64).copy()
     n, dim = X.shape
     obs = (~np.isnan(X)).astype(np.float64)
@@ -181,93 +180,88 @@ def impute_tabcsdi(data, seed, num_steps=20, epochs=TABCSDI_EPOCHS,
     col_std[col_std == 0] = 1.0
     Xn = np.nan_to_num((X - col_mean) / col_std, nan=0.0)
 
-    Xn = torch.tensor(Xn, dtype=torch.float32)
-    M = torch.tensor(obs, dtype=torch.float32)
+    Xn = torch.tensor(Xn, dtype=torch.float32, device=device)
+    M  = torch.tensor(obs, dtype=torch.float32, device=device)
 
     # Quadratic beta schedule (CSDI)
-    beta = torch.tensor(np.linspace(beta_start ** 0.5, beta_end ** 0.5, num_steps) ** 2,
-                        dtype=torch.float32)
+    beta  = torch.tensor(np.linspace(beta_start ** 0.5, beta_end ** 0.5, num_steps) ** 2,
+                         dtype=torch.float32, device=device)
     alpha = 1.0 - beta
-    abar = torch.cumprod(alpha, dim=0)
+    abar  = torch.cumprod(alpha, dim=0)
 
-    net = _TabCSDINet(dim, num_steps)
+    net = _TabCSDINet(dim, num_steps).to(device)
     opt = torch.optim.Adam(net.parameters(), lr=1e-3)
 
-    def random_cond_mask(m):
-        # For each sample keep a random fraction of observed entries as conditioning
-        ratio = torch.rand(m.size(0), 1)
-        keep = (torch.rand_like(m) < ratio).float()
-        return m * keep
-
-    # Cap epochs so total gradient steps stay near 2000 regardless of dataset size.
+    # Target ~2000 gradient steps; early stopping enforces the practical upper bound.
     steps_per_epoch = max(1, n // batch_size)
-    epochs = max(20, min(epochs, 2000 // steps_per_epoch))
+    epochs = max(20, math.ceil(2000 / steps_per_epoch))
 
     net.train()
     best_loss = float('inf')
     no_improve = 0
     for _ in range(epochs):
         ep_loss = 0.0
-        count = 0
-        perm = torch.randperm(n)
+        count   = 0
+        perm = torch.randperm(n, device=device)
         for i in range(0, n, batch_size):
-            idx = perm[i:i + batch_size]
-            x0, m = Xn[idx], M[idx]
-            b = x0.size(0)
+            idx    = perm[i:i + batch_size]
+            x0, m  = Xn[idx], M[idx]
+            b      = x0.size(0)
 
-            t = torch.randint(0, num_steps, (b,))
+            t     = torch.randint(0, num_steps, (b,), device=device)
             noise = torch.randn_like(x0)
-            a = abar[t].unsqueeze(1)
-            x_t = a.sqrt() * x0 + (1 - a).sqrt() * noise
+            a     = abar[t].unsqueeze(1)
+            x_t   = a.sqrt() * x0 + (1 - a).sqrt() * noise
 
-            cond_mask = random_cond_mask(m)
-            target_mask = m - cond_mask                       # observed but not conditioned
-            cond_value = cond_mask * x0
+            # Keep a random fraction of observed entries as conditioning
+            ratio        = torch.rand(b, 1, device=device)
+            cond_mask    = m * (torch.rand_like(m) < ratio).float()
+            target_mask  = m - cond_mask
+            cond_value   = cond_mask * x0
             noisy_target = (1 - cond_mask) * x_t
 
-            pred = net(cond_value, noisy_target, cond_mask, t)
+            pred  = net(cond_value, noisy_target, cond_mask, t)
             denom = target_mask.sum().clamp(min=1.0)
-            loss = (((noise - pred) ** 2) * target_mask).sum() / denom
+            loss  = (((noise - pred) ** 2) * target_mask).sum() / denom
 
             opt.zero_grad()
             loss.backward()
             opt.step()
             ep_loss += loss.item()
-            count += 1
+            count   += 1
 
         ep_loss /= count
         if ep_loss < best_loss * (1 - 1e-3):
-            best_loss = ep_loss
+            best_loss  = ep_loss
             no_improve = 0
         else:
             no_improve += 1
         if no_improve >= 20:
             break
 
-    # Conditional reverse sampling: observed = condition, impute the rest
     net.eval()
-    cond_mask = M
-    cond_value = M * Xn
-    samples = []
+    S      = n_samples
+    cv     = M * Xn                                                      # (N, D)
+    cv_exp = cv.unsqueeze(0).expand(S, -1, -1).reshape(S * n, dim)      # (S*N, D)
+    cm_exp = M.unsqueeze(0).expand(S, -1, -1).reshape(S * n, dim)
+
     with torch.no_grad():
-        for _ in range(n_samples):
-            current = torch.randn_like(Xn)
-            for t in reversed(range(num_steps)):
-                noisy_target = (1 - cond_mask) * current
-                t_vec = torch.full((n,), t, dtype=torch.long)
-                pred = net(cond_value, noisy_target, cond_mask, t_vec)
+        current = torch.randn(S * n, dim, device=device)
+        for t in reversed(range(num_steps)):
+            noisy_target = (1 - cm_exp) * current
+            t_vec = torch.full((S * n,), t, dtype=torch.long, device=device)
+            pred  = net(cv_exp, noisy_target, cm_exp, t_vec)
 
-                c1 = 1.0 / alpha[t].sqrt()
-                c2 = (1 - alpha[t]) / (1 - abar[t]).sqrt()
-                current = c1 * (current - c2 * pred)
-                if t > 0:
-                    sigma = ((1 - abar[t - 1]) / (1 - abar[t]) * beta[t]).sqrt()
-                    current = current + sigma * torch.randn_like(current)
-                # Hold observed entries at their true values each step
-                current = cond_mask * Xn + (1 - cond_mask) * current
-            samples.append(current)
+            c1      = 1.0 / alpha[t].sqrt()
+            c2      = (1 - alpha[t]) / (1 - abar[t]).sqrt()
+            current = c1 * (current - c2 * pred)
+            if t > 0:
+                sigma   = ((1 - abar[t - 1]) / (1 - abar[t]) * beta[t]).sqrt()
+                current = current + sigma * torch.randn_like(current)
+            # Hold observed entries at their true values each step
+            current = cm_exp * cv_exp + (1 - cm_exp) * current
 
-    out = torch.stack(samples).mean(dim=0).numpy()
+    out = current.reshape(S, n, dim).mean(dim=0).cpu().numpy()
 
     # Denormalize and restore observed values exactly
     out = out * col_std + col_mean
@@ -288,8 +282,11 @@ def _sinkhorn_cost(x, y, eps, n_iters=20):
         for _ in range(n_iters):
             f = -eps * torch.logsumexp((g.unsqueeze(0) - C) / eps + log_b.unsqueeze(0), dim=1)
             g = -eps * torch.logsumexp((f.unsqueeze(1) - C) / eps + log_a.unsqueeze(1), dim=0)
-    log_P = (f.unsqueeze(1) + g.unsqueeze(0) - C) / eps + log_a.unsqueeze(1) + log_b.unsqueeze(0)
-    return (torch.exp(log_P) * C).sum()
+        # Compute P inside no_grad so it is detached; gradient then flows through C alone
+        # (Danskin's theorem: ∂W/∂x = P · ∂C/∂x, not P·(1−C/ε)·∂C/∂x)
+        log_P = (f.unsqueeze(1) + g.unsqueeze(0) - C) / eps + log_a.unsqueeze(1) + log_b.unsqueeze(0)
+        P = torch.exp(log_P)
+    return (P * C).sum()
 
 
 def _sinkhorn_divergence(x, y, eps, n_iters=20):
@@ -303,22 +300,23 @@ def impute_ot(data, seed, n_iter=OT_ITERATIONS, batch_size=128,
     torch.manual_seed(seed)
     np.random.seed(seed)
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     X = np.asarray(data, dtype=np.float64).copy()
     n, dim = X.shape
     obs = (~np.isnan(X)).astype(np.float64)
 
     # Standardize per column (OT is scale-sensitive)
     col_mean = np.nanmean(X, axis=0)
-    col_std = np.nanstd(X, axis=0)
+    col_std  = np.nanstd(X, axis=0)
     col_std[col_std == 0] = 1.0
     Xn = (X - col_mean) / col_std
 
-    M = torch.tensor(obs, dtype=torch.float32)
-    X_obs = torch.tensor(np.nan_to_num(Xn, nan=0.0), dtype=torch.float32)
+    M     = torch.tensor(obs, dtype=torch.float32, device=device)
+    X_obs = torch.tensor(np.nan_to_num(Xn, nan=0.0), dtype=torch.float32, device=device)
 
     # Learnable parameter for the missing entries only; observed stay exact
-    init = np.nan_to_num(Xn, nan=0.0) + 0.1 * np.random.randn(n, dim) * (1 - obs)
-    X_param = torch.tensor(init, dtype=torch.float32, requires_grad=True)
+    init    = np.nan_to_num(Xn, nan=0.0) + 0.1 * np.random.randn(n, dim) * (1 - obs)
+    X_param = torch.tensor(init, dtype=torch.float32, device=device, requires_grad=True)
 
     opt = torch.optim.RMSprop([X_param], lr=lr)
     bs = max(1, min(batch_size, n // 2))
@@ -329,17 +327,17 @@ def impute_ot(data, seed, n_iter=OT_ITERATIONS, batch_size=128,
     # Adaptive entropic scale from a sample of pairwise costs.
     # Use only fully observed columns so missing-value zeros don't bias distances down.
     with torch.no_grad():
-        obs_cols = torch.tensor(obs.mean(axis=0) == 1.0)
-        s_full = X_obs[:, obs_cols] if obs_cols.any() else X_obs
-        s = s_full[torch.randperm(n)[:min(n, 256)]]
-        eps = float(0.05 * torch.cdist(s, s).pow(2).median().clamp(min=1e-3))
+        obs_cols = torch.tensor(obs.mean(axis=0) == 1.0, device=device)
+        s_full   = X_obs[:, obs_cols] if obs_cols.any() else X_obs
+        s        = s_full[torch.randperm(n, device=device)[:min(n, 256)]]
+        eps      = float(0.05 * torch.cdist(s, s).pow(2).median().clamp(min=1e-3))
 
     prev_params = None
     for it in range(n_iter):
         X_imp = X_obs * M + X_param * (1 - M)   # observed exact, missing learnable
         loss = 0.0
         for _ in range(n_pairs):
-            perm = torch.randperm(n)
+            perm   = torch.randperm(n, device=device)
             i1, i2 = perm[:bs], perm[bs:2 * bs]
             loss = loss + _sinkhorn_divergence(X_imp[i1], X_imp[i2], eps, sinkhorn_iters)
         opt.zero_grad()
@@ -357,7 +355,7 @@ def impute_ot(data, seed, n_iter=OT_ITERATIONS, batch_size=128,
             prev_params = curr
 
     with torch.no_grad():
-        out = (X_obs * M + X_param * (1 - M)).numpy()
+        out = (X_obs * M + X_param * (1 - M)).cpu().numpy()
 
     # Denormalize and restore observed values exactly
     out = out * col_std + col_mean

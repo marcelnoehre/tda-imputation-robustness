@@ -2,6 +2,7 @@ import os
 import time
 import numpy as np
 import pandas as pd
+from scipy.stats import t as t_dist, sem as scipy_sem
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from src.logger import log
 from src.data import get_all_datasets
@@ -128,30 +129,41 @@ def compute_distances(datasets, imputed_data, metrics):
 
     return res
 
-def compute_seedwise_average(distance_data):
-    res = {
-        key: {
-            mt: {
-                mr: {
-                    imp: {
-                        metric: 0.0 for metric in metrics
-                    } for imp, metrics in imp_dict.items()
-                } for mr, imp_dict in mr_dict.items()
-            } for mt, mr_dict in mt_dict.items()
-        } for key, mt_dict in next(iter(distance_data.values())).items()
-    }
-
+def compute_seedwise_statistics(distance_data):
+    collections = {}
     for seed, key_dict in distance_data.items():
         for key, mt_dict in key_dict.items():
             for mt, mr_dict in mt_dict.items():
-                if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
+                if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
                     for mr, imp_dict in mr_dict.items():
-                        for imp, metrics in imp_dict.items():
-                            if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
-                                for metric in metrics:
-                                    res[key][mt][mr][imp][metric] += distance_data[seed][key][mt][mr][imp][metric]
-                                if seed == SEEDS[-1]:
-                                    res[key][mt][mr][imp][metric] /= len(SEEDS)
+                        for imp, metric_dict in imp_dict.items():
+                            if not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]:
+                                k = (key, mt, mr, imp)
+                                if k not in collections:
+                                    collections[k] = {m: [] for m in metric_dict}
+                                for metric, value in metric_dict.items():
+                                    collections[k][metric].append(value)
+
+    res = {}
+    for (key, mt, mr, imp), metric_collections in collections.items():
+        n = len(next(iter(metric_collections.values())))
+        stats = {N_SEEDS: n}
+        for metric, values in metric_collections.items():
+            arr = np.array(values)
+            mean = np.mean(arr)
+            stats[metric] = mean
+            stats[f'{metric}_std'] = np.std(arr, ddof=1) if n > 1 else np.nan
+            stats[f'{metric}_median'] = np.median(arr)
+            stats[f'{metric}_q1'] = np.percentile(arr, 25)
+            stats[f'{metric}_q3'] = np.percentile(arr, 75)
+            if n > 1:
+                ci = t_dist.interval(0.95, df=n - 1, loc=mean, scale=scipy_sem(arr))
+                stats[f'{metric}_ci_lower'] = ci[0]
+                stats[f'{metric}_ci_upper'] = ci[1]
+            else:
+                stats[f'{metric}_ci_lower'] = np.nan
+                stats[f'{metric}_ci_upper'] = np.nan
+        res.setdefault(key, {}).setdefault(mt, {}).setdefault(mr, {})[imp] = stats
 
     return res
 
@@ -204,11 +216,11 @@ def comparison_metrics(comparison_metrics, missingness_types, missing_rates, imp
     distance_data = compute_distances(datasets, imputed_data, metrics)
     log(f'Computed distances in {time.time() - start_time:.2f} seconds')
 
-    # Compute seedwise average distances
-    log('Computing seedwise average distances...')
+    # Compute seedwise statistics
+    log('Computing seedwise statistics...')
     start_time = time.time()
-    results = compute_seedwise_average(distance_data)
-    log(f'Computed seedwise average distances in {time.time() - start_time:.2f} seconds')
+    results = compute_seedwise_statistics(distance_data)
+    log(f'Computed seedwise statistics in {time.time() - start_time:.2f} seconds')
 
     # Store results
     log('Storing results...')

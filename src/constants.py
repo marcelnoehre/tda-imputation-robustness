@@ -89,7 +89,7 @@ DATASETS = {
 }
 
 ### EXPERIMENTS ###
-SEEDS = list(range(1, 30))
+SEEDS = list(range(1, 10))
 MCAR = 'missing_completely_at_random'
 MAR = 'missing_at_random'
 MNAR = 'missing_not_at_random'
@@ -147,6 +147,7 @@ DIMENSION = 'dimension'
 DISTANCE = 'distance'
 SCALED_DISTANCE = 'scaled_distance'
 NORMALIZED_DISTANCE = 'normalized_distance'
+N_SEEDS = 'n_seeds'
 RESULT = 'result'
 LINESTYLE = 'linestyle'
 
