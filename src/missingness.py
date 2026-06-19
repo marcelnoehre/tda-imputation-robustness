@@ -1,3 +1,9 @@
+from multiprocessing.pool import ThreadPool
+import mdatagen.multivariate.mMAR as _mmar_mod
+import mdatagen.multivariate.mMNAR as _mnar_mod
+_mmar_mod.Pool = ThreadPool
+_mnar_mod.Pool = ThreadPool
+
 from mdatagen.multivariate.mMCAR import mMCAR
 from mdatagen.multivariate.mMAR import mMAR
 from mdatagen.multivariate.mMNAR import mMNAR

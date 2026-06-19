@@ -56,7 +56,8 @@ def _prepare_worker(pd_data, ct):
     return apply_prepare_for_comparison(pd_data, ct)
 
 def _missingness_worker(dataset, mt, mr, seed):
-    return apply_missingness(dataset, mt, mr, seed)
+    df = apply_missingness(dataset, mt, mr, seed)
+    return pd.DataFrame(df.to_numpy(), columns=df.columns.tolist(), index=df.index)
 
 def _imputation_worker(dataset, imp, seed):
     return apply_imputation(dataset, imp, seed)
@@ -213,18 +214,29 @@ def impute_missing_values(data, imputation_methods):
 
     tasks = list(_iter(data, imputation_methods))
 
-    if WORKERS > 1:
+    TORCH_METHODS = {GAIN, TABCSDI, OTIMPUTE}
+    pool_tasks = [(seed, key, mt, mr, imp, imp_dict) for seed, key, mt, mr, imp, imp_dict in tasks if imp not in TORCH_METHODS]
+    seq_tasks  = [(seed, key, mt, mr, imp, imp_dict) for seed, key, mt, mr, imp, imp_dict in tasks if imp in TORCH_METHODS]
+
+    if WORKERS > 1 and pool_tasks:
+        # Fork is safe here: workers import torch but never call any torch op
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
                 executor.submit(_imputation_worker, imp_dict, imp, seed): (seed, key, mt, mr, imp)
-                for seed, key, mt, mr, imp, imp_dict in tasks
+                for seed, key, mt, mr, imp, imp_dict in pool_tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr, imp = futures[fut]
                 res[seed][key][mt][mr][imp] = fut.result()
     else:
-        for seed, key, mt, mr, imp, imp_dict in tasks:
+        for seed, key, mt, mr, imp, imp_dict in pool_tasks:
             res[seed][key][mt][mr][imp] = apply_imputation(imp_dict, imp, seed)
+
+    # Torch methods run sequentially: each already saturates all CPU cores via OMP.
+    # Concurrent execution would divide those cores, making each task slower with no
+    # net throughput gain.
+    for seed, key, mt, mr, imp, imp_dict in seq_tasks:
+        res[seed][key][mt][mr][imp] = apply_imputation(imp_dict, imp, seed)
 
     return res
 
@@ -384,7 +396,7 @@ def compute_seedwise_statistics(data):
             arr = np.array(values)
             mean = np.mean(arr)
             stats[metric] = mean
-            stats[f'{metric}_std'] = np.std(arr, ddof=1) if n > 1 else np.nan
+            stats[f'{metric}_std'] = np.std(arr, ddof=1) if n > 1 else 0.0
             stats[f'{metric}_median'] = np.median(arr)
             stats[f'{metric}_q1'] = np.percentile(arr, 25)
             stats[f'{metric}_q3'] = np.percentile(arr, 75)
@@ -393,8 +405,8 @@ def compute_seedwise_statistics(data):
                 stats[f'{metric}_ci_lower'] = ci[0]
                 stats[f'{metric}_ci_upper'] = ci[1]
             else:
-                stats[f'{metric}_ci_lower'] = np.nan
-                stats[f'{metric}_ci_upper'] = np.nan
+                stats[f'{metric}_ci_lower'] = mean
+                stats[f'{metric}_ci_upper'] = mean
         res.setdefault(key, {}).setdefault(mt, {}).setdefault(mr, {}).setdefault(imp, {}).setdefault(tda, {})[dim] = stats
 
     return res

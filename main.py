@@ -34,30 +34,21 @@ def main():
         datasets
     )
     experiment(
-        f'{prefix}impact_missingness_types_rates',
+        f'{prefix}topological_metrics_mr',
         [MCAR, MAR, MNAR],
         [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
-        [KNN],
+        [KNN], 
         [VR],
         [WS, BN, L2PL, L2PI],
         datasets
     )
     experiment(
-        f'{prefix}impact_imputation_methods',
-        [MAR],
-        [5, 10, 25], 
-        [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE], 
-        [VR],
-        [WS, BN, L2PL, L2PI],
-        datasets
-    )
-    experiment(
-        f'{prefix}impact_tda_methods',
-        [MAR],
+        f'{prefix}topological_metrics_extended',
+        [MCAR, MAR, MNAR],
         [5, 10, 25],
-        [KNN],
-        [VR, DTMS, DTMC, KD],
-        [WS, BN],
+        [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
+        [VR, DTMC, KD],
+        [WS, BN, L2PL, L2PI],
         datasets
     )
 

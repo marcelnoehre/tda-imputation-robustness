@@ -15,6 +15,13 @@ from src.compute import apply_missingness, apply_imputation
 def _compare(metric, original, imputed):
     return METRICS[metric][FUNCTION](original, imputed)
 
+def _apply_missingness(dataset, mt, mr, seed):
+    df = apply_missingness(dataset, mt, mr, seed)
+    return pd.DataFrame(df.to_numpy(), columns=df.columns.tolist(), index=df.index)
+
+def _apply_imputation(dataset, imp, seed):
+    return apply_imputation(dataset, imp, seed)
+
 def introduce_missingness(datasets, missingness_types, missing_rates):
     def _iter(datasets, missingness_types, missing_rates):
         for seed in SEEDS:
@@ -37,7 +44,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr)
+                executor.submit(_apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr)
                 for seed, key, mt, mr, dataset in tasks
             }
             for fut in as_completed(futures):
@@ -73,18 +80,25 @@ def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduc
 
     tasks = list(_iter(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods))
 
-    if WORKERS > 1:
+    TORCH_METHODS = {GAIN, TABCSDI, OTIMPUTE}
+    pool_tasks = [(seed, key, mt, mr, imp, imp_dict) for seed, key, mt, mr, imp, imp_dict in tasks if imp not in TORCH_METHODS]
+    seq_tasks  = [(seed, key, mt, mr, imp, imp_dict) for seed, key, mt, mr, imp, imp_dict in tasks if imp in TORCH_METHODS]
+
+    if WORKERS > 1 and pool_tasks:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
-                for seed, key, mt, mr, imp, imp_dict in tasks
+                executor.submit(_apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
+                for seed, key, mt, mr, imp, imp_dict in pool_tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr, imp = futures[fut]
                 res[seed][key][mt][mr][imp] = fut.result()
     else:
-        for seed, key, mt, mr, imp, imp_dict in tasks:
+        for seed, key, mt, mr, imp, imp_dict in pool_tasks:
             res[seed][key][mt][mr][imp] = apply_imputation(imp_dict, imp, seed)
+
+    for seed, key, mt, mr, imp, imp_dict in seq_tasks:
+        res[seed][key][mt][mr][imp] = apply_imputation(imp_dict, imp, seed)
 
     return res
 
@@ -152,7 +166,7 @@ def compute_seedwise_statistics(distance_data):
             arr = np.array(values)
             mean = np.mean(arr)
             stats[metric] = mean
-            stats[f'{metric}_std'] = np.std(arr, ddof=1) if n > 1 else np.nan
+            stats[f'{metric}_std'] = np.std(arr, ddof=1) if n > 1 else 0.0
             stats[f'{metric}_median'] = np.median(arr)
             stats[f'{metric}_q1'] = np.percentile(arr, 25)
             stats[f'{metric}_q3'] = np.percentile(arr, 75)
@@ -161,8 +175,8 @@ def compute_seedwise_statistics(distance_data):
                 stats[f'{metric}_ci_lower'] = ci[0]
                 stats[f'{metric}_ci_upper'] = ci[1]
             else:
-                stats[f'{metric}_ci_lower'] = np.nan
-                stats[f'{metric}_ci_upper'] = np.nan
+                stats[f'{metric}_ci_lower'] = mean
+                stats[f'{metric}_ci_upper'] = mean
         res.setdefault(key, {}).setdefault(mt, {}).setdefault(mr, {})[imp] = stats
 
     return res

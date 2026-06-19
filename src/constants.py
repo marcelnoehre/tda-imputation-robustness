@@ -103,7 +103,6 @@ GAIN = 'gain_imputation'
 TABCSDI = 'tabcsdi_imputation'
 OTIMPUTE = 'otimpute_imputation'
 VR = 'vietoris_rips'
-DTMS = 'distance_to_a_measure_sqrt'
 DTMC = 'distance_to_a_measure_chazal'
 KD = 'kernel_distance'
 PD = 'persistence_diagram'
@@ -120,7 +119,7 @@ TDA_ERROR = 'tda_error'
 COMP_ERROR = 'comparison_error'
 
 ### PIPELINE ###
-WORKERS = 1
+WORKERS = 30
 N_JOBS = 1
 ESTIMATORS = 30
 DEPTH = 15
@@ -179,7 +178,7 @@ COLLECTIONS = {
     MISSINGNESS_TYPE: [MCAR, MAR, MNAR],
     MISSING_RATE: [5, 10, 25],
     IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
-    TDA_METHOD: [VR, DTMS, DTMC, KD],
+    TDA_METHOD: [VR, DTMC, KD],
     TDA_METRIC: [WS, BN, L2PL, L2PI],
     TDA_METRIC_SHORT: [WS, BN],
     RESULT: [COMPARISON_METRICS, IMPACT_MISSINGNESS, IMPACT_IMPUTATION, IMPACT_TDA],
@@ -252,7 +251,6 @@ LABEL: Dict[str, str] = {
     TABCSDI: 'TabCSDI',
     OTIMPUTE: 'OTImpute',
     VR: 'Vietoris-Rips Filtration',
-    DTMS: r'Distance To a Measure ($k = \sqrt{n}$)',
     DTMC: r'Distance To a Measure ($k = \lceil m n \rceil,\, m = 0.05$)',
     KD: 'Kernel Distance',
     PD: 'Persistence Diagram',

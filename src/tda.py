@@ -38,9 +38,18 @@ def distance_to_a_measure(data, chazal, max_edge_length):
         k = math.ceil(m * n)
     else:
         k = min(int(np.sqrt(n)), n // 2)
+    k = min(k, n - 1)
+    distances = pairwise_distances(data)
+    np.fill_diagonal(distances, np.inf)
+    kth_nn_dist = float(np.sort(distances, axis=1)[:, k - 1].max())
+    np.fill_diagonal(distances, 0.0)
+    # Pass distances as precomputed so ripser uses the exact same values we computed kth_nn_dist from.
+    # nextafter ensures the k-th neighbor is strictly inside the threshold even if ripser uses strict <.
+    effective_mel = max(max_edge_length, np.nextafter(kth_nn_dist, np.inf))
     return WeightedRipsPersistence(
+        metric='precomputed',
         homology_dimensions=DIMENSIONS,
-        max_edge_weight=max_edge_length,
+        max_edge_weight=effective_mel,
         collapse_edges=True,
         weights='DTM',
         weight_params={
@@ -48,7 +57,7 @@ def distance_to_a_measure(data, chazal, max_edge_length):
             'p': EUCLIDEAN
         },
         n_jobs=N_JOBS
-    ).fit_transform(as_batch(data))
+    ).fit_transform(distances[np.newaxis])
 
 def kernel_distance(data, max_edge_length):
     n, d = data.shape
@@ -75,7 +84,6 @@ def persistence_image(pd):
 
 TDA = {
     VR: {FUNCTION: lambda data, mel: vietoris_rips_complex(data, mel)},
-    DTMS: {FUNCTION: lambda data, mel: distance_to_a_measure(data, False, mel)},
     DTMC: {FUNCTION: lambda data, mel: distance_to_a_measure(data, True, mel)},
     KD: {FUNCTION: lambda data, mel: kernel_distance(data, mel)},
     PD: {FUNCTION: lambda data: transform_pd(data)},
