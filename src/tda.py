@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from scipy.sparse.csgraph import minimum_spanning_tree
 from gtda.homology import VietorisRipsPersistence, WeightedRipsPersistence
 from gtda.diagrams import PersistenceLandscape, PersistenceImage
 from sklearn.metrics.pairwise import pairwise_distances
@@ -11,8 +12,8 @@ def _max_edge_length(distances):
     if n > 500:
         idx = np.random.default_rng(42).choice(n, 500, replace=False)
         distances = distances[np.ix_(idx, idx)]
-    upper = distances[np.triu_indices_from(distances, k=1)]
-    return float(np.percentile(upper, EDGE_LENGTH_PERCENTILE))
+    tau_0 = float(minimum_spanning_tree(distances).max())
+    return MST_SCALE_FACTOR * tau_0
 
 def max_edge_length_for(data, tda):
     """Compute the filtration cutoff from the original data for a given TDA method."""

@@ -49,6 +49,10 @@ def _compare_all(metrics, orig, imputed):
 def _ph_worker(data, tda, max_edge_length):
     return apply_persistent_homology(data, tda, max_edge_length)
 
+def _ph_imputed_worker(data, tda):
+    max_edge_length = get_max_edge_length(np.array(data), tda)
+    return apply_persistent_homology(data, tda, max_edge_length)
+
 def _normalize_worker(pd_data, dataset_data):
     return apply_normalize(pd_data, dataset_data)
 
@@ -240,7 +244,7 @@ def impute_missing_values(data, imputation_methods):
 
     return res
 
-def compute_persistence_intervals(data, tda_methods, mel_dict):
+def compute_persistence_intervals(data, tda_methods):
     def _iter(data, tda_methods):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
@@ -269,7 +273,7 @@ def compute_persistence_intervals(data, tda_methods, mel_dict):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_ph_worker, tda_dict, tda, mel_dict[key][tda]): (seed, key, mt, mr, imp, tda)
+                executor.submit(_ph_imputed_worker, tda_dict, tda): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, tda_dict in tasks
             }
             for fut in as_completed(futures):
@@ -277,7 +281,8 @@ def compute_persistence_intervals(data, tda_methods, mel_dict):
                 res[seed][key][mt][mr][imp][tda] = fut.result()
     else:
         for seed, key, mt, mr, imp, tda, tda_dict in tasks:
-            res[seed][key][mt][mr][imp][tda] = apply_persistent_homology(tda_dict, tda, mel_dict[key][tda])
+            mel = get_max_edge_length(np.array(tda_dict), tda)
+            res[seed][key][mt][mr][imp][tda] = apply_persistent_homology(tda_dict, tda, mel)
 
     return res
 
@@ -470,7 +475,7 @@ def experiment(experiment, missingness_types, missing_rates, imputation_methods,
     # Compute persistence intervals
     log('Computing persistence intervals...')
     start_time = time.time()
-    persistence_intervals = compute_persistence_intervals(imputed_data, tda_methods, mel_dict)
+    persistence_intervals = compute_persistence_intervals(imputed_data, tda_methods)
     normalized_persistence_intervals = normalize_persistence_intervals(persistence_intervals, datasets)
     log(f'Computed persistence intervals in {time.time() - start_time:.2f} seconds')
 
