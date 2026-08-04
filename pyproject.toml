@@ -1,0 +1,32 @@
+[project]
+name = "tda-imputation-robustness"
+version = "0.1.0"
+description = "Empirical study to evaluate \"The Robustness of Topological Data Analysis under Imputation-Induced Perturbations\""
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anywidget",
+    "giotto-tda",
+    "gudhi",
+    "h5py",
+    "ipython",
+    "librosa",
+    "matplotlib",
+    "mdatagen",
+    "numpy",
+    "openml",
+    "pandas",
+    "persim",
+    "scikit-learn",
+    "scipy",
+    "seaborn",
+    "setuptools<81",
+    "shapely",
+    "statsmodels",
+    "tabulate",
+    "tadasets",
+    "torch",
+]
+
+[tool.uv]
+package = false

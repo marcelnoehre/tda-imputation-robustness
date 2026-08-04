@@ -125,6 +125,7 @@ def get_all_datasets():
         WHITE_WINE_QUALITY: preprocess(get_data(WHITE_WINE_QUALITY_DATASET_ID), WHITE_WINE_QUALITY),
         AIR_QUALITY: preprocess(get_data(AIR_QUALITY_DATASET_ID), AIR_QUALITY),
         FOOTBALL_PLAYER_POSITION: preprocess(get_data(FOOTBALL_PLAYER_POSITION_DATASET_ID), FOOTBALL_PLAYER_POSITION),
+        IRIS: preprocess(get_data(IRIS_DATASET_ID), IRIS),
         TORUS: preprocess(torus(), TORUS),
         SWISS_ROLL: preprocess(swiss_roll(), SWISS_ROLL),
         SPHERE: preprocess(sphere(), SPHERE),

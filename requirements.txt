@@ -1,5 +1,6 @@
 giotto-tda
 gudhi
+h5py
 ipython
 librosa
 matplotlib
