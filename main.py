@@ -3,6 +3,7 @@ import sys
 from src.constants import *
 from src.comparison_metrics import comparison_metrics
 from src.pipeline import experiment
+from src.robustness_pipeline import experiment_baselines, experiment_betti, experiment_downstream
 from src.data import get_data, preprocess
 from src.constants import *
 
@@ -49,6 +50,26 @@ def main():
         [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
         [VR, DTMC, KD],
         [WS, BN, L2PL, L2PI],
+        datasets
+    )
+    experiment_baselines(
+        f'{prefix}baselines',
+        [MCAR, MAR, MNAR],
+        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
+        [VR],
+        [WS, BN, L2PL, L2PI],
+        datasets
+    )
+    experiment_betti(
+        f'{prefix}betti_numbers',
+        [MCAR, MAR, MNAR],
+        [5, 10, 25],
+        datasets
+    )
+    experiment_downstream(
+        f'{prefix}downstream_task',
+        [MCAR, MAR, MNAR],
+        [5, 10, 25],
         datasets
     )
 

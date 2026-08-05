@@ -105,6 +105,11 @@ MICE = 'mice_imputation'
 GAIN = 'gain_imputation'
 TABCSDI = 'tabcsdi_imputation'
 OTIMPUTE = 'otimpute_imputation'
+COMPLETE_CASE = 'complete_case_analysis'
+RANDOM_SUBSAMPLE = 'random_subsample'
+SHUFFLED_GROUND_TRUTH = 'shuffled_ground_truth'
+ORIGINAL = 'original'
+GROUND_TRUTH = 'ground_truth'
 VR = 'vietoris_rips'
 DTMC = 'distance_to_a_measure_chazal'
 KD = 'kernel_distance'
@@ -134,6 +139,18 @@ DIMENSIONS = [0, 1, 2]
 EUCLIDEAN = 2
 DETERMINISTIC = 'deterministic'
 MST_SCALE_FACTOR = 2.5
+BETTI = 'betti_number'
+BETTI_NOISE_FLOOR = 0.2
+GROUND_TRUTH_BETTI = {
+    TORUS: {0: 1, 1: 2, 2: 1},
+    SPHERE: {0: 1, 1: 0, 2: 1},
+    SWISS_ROLL: {0: 1, 1: 0, 2: 0},
+}
+DOWNSTREAM_SCORE = 'downstream_score'
+DOWNSTREAM_ESTIMATORS = ESTIMATORS
+DOWNSTREAM_CV_FOLDS = 5
+MIN_BASELINE_POINTS = 10
+SUBSAMPLE_FRACTION = 0.8
 
 ### IDENTIFIER ###
 DATASET = 'dataset'
@@ -141,6 +158,7 @@ DATASET_TYPE = 'dataset_type'
 MISSINGNESS_TYPE = 'missingness_type'
 MISSING_RATE = 'missing_rate'
 IMPUTATION_METHOD = 'imputation_method'
+BASELINE_METHOD = 'baseline_method'
 TDA_METHOD = 'tda_method'
 METRIC = 'metric'
 TDA_METRIC = 'tda_metric'
@@ -181,6 +199,7 @@ COLLECTIONS = {
     MISSINGNESS_TYPE: [MCAR, MAR, MNAR],
     MISSING_RATE: [5, 10, 25],
     IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
+    BASELINE_METHOD: [COMPLETE_CASE, RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH],
     TDA_METHOD: [VR, DTMC, KD],
     TDA_METRIC: [WS, BN, L2PL, L2PI],
     TDA_METRIC_SHORT: [WS, BN],
@@ -253,6 +272,11 @@ LABEL: Dict[str, str] = {
     GAIN: 'GAIN',
     TABCSDI: 'TabCSDI',
     OTIMPUTE: 'OTImpute',
+    COMPLETE_CASE: 'Complete-Case Analysis',
+    RANDOM_SUBSAMPLE: 'Random Subsample',
+    SHUFFLED_GROUND_TRUTH: 'Shuffled Ground Truth',
+    ORIGINAL: 'Original',
+    GROUND_TRUTH: 'Ground Truth',
     VR: 'Vietoris-Rips Filtration',
     DTMC: r'Distance To a Measure ($k = \lceil m n \rceil,\, m = 0.05$)',
     KD: 'Kernel Distance',
@@ -277,7 +301,10 @@ LABEL: Dict[str, str] = {
     MANIFOLD: 'Synthetic Manifold',
     TIME_SERIES: 'Time Series',
     REGRESSION: 'Regression',
-    CLASSIFICATION: 'Classification'
+    CLASSIFICATION: 'Classification',
+    BASELINE_METHOD: 'Baseline Method',
+    BETTI: 'Betti Number',
+    DOWNSTREAM_SCORE: 'Downstream Task Score',
 }
 
 LABEL_SHORT: Dict[str, str] = {

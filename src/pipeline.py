@@ -244,7 +244,7 @@ def impute_missing_values(data, imputation_methods):
 
     return res
 
-def compute_persistence_intervals(data, tda_methods):
+def compute_persistence_intervals(data, tda_methods, determinism=IMPUTATION):
     def _iter(data, tda_methods):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
@@ -252,7 +252,7 @@ def compute_persistence_intervals(data, tda_methods):
                     if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
                         for mr, imp_dict in mr_dict.items():
                             for imp, tda_dict in imp_dict.items():
-                                if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
+                                if (not determinism[imp][DETERMINISTIC] or seed == SEEDS[0]):
                                     for tda in tda_methods:
                                         yield seed, key, mt, mr, imp, tda, tda_dict
 
@@ -286,7 +286,7 @@ def compute_persistence_intervals(data, tda_methods):
 
     return res
 
-def normalize_persistence_intervals(data, datasets):
+def normalize_persistence_intervals(data, datasets, determinism=IMPUTATION):
     def _iter(data):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
@@ -294,7 +294,7 @@ def normalize_persistence_intervals(data, datasets):
                     if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
                         for mr, imp_dict in mr_dict.items():
                             for imp, tda_dict in imp_dict.items():
-                                if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
+                                if (not determinism[imp][DETERMINISTIC] or seed == SEEDS[0]):
                                     for tda, normalize_dict in tda_dict.items():
                                         yield seed, key, mt, mr, imp, tda, normalize_dict
 
@@ -327,7 +327,7 @@ def normalize_persistence_intervals(data, datasets):
 
     return res
 
-def compute_distances(original, data, metrics):
+def compute_distances(original, data, metrics, determinism=IMPUTATION):
     def _iter(data):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
@@ -335,7 +335,7 @@ def compute_distances(original, data, metrics):
                     if (not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]):
                         for mr, imp_dict in mr_dict.items():
                             for imp, tda_dict in imp_dict.items():
-                                if (not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]):
+                                if (not determinism[imp][DETERMINISTIC] or seed == SEEDS[0]):
                                     for tda, dim_dict in tda_dict.items():
                                         yield seed, key, mt, mr, imp, tda, dim_dict
 
@@ -376,7 +376,7 @@ def compute_distances(original, data, metrics):
 
     return res
 
-def compute_seedwise_statistics(data):
+def compute_seedwise_statistics(data, determinism=IMPUTATION):
     collections = {}
     for seed, key_dict in data.items():
         for key, mt_dict in key_dict.items():
@@ -384,7 +384,7 @@ def compute_seedwise_statistics(data):
                 if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
                     for mr, imp_dict in mr_dict.items():
                         for imp, tda_dict in imp_dict.items():
-                            if not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]:
+                            if not determinism[imp][DETERMINISTIC] or seed == SEEDS[0]:
                                 for tda, dim_dict in tda_dict.items():
                                     for dim, metric_dict in dim_dict.items():
                                         k = (key, mt, mr, imp, tda, dim)

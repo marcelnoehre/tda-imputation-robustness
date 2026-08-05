@@ -3,6 +3,8 @@ from src.tda import TDA, max_edge_length_for
 from src.normalize import normalize_by_diameter
 from src.missingness import MISSINGNESS
 from src.imputation import IMPUTATION
+from src.robustness import complete_case_analysis, random_subsample, shuffled_ground_truth
+from src.downstream import downstream_score
 from src.constants import FUNCTION, DATA, TARGET
 
 
@@ -34,3 +36,23 @@ def apply_normalize(pd_data, dataset_data):
 @memory.cache
 def apply_prepare_for_comparison(pd_data, ct):
     return TDA[ct][FUNCTION](pd_data)
+
+
+@memory.cache
+def apply_complete_case(missing_df):
+    return complete_case_analysis(missing_df)
+
+
+@memory.cache
+def apply_random_subsample(dataset_data, seed):
+    return random_subsample(dataset_data, seed)
+
+
+@memory.cache
+def apply_shuffled_ground_truth(dataset_data, missing_df, seed):
+    return shuffled_ground_truth(dataset_data, missing_df, seed)
+
+
+@memory.cache
+def apply_downstream_score(X, y, dataset_type, seed):
+    return downstream_score(X, y, dataset_type, seed)
