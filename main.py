@@ -24,21 +24,39 @@ def main():
         raise ValueError('Parallelization of the inner loop will cause a pickle error.')
     datasets = process_args()
     prefix = f'{"_".join(datasets.keys())}_' if datasets else ''
-    comparison_metrics(
-        f'{prefix}comparison_metrics',
-        [MCAR, MAR, MNAR],
-        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
-        [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
+    # comparison_metrics(
+    #     f'{prefix}comparison_metrics',
+    #     [MCAR, MAR, MNAR],
+    #     [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
+    #     [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
+    #     [5, 10, 25],
+    #     [KNN],
+    #     [RMSE, MAE],
+    #     datasets
+    # )
+    # experiment(
+    #     f'{prefix}topological_metrics_mr',
+    #     [MCAR, MAR, MNAR],
+    #     [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
+    #     [KNN], 
+    #     [VR],
+    #     [WS, BN, L2PL, L2PI],
+    #     datasets
+    # )
+    experiment(
+        f'{prefix}topological_metrics',
+        [MAR],
         [5, 10, 25],
-        [KNN],
-        [RMSE, MAE],
+        [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
+        [VR],
+        [WS, BN, L2PL, L2PI],
         datasets
     )
     experiment(
-        f'{prefix}topological_metrics_mr',
-        [MCAR, MAR, MNAR],
-        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
-        [KNN], 
+        f'{prefix}topological_metrics_filtration',
+        [MAR],
+        [5, 10, 25],
+        [KNN],
         [VR],
         [WS, BN, L2PL, L2PI],
         datasets
