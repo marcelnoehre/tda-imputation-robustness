@@ -57,15 +57,6 @@ def main():
         [MAR],
         [5, 10, 25],
         [KNN],
-        [VR],
-        [WS, BN, L2PL, L2PI],
-        datasets
-    )
-    experiment(
-        f'{prefix}topological_metrics_extended',
-        [MCAR, MAR, MNAR],
-        [5, 10, 25],
-        [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
         [VR, DTMC, KD],
         [WS, BN, L2PL, L2PI],
         datasets
