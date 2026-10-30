@@ -10,7 +10,6 @@ dependencies = [
     "gudhi",
     "h5py",
     "ipython",
-    "librosa",
     "matplotlib",
     "mdatagen",
     "numpy",
@@ -23,7 +22,6 @@ dependencies = [
     "setuptools<81",
     "shapely",
     "statsmodels",
-    "tabulate",
     "tadasets",
     "torch",
 ]

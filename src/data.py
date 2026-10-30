@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import tadasets
-import librosa
 from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import StandardScaler
 
@@ -28,25 +27,6 @@ def sphere():
     """
     data = tadasets.sphere(n = MANIFOLD_SAMPLES, ambient=MANIFOLD_AMBIENT, seed=MANIFOLD_SEED)
     return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
-    
-def on_and_on():
-    """
-    Generate a dataset from the 'On and On' audio file by computing chroma features
-    with sliding windows. The resulting sequence of chroma vectors forms a point cloud
-    representing the harmonic structure over time.
-    """
-    try:
-        y, sr = librosa.load(AUDIO_PATH, sr=None)
-    except FileNotFoundError:
-        y, sr = librosa.load(f'../{AUDIO_PATH}', sr=None)
-    chroma = librosa.feature.chroma_stft(y=y, sr=sr, hop_length=HOP_LENGTH)
-
-    window_size = int(WINDOW_DURATION * sr / HOP_LENGTH)
-    step_size = int(STEP_DURATION * sr / HOP_LENGTH)
-    windows = np.stack([chroma[:, start:(start + window_size)] 
-                        for start in range(0, chroma.shape[1] - window_size + 1, step_size)])
-
-    return {DATA: pd.DataFrame(windows.mean(axis=2), columns=CHROMA_LABELS)}
 
 def get_data(id):
     """
@@ -60,8 +40,6 @@ def get_data(id):
         return swiss_roll()
     if id == -3:
         return sphere()
-    if id == -4:
-        return on_and_on()
     return fetch_openml(data_id=id, as_frame=True)
 
 def preprocess(dataset, key):
@@ -81,7 +59,7 @@ def preprocess(dataset, key):
     if key == GENDER_RECOGNITION:
         dataset[TARGET] = dataset[DATA].pop('label')
     if not hasattr(dataset, TARGET) or dataset[TARGET] is None:
-        if key in [CNN_STOCK_PRED_DJI, HUNGARIAN_CHICKENPOX, INDIAN_STOCK_MARKET]:
+        if key in [HUNGARIAN_CHICKENPOX, INDIAN_STOCK_MARKET]:
             dataset[DATA] = dataset[DATA].drop(columns=['Date'], errors='ignore')
         dataset[TARGET] = np.array(len(dataset[DATA]) * [0])
     else:
@@ -116,7 +94,6 @@ def get_all_datasets():
         TREASURY: preprocess(get_data(TREASURY_DATASET_ID), TREASURY),
         WEATHER_IZMIR: preprocess(get_data(WEATHER_IZMIR_DATASET_ID), WEATHER_IZMIR),
         HUNGARIAN_CHICKENPOX: preprocess(get_data(HUNGARIAN_CHICKENPOX_DATASET_ID), HUNGARIAN_CHICKENPOX),
-        CNN_STOCK_PRED_DJI: preprocess(get_data(CNN_STOCK_PRED_DJI_DATASET_ID), CNN_STOCK_PRED_DJI),
         DIABETES: preprocess(get_data(DIABETES_DATASET_ID), DIABETES),
         INDIAN_STOCK_MARKET: preprocess(get_data(INDIAN_STOCK_MARKET_DATASET_ID), INDIAN_STOCK_MARKET),
         GENDER_RECOGNITION: preprocess(get_data(GENDER_RECOGNITION_DATASET_ID), GENDER_RECOGNITION),
@@ -125,9 +102,7 @@ def get_all_datasets():
         WHITE_WINE_QUALITY: preprocess(get_data(WHITE_WINE_QUALITY_DATASET_ID), WHITE_WINE_QUALITY),
         AIR_QUALITY: preprocess(get_data(AIR_QUALITY_DATASET_ID), AIR_QUALITY),
         FOOTBALL_PLAYER_POSITION: preprocess(get_data(FOOTBALL_PLAYER_POSITION_DATASET_ID), FOOTBALL_PLAYER_POSITION),
-        IRIS: preprocess(get_data(IRIS_DATASET_ID), IRIS),
         TORUS: preprocess(torus(), TORUS),
         SWISS_ROLL: preprocess(swiss_roll(), SWISS_ROLL),
-        SPHERE: preprocess(sphere(), SPHERE),
-        ON_AND_ON: preprocess(on_and_on(), ON_AND_ON)
+        SPHERE: preprocess(sphere(), SPHERE)
     }

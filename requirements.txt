@@ -2,7 +2,6 @@ giotto-tda
 gudhi
 h5py
 ipython
-librosa
 matplotlib
 mdatagen
 numpy
@@ -13,7 +12,6 @@ scikit-learn
 scipy
 seaborn
 statsmodels
-tabulate
 tadasets
 shapely
 anywidget

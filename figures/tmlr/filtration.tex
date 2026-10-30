@@ -1,0 +1,29 @@
+\begin{table}[t]
+    \centering
+    \caption{Filtration robustness ($k$NN, MAR, 5--25\%). Median elasticity $\beta$ of topological error. Stars: Wilcoxon vs.\ VR, Holm-corrected. Mean ranks: Friedman $p = .72$ (synthetic), $p < .001$ (real).}
+    \label{tab:filtration}
+    \small
+    \setlength{\tabcolsep}{10pt}
+    \begin{tabular}{r@{\,}l ccc ccc}
+        \toprule
+        \multicolumn{2}{c}{} & \multicolumn{3}{c}{Synthetic (3)} & \multicolumn{3}{c}{Real-world (15)} \\
+        \cmidrule(lr){3-5}\cmidrule(lr){6-8}
+        \multicolumn{2}{c}{Measure} & VR & DTM & KD & VR & DTM & KD \\
+        \midrule
+        \WS & \Hd{0} & \textbf{0.35} & 0.63             & 0.37          & 1.18          & \textbf{0.40}\sig{**} & 1.35 \\
+        \WS & \Hd{1} & 0.65          & 0.81             & \textbf{0.63} & 0.71          & \textbf{0.11}\sig{**} & 0.83 \\
+        \WS & \Hd{2} & 0.32          & \textbf{$-$0.71} & 0.08          & 0.47          & \textbf{$-$0.19}      & 0.61 \\
+        \BN & \Hd{0} & 0.37          & 0.74             & \textbf{0.35} & 0.48          & 0.66                  & \textbf{0.46} \\
+        \BN & \Hd{1} & 0.65          & 0.77             & \textbf{0.42} & \textbf{0.11} & 0.17                  & 0.30 \\
+        \BN & \Hd{2} & 0.00          & \textbf{$-$0.46} & 0.02          & 0.15          & \textbf{$-$0.03}      & 0.51 \\
+        \PL & \Hd{0} & \textbf{0.40} & 0.70             & 0.47          & 1.39          & \textbf{1.30}         & 2.13 \\
+        \PL & \Hd{1} & 0.39          & \textbf{0.36}    & 0.71          & 0.17          & \textbf{0.03}         & 0.36 \\
+        \PL & \Hd{2} & 0.42          & \textbf{$-$0.02} & 0.02          & 0.08          & \textbf{$-$0.08}      & 0.28 \\
+        \PI & \Hd{0} & 1.10          & 0.50             & \textbf{0.36} & 0.54          & \textbf{0.30}         & 0.33 \\
+        \PI & \Hd{1} & 0.39          & \textbf{$-$0.11} & 0.73          & 0.89          & \textbf{0.51}         & 1.26 \\
+        \PI & \Hd{2} & 0.37          & \textbf{$-$0.25} & 0.32          & 1.31          & \textbf{0.38}         & 1.21 \\
+        \midrule
+        \multicolumn{2}{l}{Mean rank $\downarrow$} & 2.00 & 2.33 & \textbf{1.67} & 2.10 & \textbf{1.23} & 2.67 \\
+        \bottomrule
+    \end{tabular}
+\end{table}

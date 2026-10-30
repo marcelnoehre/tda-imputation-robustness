@@ -1,0 +1,27 @@
+\begin{table}[t]
+    \centering
+    \caption{Topological error relative to raw imputation error ($k$NN, VR, MAR, 1--40\%). $\Delta\beta_{\RMSE} = \beta_{\TOPO} - \beta_{\RMSE}$, $\Delta\beta_{\MAE} = \beta_{\TOPO} - \beta_{\MAE}$, $r$ is the matched-pairs rank-biserial correlation, and $\rho = d_{\TOPO} / d_{\SGT}$ (medians). Stars: Wilcoxon, Holm-corrected.}
+    \label{tab:growth}
+    \small
+    \setlength{\tabcolsep}{10pt}
+    \begin{tabular}{r@{\,}l cccc ccccc}
+        \toprule
+        \multicolumn{2}{c}{} & \multicolumn{4}{c}{Synthetic (3)} & \multicolumn{5}{c}{Real-world (15)} \\
+        \cmidrule(lr){3-6}\cmidrule(lr){7-11}
+        \multicolumn{2}{c}{Measure} & $\Delta\beta_{\RMSE}$ & $\Delta\beta_{\MAE}$ & Slower & $\rho$ & $\Delta\beta_{\RMSE}$ & $\Delta\beta_{\MAE}$ & $r$ & Slower & $\rho$ \\
+        \midrule
+        \WS & \Hd{0} & $-0.48$ & $-0.95$ & 3/3 & 0.05 & $+0.48$\sig{*} & $-0.05$ & $+0.85$ & 1/15 & 0.46 \\
+        \WS & \Hd{1} & $-0.31$ & $-0.81$ & 3/3 & 0.28 & $+0.03$ & $-0.50$\sig{***} & $+0.20$ & 6/15 & 0.77 \\
+        \WS & \Hd{2} & $-0.32$ & $-0.82$ & 2/3 & 0.09 & $-0.02$ & $-0.61$\sig{***} & $-0.10$ & 8/15 & 0.73 \\
+        \BN & \Hd{0} & $-0.44$ & $-0.94$ & 3/3 & 0.16 & $-0.20$\sig{*} & $-0.73$\sig{***} & $-0.82$ & 12/15 & 0.73 \\
+        \BN & \Hd{1} & $-0.54$ & $-1.04$ & 3/3 & 0.53 & $-0.41$\sig{***} & $-0.97$\sig{***} & $-1.00$ & 15/15 & 0.89 \\
+        \BN & \Hd{2} & $-0.01$ & $-0.51$ & 2/3 & 0.35 & $-0.46$\sig{**} & $-0.99$\sig{***} & $-0.97$ & 14/15 & 0.96 \\
+        \PL & \Hd{0} & $+0.28$ & $-0.20$ & 1/3 & 0.09 & $+0.61$ & $+0.12$ & $+0.75$ & 3/15 & 0.64 \\
+        \PL & \Hd{1} & $-0.10$ & $-0.60$ & 2/3 & 0.37 & $-0.37$\sig{**} & $-0.91$\sig{***} & $-0.97$ & 14/15 & 0.86 \\
+        \PL & \Hd{2} & $-0.56$ & $-1.03$ & 3/3 & 0.42 & $-0.34$\sig{*} & $-0.92$\sig{***} & $-0.87$ & 14/15 & 0.90 \\
+        \PI & \Hd{0} & $-0.25$ & $-0.75$ & 2/3 & 0.70 & $-0.17$ & $-0.75$\sig{**} & $-0.15$ & 9/15 & 0.82 \\
+        \PI & \Hd{1} & $-0.58$ & $-1.08$ & 3/3 & 0.19 & $-0.01$ & $-0.50$\sig{**} & $+0.07$ & 8/15 & 0.54 \\
+        \PI & \Hd{2} & $-0.49$ & $-0.99$ & 2/3 & 0.14 & $+0.33$ & $-0.18$ & $+0.33$ & 5/15 & 0.48 \\
+        \bottomrule
+    \end{tabular}
+\end{table}

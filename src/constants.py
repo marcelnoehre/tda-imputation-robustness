@@ -1,11 +1,6 @@
 from typing import Dict
 
 ### OpenML Data ###
-MIN_NUM_FEATURES = 8
-MAX_NUM_FEATURES = 50
-MIN_SAMPLES = 500
-MAX_SAMPLES = 5000
-DATASET_KEYS = ['did', 'name', 'NumberOfInstances', 'NumberOfFeatures']
 STOCK_DATASET_ID = 223
 RMFTSA_LADATA_DATASET_ID = 666
 CONCRETE_DATA_DATASET_ID = 4353
@@ -13,7 +8,6 @@ DEBUTANIZER_DATASET_ID = 23516
 TREASURY_DATASET_ID = 42367
 WEATHER_IZMIR_DATASET_ID = 42369
 HUNGARIAN_CHICKENPOX_DATASET_ID = 42999
-CNN_STOCK_PRED_DJI_DATASET_ID = 43000
 DIABETES_DATASET_ID = 43384
 INDIAN_STOCK_MARKET_DATASET_ID = 43402
 GENDER_RECOGNITION_DATASET_ID = 43437
@@ -22,19 +16,11 @@ RED_WINE_QUALITY_DATASET_ID = 43695
 WHITE_WINE_QUALITY_DATASET_ID = 44971
 AIR_QUALITY_DATASET_ID = 46762
 FOOTBALL_PLAYER_POSITION_DATASET_ID = 46764
-IRIS_DATASET_ID = 61
 
 # Manifold Data
 MANIFOLD_SAMPLES = 1000
 MANIFOLD_AMBIENT = 20
 MANIFOLD_SEED = 42
-
-# On an On (NCS)
-AUDIO_PATH = 'assets/on_and_on_ncs.wav'
-HOP_LENGTH = 512
-WINDOW_DURATION = 0.5 
-STEP_DURATION = 0.2
-CHROMA_LABELS = ['C', 'Csharp', 'D', 'Dsharp', 'E', 'F', 'Fsharp', 'G', 'Gsharp', 'A', 'Asharp', 'B']
 
 ### DATA ###
 MANIFOLD = 'manifold'
@@ -52,7 +38,6 @@ DEBUTANIZER = 'debutanizer'
 TREASURY = 'treasury'
 WEATHER_IZMIR = 'weather_izmir'
 HUNGARIAN_CHICKENPOX = 'hungarian_chickenpox'
-CNN_STOCK_PRED_DJI = 'cnn_stock_pred_dji'
 DIABETES = 'diabetes'
 INDIAN_STOCK_MARKET = 'indian_stock_market'
 GENDER_RECOGNITION = 'gender_recognition_by_voice'
@@ -61,11 +46,9 @@ RED_WINE_QUALITY = 'red_wine_quality'
 WHITE_WINE_QUALITY = 'white_wine_quality'
 AIR_QUALITY = 'air_quality_and_pollution'
 FOOTBALL_PLAYER_POSITION = 'football_player_position'
-IRIS = 'iris'
 TORUS = 'torus'
 SWISS_ROLL = 'swiss_roll'
 SPHERE = 'sphere'
-ON_AND_ON = 'on_and_on'
 
 DATASETS = {
     STOCK_DATASET_ID: STOCK,
@@ -75,7 +58,6 @@ DATASETS = {
     TREASURY_DATASET_ID: TREASURY,
     WEATHER_IZMIR_DATASET_ID: WEATHER_IZMIR,
     HUNGARIAN_CHICKENPOX_DATASET_ID: HUNGARIAN_CHICKENPOX,
-    CNN_STOCK_PRED_DJI_DATASET_ID: CNN_STOCK_PRED_DJI,
     DIABETES_DATASET_ID: DIABETES,
     INDIAN_STOCK_MARKET_DATASET_ID: INDIAN_STOCK_MARKET,
     GENDER_RECOGNITION_DATASET_ID: GENDER_RECOGNITION,
@@ -84,11 +66,9 @@ DATASETS = {
     WHITE_WINE_QUALITY_DATASET_ID: WHITE_WINE_QUALITY,
     AIR_QUALITY_DATASET_ID: AIR_QUALITY,
     FOOTBALL_PLAYER_POSITION_DATASET_ID: FOOTBALL_PLAYER_POSITION,
-    IRIS_DATASET_ID: IRIS,
     -1: TORUS,
     -2: SWISS_ROLL,
-    -3: SPHERE,
-    -4: ON_AND_ON
+    -3: SPHERE
 }
 
 ### EXPERIMENTS ###
@@ -108,8 +88,6 @@ OTIMPUTE = 'otimpute_imputation'
 COMPLETE_CASE = 'complete_case_analysis'
 RANDOM_SUBSAMPLE = 'random_subsample'
 SHUFFLED_GROUND_TRUTH = 'shuffled_ground_truth'
-ORIGINAL = 'original'
-GROUND_TRUTH = 'ground_truth'
 VR = 'vietoris_rips'
 DTMC = 'distance_to_a_measure_chazal'
 KD = 'kernel_distance'
@@ -122,9 +100,6 @@ L2PL = 'l2_distance_landscape'
 L2PI = 'l2_distance_image'
 RMSE = 'root_mean_square_error'
 MAE = 'mean_absolute_error'
-
-TDA_ERROR = 'tda_error'
-COMP_ERROR = 'comparison_error'
 
 ### PIPELINE ###
 WORKERS = 30
@@ -139,76 +114,34 @@ DIMENSIONS = [0, 1, 2]
 EUCLIDEAN = 2
 DETERMINISTIC = 'deterministic'
 MST_SCALE_FACTOR = 2.5
-BETTI = 'betti_number'
-BETTI_NOISE_FLOOR = 0.2
-GROUND_TRUTH_BETTI = {
-    TORUS: {0: 1, 1: 2, 2: 1},
-    SPHERE: {0: 1, 1: 0, 2: 1},
-    SWISS_ROLL: {0: 1, 1: 0, 2: 0},
-}
-DOWNSTREAM_SCORE = 'downstream_score'
-DOWNSTREAM_ESTIMATORS = ESTIMATORS
-DOWNSTREAM_CV_FOLDS = 5
 MIN_BASELINE_POINTS = 10
 SUBSAMPLE_FRACTION = 0.8
 
 ### IDENTIFIER ###
 DATASET = 'dataset'
-DATASET_TYPE = 'dataset_type'
 MISSINGNESS_TYPE = 'missingness_type'
 MISSING_RATE = 'missing_rate'
 IMPUTATION_METHOD = 'imputation_method'
 BASELINE_METHOD = 'baseline_method'
 TDA_METHOD = 'tda_method'
-METRIC = 'metric'
-TDA_METRIC = 'tda_metric'
-TDA_METRIC_SHORT = 'tda_metric_short'
 DIMENSION = 'dimension'
-DISTANCE = 'distance'
-SCALED_DISTANCE = 'scaled_distance'
-NORMALIZED_DISTANCE = 'normalized_distance'
 N_SEEDS = 'n_seeds'
-RESULT = 'result'
-LINESTYLE = 'linestyle'
-
-### RESULTS ###
-COMPARISON_METRICS = '../results/comparison_metrics_results.csv'
-IMPACT_MISSINGNESS = '../results/impact_missingness_types_rates_results.csv'
-IMPACT_IMPUTATION = '../results/impact_imputation_methods_results.csv'
-IMPACT_TDA = '../results/impact_tda_methods_results.csv'
-
-### VISUALIZATION ###
-HEIGHT = 4.5
-ASPECT = 1.4
-
-COLOR_MAP = {
-    DIMENSION: 'Set1',
-    MISSINGNESS_TYPE: 'Set2',
-    IMPUTATION_METHOD: 'tab10',
-    TDA_METHOD: 'Dark2',
-}
 
 ### COLLECTIONS ###
 COLLECTIONS = {
-    DATA: [AIR_QUALITY, BOSTON_WEATHER, CNN_STOCK_PRED_DJI, CONCRETE_DATA, DEBUTANIZER,
+    DATA: [AIR_QUALITY, BOSTON_WEATHER, CONCRETE_DATA, DEBUTANIZER,
            DIABETES, FOOTBALL_PLAYER_POSITION, GENDER_RECOGNITION, HUNGARIAN_CHICKENPOX,
-           INDIAN_STOCK_MARKET, ON_AND_ON, RED_WINE_QUALITY, RMFTSA_LADATA, SPHERE,
+           INDIAN_STOCK_MARKET, RED_WINE_QUALITY, RMFTSA_LADATA, SPHERE,
            STOCK, SWISS_ROLL, TORUS, TREASURY, WEATHER_IZMIR, WHITE_WINE_QUALITY],
-    DATASET_TYPE: [MANIFOLD, TIME_SERIES, REGRESSION, CLASSIFICATION],
-    METRIC: [MAE, RMSE],
     MISSINGNESS_TYPE: [MCAR, MAR, MNAR],
     MISSING_RATE: [5, 10, 25],
     IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
     BASELINE_METHOD: [COMPLETE_CASE, RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH],
     TDA_METHOD: [VR, DTMC, KD],
-    TDA_METRIC: [WS, BN, L2PL, L2PI],
-    TDA_METRIC_SHORT: [WS, BN],
-    RESULT: [COMPARISON_METRICS, IMPACT_MISSINGNESS, IMPACT_IMPUTATION, IMPACT_TDA],
     MANIFOLD: [SPHERE, SWISS_ROLL, TORUS],
-    TIME_SERIES: [BOSTON_WEATHER, CNN_STOCK_PRED_DJI, HUNGARIAN_CHICKENPOX, INDIAN_STOCK_MARKET, ON_AND_ON, RMFTSA_LADATA, STOCK, TREASURY, WEATHER_IZMIR],
+    TIME_SERIES: [BOSTON_WEATHER, HUNGARIAN_CHICKENPOX, INDIAN_STOCK_MARKET, RMFTSA_LADATA, STOCK, TREASURY, WEATHER_IZMIR],
     REGRESSION: [CONCRETE_DATA, RED_WINE_QUALITY, WHITE_WINE_QUALITY],
-    CLASSIFICATION: [AIR_QUALITY, DEBUTANIZER, DIABETES, FOOTBALL_PLAYER_POSITION, GENDER_RECOGNITION],
-    LINESTYLE: ['-', '--', ':']
+    CLASSIFICATION: [AIR_QUALITY, DEBUTANIZER, DIABETES, FOOTBALL_PLAYER_POSITION, GENDER_RECOGNITION]
 }
 
 DATASET_TYPE_MAP = {
@@ -218,10 +151,8 @@ DATASET_TYPE_MAP = {
     TORUS: MANIFOLD,
     # TIME_SERIES
     BOSTON_WEATHER: TIME_SERIES,
-    CNN_STOCK_PRED_DJI: TIME_SERIES,
     HUNGARIAN_CHICKENPOX: TIME_SERIES,
     INDIAN_STOCK_MARKET: TIME_SERIES,
-    ON_AND_ON: TIME_SERIES,
     RMFTSA_LADATA: TIME_SERIES,
     STOCK: TIME_SERIES,
     TREASURY: TIME_SERIES,
@@ -240,15 +171,14 @@ DATASET_TYPE_MAP = {
 
 ### LABELS ###
 LABEL: Dict[str, str] = {
-    STOCK: 'Stock Dataset',
+    STOCK: 'Stock',
     RMFTSA_LADATA: 'RMFTSA LA Data',
     CONCRETE_DATA: 'Concrete Data',
     DEBUTANIZER: 'Debutanizer',
     TREASURY: 'Treasury',
     WEATHER_IZMIR: 'Weather Izmir',
     HUNGARIAN_CHICKENPOX: 'Hungarian Chickenpox',
-    CNN_STOCK_PRED_DJI: 'CNN Stock Prediction DJI',
-    DIABETES: 'Diabetes Dataset',
+    DIABETES: 'Diabetes',
     INDIAN_STOCK_MARKET: 'Indian Stock Market',
     GENDER_RECOGNITION: 'Gender Recognition by Voice',
     BOSTON_WEATHER: 'Boston Weather Data',
@@ -256,10 +186,9 @@ LABEL: Dict[str, str] = {
     WHITE_WINE_QUALITY: 'White Wine Quality',
     AIR_QUALITY: 'Air Quality and Pollution',
     FOOTBALL_PLAYER_POSITION: 'Football Player Position',
-    TORUS: 'Torus (Synthetic)',
-    SWISS_ROLL: 'Swiss Roll (Synthetic)',
-    SPHERE: 'Sphere (Synthetic)',
-    ON_AND_ON: 'On & On (NCS)',
+    TORUS: 'Torus',
+    SWISS_ROLL: 'Swiss Roll',
+    SPHERE: 'Sphere',
     MCAR: 'Missing Completely at Random',
     MAR: 'Missing at Random',
     MNAR: 'Missing Not at Random',
@@ -275,8 +204,6 @@ LABEL: Dict[str, str] = {
     COMPLETE_CASE: 'Complete-Case Analysis',
     RANDOM_SUBSAMPLE: 'Random Subsample',
     SHUFFLED_GROUND_TRUTH: 'Shuffled Ground Truth',
-    ORIGINAL: 'Original',
-    GROUND_TRUTH: 'Ground Truth',
     VR: 'Vietoris-Rips Filtration',
     DTMC: r'Distance To a Measure ($k = \lceil m n \rceil,\, m = 0.05$)',
     KD: 'Kernel Distance',
@@ -303,13 +230,4 @@ LABEL: Dict[str, str] = {
     REGRESSION: 'Regression',
     CLASSIFICATION: 'Classification',
     BASELINE_METHOD: 'Baseline Method',
-    BETTI: 'Betti Number',
-    DOWNSTREAM_SCORE: 'Downstream Task Score',
-}
-
-LABEL_SHORT: Dict[str, str] = {
-    MCAR: 'MCAR',
-    MAR: 'MAR',
-    MNAR: 'MNAR',
-    DIMENSION: 'Dim'
 }

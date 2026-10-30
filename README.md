@@ -67,15 +67,14 @@ python main.py 123 321
 
 | Dataset ID | String Key                  | Dataset Name                |
 |------------|-----------------------------|-----------------------------|
-| 223        | stock                       | Stock Dataset               |
+| 223        | stock                       | Stock                       |
 | 666        | rmftsa_ladata               | RMFTSA LA Data              |
 | 4353       | concrete_data               | Concrete Data               |
 | 23516      | debutanizer                 | Debutanizer                 |
 | 42367      | treasury                    | Treasury                    |
 | 42369      | weather_izmir               | Weather Izmir               |
 | 42999      | hungarian_chickenpox        | Hungarian Chickenpox        |
-| 43000      | cnn_stock_pred_dji          | CNN Stock Prediction DJI    |
-| 43384      | diabetes                    | Diabetes Dataset            |
+| 43384      | diabetes                    | Diabetes                    |
 | 43402      | indian_stock_market         | Indian Stock Market         |
 | 43437      | gender_recognition_by_voice | Gender Recognition by Voice |
 | 43623      | boston_weather_data         | Boston Weather Data         |
@@ -84,6 +83,19 @@ python main.py 123 321
 | 46762      | air_quality_and_pollution   | Air Quality and Pollution   |
 | 46764      | football_player_position    | Football Player Position    |
 | -1         | torus                       | Torus (Synthetic)           |
-| -2         | swiss_role                  | Swiss Roll (Synthetic)      |
+| -2         | swiss_roll                  | Swiss Roll (Synthetic)      |
 | -3         | sphere                      | Sphere (Synthetic)          |
-| -4         | on_and_on                   | On & On (NCS)               |
+
+## Reproduce the Paper
+
+`main.py` runs every experiment used in the paper and writes one file per experiment to `results/`:
+
+| File | Experiment |
+|------|------------|
+| `comparison_metrics_results.csv` | Raw imputation error (RMSE, MAE) |
+| `topological_metrics_results.csv` | All imputers, VR, MAR, 5/10/25% |
+| `topological_metrics_mr_results.csv` | kNN, VR, all mechanisms, 1-40% |
+| `topological_metrics_filtration_results.csv` | kNN, VR/DTM/KD, MAR, 5/10/25% |
+| `baseline_results.csv` | Shuffled ground truth, random subsample, complete-case analysis |
+
+`notebooks/tmlr_figures.ipynb` reads these files and writes all results tables and figures of the paper to `figures/tmlr/`, and prints the statistics quoted in the text.

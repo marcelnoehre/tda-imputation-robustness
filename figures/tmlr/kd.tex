@@ -1,0 +1,31 @@
+\begin{table}[h]
+    \centering
+    \caption{Kernel-distance scale with Silverman's bandwidth $h$: median pairwise Euclidean distance, share of pairs with kernel distance above $0.99 \cdot \sqrt2$, and median nearest-neighbor kernel distance relative to $\sqrt2$.}
+    \label{tab:kd}
+    \small
+    \setlength{\tabcolsep}{10pt}
+    \begin{tabular}{l l cccc}
+        \toprule
+        Dataset & Type & $h$ & Median dist. & Pairs at ceiling & $\dfrac{\operatorname{1-NN}}{\sqrt2}$ \\
+        \midrule
+        Treasury                    & Time series        & 0.64 & 4.17 & 84.8\% & 0.10 \\
+        Indian Stock Market         & Time series        & 0.47 & 3.27 & 88.6\% & 0.14 \\
+        Stock                       & Time series        & 0.55 & 4.28 & 91.2\% & 0.27 \\
+        Hungarian Chickenpox        & Time series        & 0.72 & 5.68 & 92.1\% & 1.00 \\
+        Sphere                      & Synthetic Manifold & 0.70 & 6.34 & 93.8\% & 0.21 \\
+        Weather Izmir               & Time series        & 0.53 & 3.61 & 94.8\% & 0.71 \\
+        Swiss Roll                  & Synthetic Manifold & 0.70 & 5.83 & 95.0\% & 0.21 \\
+        Debutanizer                 & Classification     & 0.46 & 3.15 & 95.0\% & 0.46 \\
+        Torus                       & Synthetic Manifold & 0.70 & 5.78 & 95.9\% & 0.26 \\
+        RMFTSA LA Data              & Time series        & 0.59 & 3.94 & 96.3\% & 0.89 \\
+        Diabetes                    & Classification     & 0.53 & 3.63 & 97.7\% & 0.90 \\
+        Concrete Data               & Regression         & 0.54 & 3.95 & 97.8\% & 0.45 \\
+        Air Quality and Pollution   & Classification     & 0.48 & 3.52 & 97.9\% & 0.83 \\
+        Gender Recognition by Voice & Classification     & 0.67 & 5.42 & 98.4\% & 0.81 \\
+        Boston Weather Data         & Time series        & 0.66 & 5.54 & 98.7\% & 0.85 \\
+        Red Wine Quality            & Regression         & 0.57 & 4.06 & 98.7\% & 0.80 \\
+        Football Player Position    & Classification     & 0.54 & 4.06 & 99.2\% & 0.90 \\
+        White Wine Quality          & Regression         & 0.52 & 4.25 & 99.7\% & 0.78 \\
+        \bottomrule
+    \end{tabular}
+\end{table}

@@ -3,7 +3,7 @@ import sys
 from src.constants import *
 from src.comparison_metrics import comparison_metrics
 from src.pipeline import experiment
-from src.robustness_pipeline import experiment_baselines, experiment_betti, experiment_downstream
+from src.robustness_pipeline import experiment_baselines
 from src.data import get_data, preprocess
 from src.constants import *
 
@@ -24,30 +24,28 @@ def main():
         raise ValueError('Parallelization of the inner loop will cause a pickle error.')
     datasets = process_args()
     prefix = f'{"_".join(datasets.keys())}_' if datasets else ''
-    # comparison_metrics(
-    #     f'{prefix}comparison_metrics',
-    #     [MCAR, MAR, MNAR],
-    #     [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
-    #     [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
-    #     [5, 10, 25],
-    #     [KNN],
-    #     [RMSE, MAE],
-    #     datasets
-    # )
-    # experiment(
-    #     f'{prefix}topological_metrics_mr',
-    #     [MCAR, MAR, MNAR],
-    #     [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
-    #     [KNN], 
-    #     [VR],
-    #     [WS, BN, L2PL, L2PI],
-    #     datasets
-    # )
+    comparison_metrics(
+        f'{prefix}comparison_metrics',
+        [MCAR, MAR, MNAR],
+        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
+        [KNN],
+        [RMSE, MAE],
+        datasets
+    )
     experiment(
         f'{prefix}topological_metrics',
         [MAR],
         [5, 10, 25],
         [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
+        [VR],
+        [WS, BN, L2PL, L2PI],
+        datasets
+    )
+    experiment(
+        f'{prefix}topological_metrics_mr',
+        [MCAR, MAR, MNAR],
+        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
+        [KNN],
         [VR],
         [WS, BN, L2PL, L2PI],
         datasets
@@ -62,23 +60,11 @@ def main():
         datasets
     )
     experiment_baselines(
-        f'{prefix}baselines',
+        f'{prefix}baseline',
         [MCAR, MAR, MNAR],
         [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
         [VR],
         [WS, BN, L2PL, L2PI],
-        datasets
-    )
-    experiment_betti(
-        f'{prefix}betti_numbers',
-        [MCAR, MAR, MNAR],
-        [5, 10, 25],
-        datasets
-    )
-    experiment_downstream(
-        f'{prefix}downstream_task',
-        [MCAR, MAR, MNAR],
-        [5, 10, 25],
         datasets
     )
 

@@ -1,0 +1,25 @@
+\begin{table}[t]
+    \centering
+    \caption{Impact of the missingness mechanism ($k$NN, VR, 1--40\%). Median geometric mean across datasets, missing rates, distances, and dimensions. $p$: Friedman test across mechanisms (real-world).}
+    \label{tab:mechanism}
+    \small
+    \setlength{\tabcolsep}{10pt}
+    \begin{tabular}{l ccc cccc}
+        \toprule
+        & \multicolumn{3}{c}{Synthetic (3)} & \multicolumn{4}{c}{Real-world (15)} \\
+        \cmidrule(lr){2-4}\cmidrule(lr){5-8}
+        & MCAR & MAR & MNAR & MCAR & MAR & MNAR & $p$ \\
+        \midrule
+        $\rho = d_{\TOPO} / d_{\SGT}$ & 0.05 & 0.21 & 0.37 & 0.57 & 0.73 & 1.33 & $<.001$ \\
+        \quad datasets with $\rho > 1$ & 0/3 & 0/3 & 0/3 & 0/15 & 1/15 & 11/15 &  \\
+        \quad 1--5\% missing & 0.03 & 0.38 & 0.92 & 0.51 & 0.79 & 1.80 &  \\
+        \quad 25--40\% missing & 0.09 & 0.10 & 0.12 & 0.51 & 0.66 & 0.89 &  \\
+        \midrule
+        $d_{\TOPO} / d_{\RS}$ & 0.36 & 0.41 & 0.45 & 0.66 & 0.58 & 0.69 & $.42$ \\
+        $d_{\SGT}/d_{\RS}$ & 6.32 & 2.07 & 1.04 & 1.08 & 0.74 & 0.49 & $<.001$ \\
+        \midrule
+        RMSE & 0.03 & 0.20 & 0.21 & 0.18 & 0.23 & 0.33 & $<.001$ \\
+        MAE & 0.01 & 0.05 & 0.05 & 0.03 & 0.05 & 0.08 & $<.001$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}

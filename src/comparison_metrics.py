@@ -56,8 +56,8 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
 
     return res
 
-def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods):
-    def _iter(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods):
+def impute_missing_values(data, imputation_methods):
+    def _iter(data, imputation_methods):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
                 for mt, mr_dict in mt_dict.items():
@@ -65,8 +65,7 @@ def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduc
                         for mr, imp_dict in mr_dict.items():
                             for imp in imputation_methods:
                                 if not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]:
-                                    if mr in reduced_missing_rates or imp in reduced_imputation_methods:
-                                        yield seed, key, mt, mr, imp, imp_dict
+                                    yield seed, key, mt, mr, imp, imp_dict
 
     res = {
         seed: {
@@ -78,7 +77,7 @@ def impute_missing_values(data, imputation_methods, reduced_missing_rates, reduc
         } for seed, key_dict in data.items()
     }
 
-    tasks = list(_iter(data, imputation_methods, reduced_missing_rates, reduced_imputation_methods))
+    tasks = list(_iter(data, imputation_methods))
 
     TORCH_METHODS = {GAIN, TABCSDI, OTIMPUTE}
     pool_tasks = [(seed, key, mt, mr, imp, imp_dict) for seed, key, mt, mr, imp, imp_dict in tasks if imp not in TORCH_METHODS]
@@ -201,7 +200,7 @@ def store_results(results, filename):
 
     pd.DataFrame(rows).to_csv(f'results/{filename}.csv', index=False)
 
-def comparison_metrics(comparison_metrics, missingness_types, missing_rates, imputation_methods, reduced_missing_rates, reduced_imputation_methods, metrics, datasets=None):
+def comparison_metrics(comparison_metrics, missingness_types, missing_rates, imputation_methods, metrics, datasets=None):
     initial_time = start_time = time.time()
 
     # Load datasets
@@ -221,7 +220,7 @@ def comparison_metrics(comparison_metrics, missingness_types, missing_rates, imp
     # Impute missing values
     log('Imputing missing values...')
     start_time = time.time()
-    imputed_data = impute_missing_values(data_missing_values, imputation_methods, reduced_missing_rates, reduced_imputation_methods)
+    imputed_data = impute_missing_values(data_missing_values, imputation_methods)
     log(f'Imputed missing values in {time.time() - start_time:.2f} seconds')
 
     # Compute Distances
