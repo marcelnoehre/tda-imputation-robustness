@@ -135,7 +135,7 @@ def experiment_baselines(experiment, missingness_types, missing_rates, tda_metho
     mel_dict = compute_mel_dict(datasets, tda_methods)
     original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods, mel_dict)
     normalized_original_persistence_intervals = normalize_original_persistence_intervals(original_persistence_intervals, datasets)
-    comparisons = [{WS: PD, BN: PD, L2PL: PL, L2PI: PI}.get(metric, '_') for metric in metrics]
+    comparisons = list(dict.fromkeys({WS: PD, BN: PD, L2PL: DIAGRAM, L2PI: DIAGRAM}[metric] for metric in metrics))
     original_comparable = prepare_original_data(normalized_original_persistence_intervals, comparisons)
     log(f'Prepared original data in {time.time() - start_time:.2f} seconds')
 

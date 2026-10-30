@@ -22,9 +22,11 @@ These affect items 3, 5 and 6 and the existing growth results, so resolve them f
 
 ### 0.2 Landscape and image grids are fitted per diagram
 - **Now:** `src/tda.py::persistence_landscape` / `persistence_image` call giotto-tda `fit_transform` on a single diagram. The sampling range (and for PI, the image extent) is therefore fitted separately for the original and for each imputed diagram. `landscape_l2_distance` then subtracts vectors that may lie on different grids, using Δt from the original only.
-- [ ] Verify with one dataset: compare the fitted `samplings_` of the original and an imputed diagram.
-- [ ] If they differ, fit the vectoriser once per (dataset, filtration, dimension) on the original diagram, and transform both diagrams with that fitted object.
-- [ ] **[user]** Re-run every experiment so the PL/PI columns are recomputed; diagrams are cached, so only vectorisation is recomputed.
+- [x] Verify with one dataset: compare the fitted `samplings_` of the original and an imputed diagram.
+  - Torus, MAR 25%, kNN, VR: grids differ (PL H1 [0.025, 0.248] vs [0.024, 0.224]; PL H2 [0.085, 0.248] vs [0.068, 0.233]; PI ranges likewise). Two further bugs: `landscape_l2_distance` took Δt from the **H0** range for all dimensions; and giotto PI divides each image by its pixel area, so per-diagram grids rescaled the PI values themselves. giotto clips PI points outside the grid onto its border (no mass lost); PL values outside the original's range are cut off.
+- [x] If they differ, fit the vectoriser once per (dataset, filtration, dimension) on the original diagram, and transform both diagrams with that fitted object.
+  - `tda.persistence_landscape/persistence_image(pd_fit, pd)` fit once on the original diagram and return both vectors plus the grid; `metrics.py` checks that both vectors match the grid and takes Δt from that dimension's grid. The original is passed as the raw normalised diagram (new key `DIAGRAM`), so existing cached diagrams stay valid; the old cached original PL/PI vectors are simply no longer used. Verified: the original's landscape is unchanged (allclose to the old fit_transform); smoke runs of `experiment` and `experiment_baselines` on the torus (MAR 10%). Torus PI H0 kNN dropped from 3.4e5 to 8.7e2, so **PL/PI columns of all four topological result files are stale**, and RQ1/RQ2 PI statements may change.
+- [ ] **[user]** Re-run every experiment so the PL/PI columns are recomputed; diagrams are cached, so only vectorisation is recomputed. (Merged into the consolidated runs under "Waiting for user".)
 - **Done when:** both vectors share one grid by construction (assert in `metrics.py`).
 
 ### 0.3 Seeds
@@ -154,6 +156,7 @@ Tasks:
 Running list of every change the paper (`paper/robustness_tda`) needs, with the PLAN item that causes it. `[x]` = edited in the paper (possibly as a `% TODO(PLAN x.y)` placeholder), `[ ]` = still to do, `(runs)` = needs the user's runs first.
 
 - [x] **0.1** `setup.tex`: "computed between $X$ and $\widehat{X}$ on the masked entries" is wrong. RMSE/MAE are computed over all $n \times d$ entries (observed ones contribute zero), i.e. $\lVert X - \widehat{X} \rVert_F / \sqrt{nd}$, the total perturbation, matching the whole-diagram topological distances. Mention RMSE$_\text{all}$ = $\sqrt{\MR}\,$RMSE$_\text{masked}$.
+- [ ] **0.2** (runs) all PL/PI numbers in RQ1–RQ6, Tables `baseline`, `imputation`, `growth`, `mechanism`, `filtration` and Figures `growth_by_family`, `pairwise_imputers`, `redundancy_retention` change once PL/PI are recomputed on a shared grid. Re-check every PI claim (e.g. RQ1 "PI ratios 0.23/0.36", "PI exceeds the noise floor only at 10–30%").
 - [x] **0.1** `results.tex` RQ3: "MAE naturally has a steeper growth rate than RMSE ($\beta = 1.18$ vs.\ 0.65)": explain it, since over all entries MAE scales with MR and RMSE with $\sqrt{\MR}$ for a fixed per-cell error.
 
 ## Waiting for user
@@ -161,7 +164,7 @@ Running list of every change the paper (`paper/robustness_tda`) needs, with the 
 Items here are blocked on the user. Agents add to this section (see `CLAUDE.md`); the user clears entries.
 
 ### Questions
-- (none yet)
+- **(0.2 / 2.3) PI bandwidth.** giotto's `sigma=0.1` is in filtration units, but the normalised diagrams span ~0.003 (H0), ~0.025 (H1) and ~0.08 (H2). σ is therefore 4–400× the grid extent, and the image is one broad blob (torus: min/max pixel 0.14–0.77; correlation of original and imputed image 0.92–1.00). PI then mostly measures the difference in feature counts, which explains its cardinality sensitivity in RQ1. Options: keep σ = 0.1 and state it; or set σ relative to the grid (e.g. σ = 0.01 → H1 correlation 0.99, H2 0.55). Decide before the PL/PI re-run.
 
 ### Runs needed
 Exact `main.py` calls in the order they should run, with the result files they write.

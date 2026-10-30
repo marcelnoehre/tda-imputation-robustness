@@ -29,8 +29,8 @@ from src.compute import (
     
 def _compare_all(metrics, orig, imputed):
     pd_Y = transform_pd(imputed) if WS in metrics or BN in metrics else None
-    pl_Y = persistence_landscape(imputed) if L2PL in metrics else None
-    pi_Y = persistence_image(imputed) if L2PI in metrics else None
+    pl_X, pl_Y, pl_grid = persistence_landscape(orig[DIAGRAM], imputed) if L2PL in metrics else (None, None, None)
+    pi_X, pi_Y, pi_grid = persistence_image(orig[DIAGRAM], imputed) if L2PI in metrics else (None, None, None)
     results = {dim: {} for dim in DIMENSIONS}
     for dim in DIMENSIONS:
         for metric in metrics:
@@ -39,9 +39,9 @@ def _compare_all(metrics, orig, imputed):
             elif metric == BN:
                 results[dim][metric] = compute_bottleneck_distance(orig[PD][dim], pd_Y[dim])
             elif metric == L2PL:
-                results[dim][metric] = landscape_l2_distance(orig[PL][dim], pl_Y[dim], orig[PD])
+                results[dim][metric] = landscape_l2_distance(pl_X[dim], pl_Y[dim], pl_grid[dim])
             elif metric == L2PI:
-                results[dim][metric] = persistence_image_l2_distance(orig[PI][dim], pi_Y[dim])
+                results[dim][metric] = persistence_image_l2_distance(pi_X[dim], pi_Y[dim], pi_grid[dim])
             else:
                 results[dim][metric] = METRICS[metric][FUNCTION](orig, imputed, dim)
     return results
@@ -456,7 +456,7 @@ def experiment(experiment, missingness_types, missing_rates, imputation_methods,
     mel_dict = compute_mel_dict(datasets, tda_methods)
     original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods, mel_dict)
     normalized_original_persistence_intervals = normalize_original_persistence_intervals(original_persistence_intervals, datasets)
-    comparisons = [{WS: PD, BN: PD, L2PL: PL, L2PI: PI}.get(metric, '_') for metric in metrics]
+    comparisons = list(dict.fromkeys({WS: PD, BN: PD, L2PL: DIAGRAM, L2PI: DIAGRAM}[metric] for metric in metrics))
     original_comparable = prepare_original_data(normalized_original_persistence_intervals, comparisons)
     log(f'Prepared original data in {time.time() - start_time:.2f} seconds')
 

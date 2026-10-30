@@ -73,21 +73,22 @@ def kernel_distance(data, max_edge_length):
         collapse_edges=True,
     ).fit_transform([D])
 
-def persistence_landscape(pd):
-    return PersistenceLandscape(
-        n_jobs=N_JOBS,
-    ).fit_transform(pd)[0]
+def _on_common_grid(vectorizer, pd_fit, pd):
+    # The grid is fitted once on pd_fit (the original diagram) and both diagrams are transformed with it,
+    # so the two vectors share one grid by construction.
+    vectorizer.fit(pd_fit)
+    return vectorizer.transform(pd_fit)[0], vectorizer.transform(pd)[0], vectorizer.samplings_
 
-def persistence_image(pd):
-    return PersistenceImage(
-        n_jobs=N_JOBS,
-    ).fit_transform(pd)[0]
+def persistence_landscape(pd_fit, pd):
+    return _on_common_grid(PersistenceLandscape(n_jobs=N_JOBS), pd_fit, pd)
+
+def persistence_image(pd_fit, pd):
+    return _on_common_grid(PersistenceImage(n_jobs=N_JOBS), pd_fit, pd)
 
 TDA = {
     VR: {FUNCTION: lambda data, mel: vietoris_rips_complex(data, mel)},
     DTMC: {FUNCTION: lambda data, mel: distance_to_a_measure(data, True, mel)},
     KD: {FUNCTION: lambda data, mel: kernel_distance(data, mel)},
     PD: {FUNCTION: lambda data: transform_pd(data)},
-    PL: {FUNCTION: lambda data: persistence_landscape(data)},
-    PI: {FUNCTION: lambda data: persistence_image(data)}
+    DIAGRAM: {FUNCTION: lambda data: np.asarray(data)}
 }
