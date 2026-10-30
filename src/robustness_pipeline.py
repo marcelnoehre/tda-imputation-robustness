@@ -4,7 +4,7 @@ import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from src.logger import log
 from src.data import get_all_datasets
-from src.missingness import MISSINGNESS
+from src.missingness import MISSINGNESS, repeated
 from src.constants import *
 from src.compute import (
     apply_complete_case,
@@ -56,11 +56,10 @@ def apply_baseline_methods(datasets, data_missing_values, baseline_methods):
         for seed, key_dict in data_missing_values.items():
             for key, mt_dict in key_dict.items():
                 for mt, mr_dict in mt_dict.items():
-                    if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
-                        for mr, missing_df in mr_dict.items():
-                            for method in baseline_methods:
-                                if not BASELINE_DETERMINISM[method] or seed == SEEDS[0]:
-                                    yield seed, key, mt, mr, method, missing_df
+                    for mr, missing_df in mr_dict.items():
+                        for method in baseline_methods:
+                            if repeated(seed, mt, BASELINE_DETERMINISM[method]):
+                                yield seed, key, mt, mr, method, missing_df
 
     tasks = list(_iter(data_missing_values, baseline_methods))
 

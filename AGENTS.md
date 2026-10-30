@@ -63,7 +63,7 @@ The kernel must be the project's `.venv` interpreter. If uvx's own Python is pic
 ## Known issues
 
 - Manifold embedding in `tadasets` uses an unseeded global random rotation, and data are standardised after it. The synthetic data therefore differ between runs, so the Swiss Roll and Torus rows of `kd.tex` drift slightly.
-- `SEEDS` holds 9 seeds, while the paper text says 10. The results CSVs contain one seed per imputer; only the RS/SGT baselines have 9.
+- Until the re-runs of PLAN 0.3 are in, the results CSVs contain one seed per imputer (only the RS/SGT baselines under MCAR have 9). Cause, fixed in the code: extra seeds ran only when both the mechanism and the method were stochastic. `SEEDS` now holds 10 seeds (`range(1, 11)`).
 - OpenML ID 43000 (`cnn_stock_pred_dji`) returned the same matrix as `hungarian_chickenpox`, so it is excluded from the code and the results.
 
 ## Git

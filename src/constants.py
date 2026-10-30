@@ -72,7 +72,7 @@ DATASETS = {
 }
 
 ### EXPERIMENTS ###
-SEEDS = list(range(1, 10))
+SEEDS = list(range(1, 11))
 MCAR = 'missing_completely_at_random'
 MAR = 'missing_at_random'
 MNAR = 'missing_not_at_random'

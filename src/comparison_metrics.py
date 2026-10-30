@@ -6,7 +6,7 @@ from scipy.stats import t as t_dist, sem as scipy_sem
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from src.logger import log
 from src.data import get_all_datasets
-from src.missingness import MISSINGNESS
+from src.missingness import MISSINGNESS, repeated
 from src.imputation import IMPUTATION
 from src.metrics import METRICS
 from src.constants import *
@@ -54,6 +54,13 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
         for seed, key, mt, mr, dataset in tasks:
             res[seed][key][mt][mr] = apply_missingness(dataset, mt, mr, seed)
 
+    # Deterministic masks are shared by all seeds, so stochastic methods are repeated on the same mask
+    for seed in SEEDS[1:]:
+        for key in datasets.keys():
+            for mt in missingness_types:
+                if MISSINGNESS[mt][DETERMINISTIC]:
+                    res[seed][key][mt] = res[SEEDS[0]][key][mt]
+
     return res
 
 def impute_missing_values(data, imputation_methods):
@@ -61,11 +68,10 @@ def impute_missing_values(data, imputation_methods):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
                 for mt, mr_dict in mt_dict.items():
-                    if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
-                        for mr, imp_dict in mr_dict.items():
-                            for imp in imputation_methods:
-                                if not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]:
-                                    yield seed, key, mt, mr, imp, imp_dict
+                    for mr, imp_dict in mr_dict.items():
+                        for imp in imputation_methods:
+                            if repeated(seed, mt, IMPUTATION[imp][DETERMINISTIC]):
+                                yield seed, key, mt, mr, imp, imp_dict
 
     res = {
         seed: {
@@ -106,12 +112,11 @@ def compute_distances(datasets, imputed_data, metrics):
         for seed, key_dict in imputed_data.items():
             for key, mt_dict in key_dict.items():
                 for mt, mr_dict in mt_dict.items():
-                    if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
-                        for mr, imp_dict in mr_dict.items():
-                            for imp, arr in imp_dict.items():
-                                if not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]:
-                                    for metric in metrics:
-                                        yield seed, key, mt, mr, imp, metric, arr
+                    for mr, imp_dict in mr_dict.items():
+                        for imp, arr in imp_dict.items():
+                            if repeated(seed, mt, IMPUTATION[imp][DETERMINISTIC]):
+                                for metric in metrics:
+                                    yield seed, key, mt, mr, imp, metric, arr
 
     res = {
         seed: {
@@ -147,15 +152,14 @@ def compute_seedwise_statistics(distance_data):
     for seed, key_dict in distance_data.items():
         for key, mt_dict in key_dict.items():
             for mt, mr_dict in mt_dict.items():
-                if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
-                    for mr, imp_dict in mr_dict.items():
-                        for imp, metric_dict in imp_dict.items():
-                            if not IMPUTATION[imp][DETERMINISTIC] or seed == SEEDS[0]:
-                                k = (key, mt, mr, imp)
-                                if k not in collections:
-                                    collections[k] = {m: [] for m in metric_dict}
-                                for metric, value in metric_dict.items():
-                                    collections[k][metric].append(value)
+                for mr, imp_dict in mr_dict.items():
+                    for imp, metric_dict in imp_dict.items():
+                        if repeated(seed, mt, IMPUTATION[imp][DETERMINISTIC]):
+                            k = (key, mt, mr, imp)
+                            if k not in collections:
+                                collections[k] = {m: [] for m in metric_dict}
+                            for metric, value in metric_dict.items():
+                                collections[k][metric].append(value)
 
     res = {}
     for (key, mt, mr, imp), metric_collections in collections.items():

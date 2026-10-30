@@ -38,6 +38,11 @@ def multivariat_mnar(df, target, missing_rate):
         n_Threads=N_JOBS
     ).random(missing_rate, deterministic=True).drop(columns=[TARGET])
 
+def repeated(seed, mt, method_deterministic):
+    """A (mechanism, method) pair runs for every seed as soon as either of them is stochastic.
+    Deterministic masks are computed once and shared by all seeds (see introduce_missingness)."""
+    return seed == SEEDS[0] or not MISSINGNESS[mt][DETERMINISTIC] or not method_deterministic
+
 MISSINGNESS = {
     MCAR: {FUNCTION: lambda df, target, missing_rate, seed: multivariat_mcar(df, target, missing_rate, seed), DETERMINISTIC: False},
     MAR: {FUNCTION: lambda df, target, missing_rate, _: multivariat_mar(df, target, missing_rate), DETERMINISTIC: True},

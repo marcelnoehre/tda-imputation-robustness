@@ -31,8 +31,9 @@ These affect items 3, 5 and 6 and the existing growth results, so resolve them f
 
 ### 0.3 Seeds
 - **Now:** `SEEDS = range(1, 10)` gives 9 seeds; the paper says 10. `topological_metrics_results.csv` has `n_seeds = 1` for every imputer, including RF/MICE/GAIN/TabCSDI/OT-Impute. Only RS/SGT baselines have 9.
-- [ ] Find out why the stochastic imputers ran with one seed (was `SEEDS` reduced for the run?).
-- [ ] Decide (user): **[user]** re-run with 10 seeds (`range(10)`), or state the actual number in the paper. Item 2 depends on this.
+- [x] Find out why the stochastic imputers ran with one seed (was `SEEDS` reduced for the run?).
+  - Not a reduced `SEEDS`, but a loop bug: every iterator ran extra seeds only if **both** the mechanism and the method were stochastic (`not det_mt or seed == S0` and `not det_method or seed == S0`). So all MAR/MNAR × imputer runs, kNN × MCAR, CCA × MCAR and RS/SGT × MAR/MNAR had one seed. Fixed with `missingness.repeated(seed, mt, method_deterministic)`: a pair repeats over all seeds as soon as either part is stochastic; deterministic MAR/MNAR masks are computed once and shared by all seeds. Verified by smoke runs (torus, MCAR/MAR 10%, 2 seeds, WORKERS 1 and 4) of all three drivers: n_seeds = 1 only for deterministic × deterministic pairs. Stale: n_seeds and all means in every result file.
+- [x] Decide (user): re-run with 10 seeds. User chose `SEEDS = range(1, 11)` (keeps the cache of seeds 1–9; `range(10)` would recompute everything). Set in `constants.py`. The re-runs are listed under "Waiting for user → Runs needed".
 
 ---
 
@@ -157,6 +158,7 @@ Running list of every change the paper (`paper/robustness_tda`) needs, with the 
 
 - [x] **0.1** `setup.tex`: "computed between $X$ and $\widehat{X}$ on the masked entries" is wrong. RMSE/MAE are computed over all $n \times d$ entries (observed ones contribute zero), i.e. $\lVert X - \widehat{X} \rVert_F / \sqrt{nd}$, the total perturbation, matching the whole-diagram topological distances. Mention RMSE$_\text{all}$ = $\sqrt{\MR}\,$RMSE$_\text{masked}$.
 - [ ] **0.2** (runs) all PL/PI numbers in RQ1–RQ6, Tables `baseline`, `imputation`, `growth`, `mechanism`, `filtration` and Figures `growth_by_family`, `pairwise_imputers`, `redundancy_retention` change once PL/PI are recomputed on a shared grid. Re-check every PI claim (e.g. RQ1 "PI ratios 0.23/0.36", "PI exceeds the noise floor only at 10–30%").
+- [x] **0.3** `setup.tex`: the seeds sentence now says which settings are repeated over 10 seeds and that MAR/MNAR masks are shared (with a `% TODO(PLAN 0.3)` until the re-runs are in). Check `limitations.tex` ("10 seeds for each non-deterministic method") and the compute statement once the runs are done.
 - [x] **0.1** `results.tex` RQ3: "MAE naturally has a steeper growth rate than RMSE ($\beta = 1.18$ vs.\ 0.65)": explain it, since over all entries MAE scales with MR and RMSE with $\sqrt{\MR}$ for a fixed per-cell error.
 
 ## Waiting for user
