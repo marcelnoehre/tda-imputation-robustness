@@ -5,6 +5,8 @@ from src.tda import persistence_landscape, persistence_image
 from src.utils import transform_pd
 from src.constants import *
 
+# RMSE and MAE run over all entries (observed ones contribute zero), i.e. the total perturbation
+# of the cloud, which is what the topological distances compare; masked-entry RMSE = RMSE / sqrt(MR).
 def compute_rmse(X: np.ndarray, Y: np.ndarray):
     if X.shape != Y.shape:
         raise ValueError(f'Arrays must have same shape, got {X.shape} vs {Y.shape}')
