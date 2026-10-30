@@ -8,9 +8,10 @@ Code and results for the paper *The Robustness of Topological Data Analysis Unde
 
 | Path | Purpose |
 |------|---------|
-| `main.py` | Runs all five experiments of the paper; optional OpenML IDs restrict it to those datasets |
+| `main.py` | Runs the experiments of `config/experiments.yaml`; optional OpenML IDs restrict it to those datasets, `-e NAME …` to those experiments |
 | `src/` | Pipeline: data loading (`data.py`), masking (`missingness.py`), imputers (`imputation.py`), filtrations and vectorisations (`tda.py`), distances (`metrics.py`), baselines (`robustness.py`), experiment drivers (`pipeline.py`, `comparison_metrics.py`, `robustness_pipeline.py`), disk cache (`cache.py`) |
-| `src/constants.py` | Single source of truth for dataset IDs, method keys, seeds, worker count and labels |
+| `config/experiments.yaml` | Single source of truth for the experimental grid, seeds, worker count and every hyperparameter (read by `src/config.py`) |
+| `src/constants.py` | Dataset IDs, method keys and labels |
 | `results/*_results.csv` | Raw experiment output, one file per experiment (see below) |
 | `notebooks/tmlr_figures.ipynb` | Reads `results/`, writes every results table and figure of the paper to `figures/tmlr/`, and prints the statistics quoted in the text |
 | `figures/tmlr/` | Generated output; copy into the paper's `tables/` and `figures/` |
@@ -38,9 +39,10 @@ Distances: Wasserstein, bottleneck, L² on persistence landscapes, L² on persis
 uv sync                               # environment (.venv, Python >= 3.11)
 python main.py                        # all experiments, all datasets (takes long)
 python main.py 223 666                # only these OpenML IDs (-1/-2/-3 = torus/swiss roll/sphere)
+python main.py -e baseline            # only these experiments (names from config/experiments.yaml)
 ```
 
-Set `WORKERS` in `src/constants.py` before running; `WORKERS > 1` requires `N_JOBS == 1`. Intermediate results are cached on disk in `.cache/` (keyed by the function arguments), so re-runs only compute what is new.
+Set `runtime.workers` in `config/experiments.yaml` before running; `workers > 1` requires `n_jobs: 1`. Intermediate results are cached on disk in `.cache/` (keyed by the function arguments, not by the config), so re-runs only compute what is new. After changing a hyperparameter in the config, delete the affected cache entries.
 
 Regenerate the paper outputs (takes about 2 minutes; nbconvert is not a project dependency):
 
@@ -62,7 +64,7 @@ The kernel must be the project's `.venv` interpreter. If uvx's own Python is pic
 
 ## Known issues
 
-- Manifold embedding in `tadasets` uses an unseeded global random rotation, and data are standardised after it. The synthetic data therefore differ between runs, so the Swiss Roll and Torus rows of `kd.tex` drift slightly.
+- The results in `results/` were produced while the manifold rotation (`tadasets.embed`) was unseeded, so their synthetic data cannot be reproduced exactly. `src/data.py::embed` now draws the rotation from a seeded generator.
 - Until the re-runs of PLAN 0.3 are in, the results CSVs contain one seed per imputer (only the RS/SGT baselines under MCAR have 9). Cause, fixed in the code: extra seeds ran only when both the mechanism and the method were stochastic. `SEEDS` now holds 10 seeds (`range(1, 11)`).
 - OpenML ID 43000 (`cnn_stock_pred_dji`) returned the same matrix as `hungarian_chickenpox`, so it is excluded from the code and the results.
 

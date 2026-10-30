@@ -18,6 +18,7 @@ from src.metrics import (
 from src.tda import persistence_landscape, persistence_image
 from src.utils import transform_pd
 from src.constants import *
+from src.config import SEEDS, WORKERS, DIMENSIONS
 from src.compute import (
     get_max_edge_length,
     apply_persistent_homology,

@@ -1,72 +1,40 @@
-import sys
+import argparse
 
 from src.constants import *
+from src.config import WORKERS, N_JOBS, CONFIG, experiments
 from src.comparison_metrics import comparison_metrics
 from src.pipeline import experiment
 from src.robustness_pipeline import experiment_baselines
 from src.data import get_data, preprocess
-from src.constants import *
+
+DRIVERS = {
+    'comparison_metrics': comparison_metrics,
+    'topological': experiment,
+    'baseline': experiment_baselines,
+}
 
 def process_args():
-    ids = [int(arg) for arg in sys.argv[1:]] if len(sys.argv) > 1 else None
-    if ids is None:
-        return None
-    else:
+    parser = argparse.ArgumentParser(description='Run the experiments listed in config/experiments.yaml.')
+    parser.add_argument('ids', nargs='*', type=int, help='OpenML IDs (-1/-2/-3 = torus/swiss roll/sphere); default: all datasets')
+    parser.add_argument('-e', '--experiments', nargs='+', choices=list(CONFIG['experiments']), metavar='NAME', help=f'run only these experiments: {", ".join(CONFIG["experiments"])}')
+    args = parser.parse_args()
+    datasets = None
+    if args.ids:
         datasets = {}
-        for id in ids:
+        for id in args.ids:
             if id not in DATASETS:
                 raise ValueError(f"Invalid dataset ID: {id}")
             datasets[DATASETS[id]] = preprocess(get_data(id), DATASETS[id])
-        return datasets
+    return datasets, args.experiments
 
 def main():
     if WORKERS > 1 and N_JOBS != 1:
         raise ValueError('Parallelization of the inner loop will cause a pickle error.')
-    datasets = process_args()
+    datasets, selected = process_args()
     prefix = f'{"_".join(datasets.keys())}_' if datasets else ''
-    comparison_metrics(
-        f'{prefix}comparison_metrics',
-        [MCAR, MAR, MNAR],
-        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
-        [KNN],
-        [RMSE, MAE],
-        datasets
-    )
-    experiment(
-        f'{prefix}topological_metrics',
-        [MAR],
-        [5, 10, 25],
-        [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
-        [VR],
-        [WS, BN, L2PL, L2PI],
-        datasets
-    )
-    experiment(
-        f'{prefix}topological_metrics_mr',
-        [MCAR, MAR, MNAR],
-        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
-        [KNN],
-        [VR],
-        [WS, BN, L2PL, L2PI],
-        datasets
-    )
-    experiment(
-        f'{prefix}topological_metrics_filtration',
-        [MAR],
-        [5, 10, 25],
-        [KNN],
-        [VR, DTMC, KD],
-        [WS, BN, L2PL, L2PI],
-        datasets
-    )
-    experiment_baselines(
-        f'{prefix}baseline',
-        [MCAR, MAR, MNAR],
-        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
-        [VR],
-        [WS, BN, L2PL, L2PI],
-        datasets
-    )
+    for name, driver, kwargs in experiments():
+        if selected is None or name in selected:
+            DRIVERS[driver](f'{prefix}{name}', **kwargs, datasets=datasets)
 
 if __name__ == '__main__':
     main()

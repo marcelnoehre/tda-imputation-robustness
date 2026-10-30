@@ -6,14 +6,15 @@ from gtda.diagrams import PersistenceLandscape, PersistenceImage
 from sklearn.metrics.pairwise import pairwise_distances
 from src.utils import as_batch, transform_pd
 from src.constants import *
+from src.config import N_JOBS, DIMENSIONS, MEL_PARAMS, DTM_PARAMS, LANDSCAPE_PARAMS, IMAGE_PARAMS
 
 def _max_edge_length(distances):
-    n = len(distances)
-    if n > 500:
-        idx = np.random.default_rng(42).choice(n, 500, replace=False)
+    n, size = len(distances), MEL_PARAMS['subsample']
+    if n > size:
+        idx = np.random.default_rng(MEL_PARAMS['subsample_seed']).choice(n, size, replace=False)
         distances = distances[np.ix_(idx, idx)]
     tau_0 = float(minimum_spanning_tree(distances).max())
-    return MST_SCALE_FACTOR * tau_0
+    return MEL_PARAMS['mst_scale_factor'] * tau_0
 
 def max_edge_length_for(data, tda):
     """Compute the filtration cutoff from the original data for a given TDA method."""
@@ -32,14 +33,9 @@ def vietoris_rips_complex(data, max_edge_length):
         n_jobs=N_JOBS
     ).fit_transform(as_batch(data))
 
-def distance_to_a_measure(data, chazal, max_edge_length):
+def distance_to_a_measure(data, max_edge_length):
     n = len(data)
-    if chazal:
-        m = 0.05
-        k = math.ceil(m * n)
-    else:
-        k = min(int(np.sqrt(n)), n // 2)
-    k = min(k, n - 1)
+    k = min(math.ceil(DTM_PARAMS['m'] * n), n - 1)
     distances = pairwise_distances(data)
     np.fill_diagonal(distances, np.inf)
     kth_nn_dist = float(np.sort(distances, axis=1)[:, k - 1].max())
@@ -55,7 +51,7 @@ def distance_to_a_measure(data, chazal, max_edge_length):
         weights='DTM',
         weight_params={
             'n_neighbors': k,
-            'p': EUCLIDEAN
+            'p': DTM_PARAMS['p']
         },
         n_jobs=N_JOBS
     ).fit_transform(distances[np.newaxis])
@@ -80,14 +76,14 @@ def _on_common_grid(vectorizer, pd_fit, pd):
     return vectorizer.transform(pd_fit)[0], vectorizer.transform(pd)[0], vectorizer.samplings_
 
 def persistence_landscape(pd_fit, pd):
-    return _on_common_grid(PersistenceLandscape(n_jobs=N_JOBS), pd_fit, pd)
+    return _on_common_grid(PersistenceLandscape(**LANDSCAPE_PARAMS, n_jobs=N_JOBS), pd_fit, pd)
 
 def persistence_image(pd_fit, pd):
-    return _on_common_grid(PersistenceImage(n_jobs=N_JOBS), pd_fit, pd)
+    return _on_common_grid(PersistenceImage(**IMAGE_PARAMS, n_jobs=N_JOBS), pd_fit, pd)
 
 TDA = {
     VR: {FUNCTION: lambda data, mel: vietoris_rips_complex(data, mel)},
-    DTMC: {FUNCTION: lambda data, mel: distance_to_a_measure(data, True, mel)},
+    DTMC: {FUNCTION: lambda data, mel: distance_to_a_measure(data, mel)},
     KD: {FUNCTION: lambda data, mel: kernel_distance(data, mel)},
     PD: {FUNCTION: lambda data: transform_pd(data)},
     DIAGRAM: {FUNCTION: lambda data: np.asarray(data)}

@@ -10,6 +10,7 @@ from src.missingness import MISSINGNESS, repeated
 from src.imputation import IMPUTATION
 from src.metrics import METRICS
 from src.constants import *
+from src.config import SEEDS, WORKERS
 from src.compute import apply_missingness, apply_imputation
 
 def _compare(metric, original, imputed):

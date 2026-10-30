@@ -8,6 +8,7 @@ from sklearn.impute import SimpleImputer, KNNImputer, IterativeImputer
 from sklearn.ensemble import RandomForestRegressor
 from statsmodels.imputation.mice import MICEData
 from src.constants import *
+from src.config import N_JOBS, IMPUTATION_PARAMS
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -76,14 +77,16 @@ def impute_knn(data):
     return knn_imp.fit_transform(data)
 
 def impute_random_forest(data, seed):
+    params = IMPUTATION_PARAMS['random_forest']
     rf = RandomForestRegressor(
         random_state=seed,
         n_jobs=N_JOBS,
-        n_estimators=ESTIMATORS,
-        max_depth=DEPTH,
+        n_estimators=params['n_estimators'],
+        max_depth=params['max_depth'],
     )
     rf_imp = IterativeImputer(
         estimator=rf,
+        max_iter=params['max_iter'],
         random_state=seed
     )
     return rf_imp.fit_transform(data)
@@ -91,10 +94,12 @@ def impute_random_forest(data, seed):
 def impute_mice(data, seed):
     np.random.seed(seed)
     mice_imp = MICEData(data)
-    mice_imp.update_all(n_iter=ITERATIONS)
+    mice_imp.update_all(n_iter=IMPUTATION_PARAMS['mice']['n_iter'])
     return mice_imp.data.values
 
-def impute_gain(data, seed, batch_size=128, hint_rate=0.9, alpha=100.0):
+def impute_gain(data, seed):
+    params = IMPUTATION_PARAMS['gain']
+    batch_size, hint_rate, alpha = params['batch_size'], params['hint_rate'], params['alpha']
     torch.manual_seed(seed)
     np.random.seed(seed)
 
@@ -116,12 +121,12 @@ def impute_gain(data, seed, batch_size=128, hint_rate=0.9, alpha=100.0):
 
     G = _GAINNet(dim).to(device)
     D = _GAINNet(dim).to(device)
-    opt_G = torch.optim.Adam(G.parameters())
-    opt_D = torch.optim.Adam(D.parameters())
+    opt_G = torch.optim.Adam(G.parameters(), lr=params['lr'])
+    opt_D = torch.optim.Adam(D.parameters(), lr=params['lr'])
     bce = nn.BCELoss()
     eps = 1e-8
     bs  = min(batch_size, n)
-    iterations = int(np.clip(300 * max(1, n // bs), 2000, GAIN_ITERATIONS))
+    iterations = int(np.clip(params['iterations_per_batch'] * max(1, n // bs), params['min_iterations'], params['max_iterations']))
 
     for _ in range(iterations):
         # Sample once; reuse for both D and G steps
@@ -163,9 +168,10 @@ def impute_gain(data, seed, batch_size=128, hint_rate=0.9, alpha=100.0):
     out[mask.astype(bool)] = X[mask.astype(bool)]
     return out
 
-def impute_tabcsdi(data, seed, num_steps=20, epochs=TABCSDI_EPOCHS,
-                   batch_size=128, n_samples=1,
-                   beta_start=1e-4, beta_end=0.5):
+def impute_tabcsdi(data, seed):
+    params = IMPUTATION_PARAMS['tabcsdi']
+    num_steps, batch_size, n_samples = params['num_steps'], params['batch_size'], params['n_samples']
+    beta_start, beta_end = params['beta_start'], params['beta_end']
     torch.manual_seed(seed)
     np.random.seed(seed)
 
@@ -189,12 +195,12 @@ def impute_tabcsdi(data, seed, num_steps=20, epochs=TABCSDI_EPOCHS,
     alpha = 1.0 - beta
     abar  = torch.cumprod(alpha, dim=0)
 
-    net = _TabCSDINet(dim, num_steps).to(device)
-    opt = torch.optim.Adam(net.parameters(), lr=1e-3)
+    net = _TabCSDINet(dim, num_steps, d_model=params['d_model'], nheads=params['nheads'], layers=params['layers']).to(device)
+    opt = torch.optim.Adam(net.parameters(), lr=params['lr'])
 
     # Target ~2000 gradient steps; early stopping enforces the practical upper bound.
     steps_per_epoch = max(1, n // batch_size)
-    epochs = max(20, math.ceil(2000 / steps_per_epoch))
+    epochs = max(params['min_epochs'], math.ceil(params['target_steps'] / steps_per_epoch))
 
     net.train()
     best_loss = float('inf')
@@ -236,7 +242,7 @@ def impute_tabcsdi(data, seed, num_steps=20, epochs=TABCSDI_EPOCHS,
             no_improve = 0
         else:
             no_improve += 1
-        if no_improve >= 20:
+        if no_improve >= params['patience']:
             break
 
     net.eval()
@@ -295,8 +301,9 @@ def _sinkhorn_divergence(x, y, eps, n_iters=20):
             - 0.5 * _sinkhorn_cost(y, y, eps, n_iters))
 
 
-def impute_ot(data, seed, n_iter=OT_ITERATIONS, batch_size=128,
-              n_pairs=1, lr=1e-2, sinkhorn_iters=20):
+def impute_ot(data, seed):
+    params = IMPUTATION_PARAMS['otimpute']
+    batch_size, lr, sinkhorn_iters, n_pairs = params['batch_size'], params['lr'], params['sinkhorn_iterations'], params['pairs']
     torch.manual_seed(seed)
     np.random.seed(seed)
 
@@ -315,14 +322,14 @@ def impute_ot(data, seed, n_iter=OT_ITERATIONS, batch_size=128,
     X_obs = torch.tensor(np.nan_to_num(Xn, nan=0.0), dtype=torch.float32, device=device)
 
     # Learnable parameter for the missing entries only; observed stay exact
-    init    = np.nan_to_num(Xn, nan=0.0) + 0.1 * np.random.randn(n, dim) * (1 - obs)
+    init    = np.nan_to_num(Xn, nan=0.0) + params['init_noise'] * np.random.randn(n, dim) * (1 - obs)
     X_param = torch.tensor(init, dtype=torch.float32, device=device, requires_grad=True)
 
     opt = torch.optim.RMSprop([X_param], lr=lr)
     bs = max(1, min(batch_size, n // 2))
 
     # Scale iterations so each data point is seen ~50 times; cap at the configured max.
-    n_iter = max(200, min(n_iter, (n // bs) * 50))
+    n_iter = max(params['min_iterations'], min(params['max_iterations'], (n // bs) * params['passes']))
 
     # Adaptive entropic scale from a sample of pairwise costs.
     # Use only fully observed columns so missing-value zeros don't bias distances down.
@@ -330,7 +337,7 @@ def impute_ot(data, seed, n_iter=OT_ITERATIONS, batch_size=128,
         obs_cols = torch.tensor(obs.mean(axis=0) == 1.0, device=device)
         s_full   = X_obs[:, obs_cols] if obs_cols.any() else X_obs
         s        = s_full[torch.randperm(n, device=device)[:min(n, 256)]]
-        eps      = float(0.05 * torch.cdist(s, s).pow(2).median().clamp(min=1e-3))
+        eps      = float(params['epsilon_scale'] * torch.cdist(s, s).pow(2).median().clamp(min=1e-3))
 
     prev_params = None
     for it in range(n_iter):

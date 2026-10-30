@@ -6,6 +6,7 @@ from src.logger import log
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS, repeated
 from src.constants import *
+from src.config import WORKERS, MIN_BASELINE_POINTS
 from src.compute import (
     apply_complete_case,
     apply_random_subsample,

@@ -16,6 +16,7 @@ dependencies = [
     "openml",
     "pandas",
     "persim",
+    "pyyaml>=6.0.3",
     "scikit-learn",
     "scipy",
     "seaborn",

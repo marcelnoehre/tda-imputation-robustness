@@ -1,5 +1,5 @@
 import numpy as np
-from src.constants import SUBSAMPLE_FRACTION
+from src.config import SUBSAMPLE_FRACTION
 
 def complete_case_analysis(missing_df):
     '''

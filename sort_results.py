@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname('src'), '..')))
 
 import pandas as pd
 from src.constants import *
+from src.config import DIMENSIONS
 
 def sort(path):
     df = pd.read_csv(path)

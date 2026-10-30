@@ -17,11 +17,6 @@ WHITE_WINE_QUALITY_DATASET_ID = 44971
 AIR_QUALITY_DATASET_ID = 46762
 FOOTBALL_PLAYER_POSITION_DATASET_ID = 46764
 
-# Manifold Data
-MANIFOLD_SAMPLES = 1000
-MANIFOLD_AMBIENT = 20
-MANIFOLD_SEED = 42
-
 ### DATA ###
 MANIFOLD = 'manifold'
 TIME_SERIES = 'time_series'
@@ -72,7 +67,7 @@ DATASETS = {
 }
 
 ### EXPERIMENTS ###
-SEEDS = list(range(1, 11))
+# Grids, seeds and hyperparameters live in config/experiments.yaml (read by src/config.py)
 MCAR = 'missing_completely_at_random'
 MAR = 'missing_at_random'
 MNAR = 'missing_not_at_random'
@@ -103,20 +98,7 @@ RMSE = 'root_mean_square_error'
 MAE = 'mean_absolute_error'
 
 ### PIPELINE ###
-WORKERS = 30
-N_JOBS = 1
-ESTIMATORS = 30
-DEPTH = 15
-ITERATIONS = 5
-GAIN_ITERATIONS = 10000
-TABCSDI_EPOCHS = 100
-OT_ITERATIONS = 500
-DIMENSIONS = [0, 1, 2]
-EUCLIDEAN = 2
 DETERMINISTIC = 'deterministic'
-MST_SCALE_FACTOR = 2.5
-MIN_BASELINE_POINTS = 10
-SUBSAMPLE_FRACTION = 0.8
 
 ### IDENTIFIER ###
 DATASET = 'dataset'

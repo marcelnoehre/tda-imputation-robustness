@@ -1,0 +1,123 @@
+# Full experimental grid and every hyperparameter of the paper.
+# Read by src/config.py; method and mechanism names refer to the keys in src/constants.py.
+# Cache keys hash the function arguments, not this file: after changing a hyperparameter,
+# delete the affected entries in .cache/ (e.g. .cache/src.compute/apply_imputation for an imputer).
+
+runtime:
+  workers: 30          # process pool size; workers > 1 requires n_jobs == 1
+  n_jobs: 1            # threads inside giotto-tda, scikit-learn and mdatagen
+
+seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+data:
+  manifolds:
+    samples: 1000
+    ambient: 20        # 3-d sample padded to 20 columns and rotated by a seeded random orthogonal matrix
+    seed: 42           # sampling and rotation
+  # OpenML datasets are standardised (z-score per column) after loading, see src/data.py::preprocess
+
+missingness:
+  missing_feature_fraction: 0.5   # MCAR, MAR and MNAR mask floor(d / 2) columns
+
+missing_rates:
+  main: [5, 10, 25]
+  sweep: [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40]
+
+imputation:
+  knn:
+    n_neighbors: sqrt          # k = min(floor(sqrt(n)), n // 2)
+  random_forest:
+    n_estimators: 30
+    max_depth: 15
+    max_iter: 10               # IterativeImputer rounds (scikit-learn default)
+  mice:
+    n_iter: 5                  # statsmodels MICEData.update_all; a single draw is used
+  gain:
+    batch_size: 128
+    hint_rate: 0.9
+    alpha: 100.0
+    lr: 0.001                  # Adam (PyTorch default)
+    iterations_per_batch: 300  # iterations = clip(300 * max(1, n // batch_size), 2000, 10000)
+    min_iterations: 2000
+    max_iterations: 10000
+  tabcsdi:
+    num_steps: 20
+    beta_start: 0.0001
+    beta_end: 0.5
+    batch_size: 128
+    lr: 0.001
+    target_steps: 2000         # epochs = max(min_epochs, ceil(target_steps / steps per epoch))
+    min_epochs: 20
+    patience: 20               # early stopping on the epoch loss (relative tolerance 1e-3)
+    n_samples: 1
+    d_model: 64
+    nheads: 4
+    layers: 3
+  otimpute:
+    max_iterations: 500        # n_iter = max(200, min(500, (n // batch) * 50)), early stop every 25 steps
+    min_iterations: 200
+    passes: 50
+    batch_size: 128
+    lr: 0.01                   # RMSprop
+    pairs: 1                   # batch pairs per step
+    sinkhorn_iterations: 20
+    epsilon_scale: 0.05        # eps = 0.05 * median squared pairwise distance of a 256-row sample
+    init_noise: 0.1
+
+filtration:
+  homology_dimensions: [0, 1, 2]
+  max_edge_length:
+    mst_scale_factor: 2.5      # cutoff = 2.5 * longest MST edge
+    subsample: 500             # MST computed on a random subsample of this size
+    subsample_seed: 42
+  dtm:
+    m: 0.05                    # k = ceil(m * n) nearest neighbours
+    p: 2
+
+vectorization:
+  landscape:
+    n_layers: 1
+    n_bins: 100
+  image:
+    sigma: 0.1                 # in filtration units (diagrams are divided by the diameter of the original cloud)
+    n_bins: 100
+
+baselines:
+  subsample_fraction: 0.8
+  min_points: 10
+
+# One entry per result file results/<name>_results.csv; run in this order by main.py.
+experiments:
+  comparison_metrics:
+    driver: comparison_metrics
+    missingness_types: [MCAR, MAR, MNAR]
+    missing_rates: sweep
+    imputation_methods: [KNN]
+    metrics: [RMSE, MAE]
+  topological_metrics:
+    driver: topological
+    missingness_types: [MAR]
+    missing_rates: main
+    imputation_methods: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE]
+    tda_methods: [VR]
+    metrics: [WS, BN, L2PL, L2PI]
+  topological_metrics_mr:
+    driver: topological
+    missingness_types: [MCAR, MAR, MNAR]
+    missing_rates: sweep
+    imputation_methods: [KNN]
+    tda_methods: [VR]
+    metrics: [WS, BN, L2PL, L2PI]
+  topological_metrics_filtration:
+    driver: topological
+    missingness_types: [MAR]
+    missing_rates: main
+    imputation_methods: [KNN]
+    tda_methods: [VR, DTMC, KD]
+    metrics: [WS, BN, L2PL, L2PI]
+  baseline:
+    driver: baseline
+    missingness_types: [MCAR, MAR, MNAR]
+    missing_rates: sweep
+    tda_methods: [VR]
+    metrics: [WS, BN, L2PL, L2PI]

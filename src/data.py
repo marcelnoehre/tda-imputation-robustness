@@ -5,28 +5,47 @@ from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import StandardScaler
 
 from src.constants import *
+from src.config import MANIFOLD_PARAMS
 from src.utils import numeric_target_mapping
+
+def embed(data, ambient, seed):
+    """
+    Pad the data with zero columns to `ambient` dimensions and rotate it by a random orthogonal matrix.
+    Same construction as tadasets.embed, whose rotation is drawn from the unseeded global generator.
+
+    :param np.ndarray data: The sample, shape (n, d) with d < ambient.
+    :param int ambient: The ambient dimension.
+    :param int seed: Seed of the rotation (drawn from its own stream, independent of the sample).
+
+    :return np.ndarray: The embedded data, shape (n, ambient).
+    """
+    n, d = data.shape
+    base = np.zeros((n, ambient))
+    base[:, :d] = data
+    q, _ = np.linalg.qr(np.random.default_rng([seed, 1]).random((ambient, ambient)))
+    return base @ q
+
+def _manifold(sample):
+    data = embed(sample(n=MANIFOLD_PARAMS['samples'], seed=MANIFOLD_PARAMS['seed']), MANIFOLD_PARAMS['ambient'], MANIFOLD_PARAMS['seed'])
+    return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
 
 def torus():
     """
     Generate a torus dataset.
     """
-    data = tadasets.torus(n=MANIFOLD_SAMPLES, ambient=MANIFOLD_AMBIENT, seed=MANIFOLD_SEED)
-    return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
+    return _manifold(tadasets.torus)
 
 def swiss_roll():
     """
     Generate a Swiss roll dataset.
     """
-    data = tadasets.swiss_roll(n=MANIFOLD_SAMPLES, ambient=MANIFOLD_AMBIENT, seed=MANIFOLD_SEED)
-    return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
+    return _manifold(tadasets.swiss_roll)
 
 def sphere():
     """
     Generate a sphere dataset.
     """
-    data = tadasets.sphere(n = MANIFOLD_SAMPLES, ambient=MANIFOLD_AMBIENT, seed=MANIFOLD_SEED)
-    return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
+    return _manifold(tadasets.sphere)
 
 def get_data(id):
     """
