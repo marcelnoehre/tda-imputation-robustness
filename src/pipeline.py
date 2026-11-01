@@ -20,9 +20,10 @@ from src.utils import transform_pd
 from src.constants import *
 from src.config import SEEDS, WORKERS, DIMENSIONS
 from src.compute import (
-    get_max_edge_length,
+    get_filtration_cutoff,
+    get_filtration_params,
     apply_persistent_homology,
-    apply_missingness,
+    apply_mask,
     apply_imputation,
     apply_normalize,
     apply_prepare_for_comparison,
@@ -47,12 +48,8 @@ def _compare_all(metrics, orig, imputed):
                 results[dim][metric] = METRICS[metric][FUNCTION](orig, imputed, dim)
     return results
 
-def _ph_worker(data, tda, max_edge_length):
-    return apply_persistent_homology(data, tda, max_edge_length)
-
-def _ph_imputed_worker(data, tda):
-    max_edge_length = get_max_edge_length(np.array(data), tda)
-    return apply_persistent_homology(data, tda, max_edge_length)
+def _ph_worker(data, tda, max_edge_length, params):
+    return apply_persistent_homology(data, tda, max_edge_length, **params)
 
 def _normalize_worker(pd_data, dataset_data):
     return apply_normalize(pd_data, dataset_data)
@@ -61,22 +58,27 @@ def _prepare_worker(pd_data, ct):
     return apply_prepare_for_comparison(pd_data, ct)
 
 def _missingness_worker(dataset, mt, mr, seed):
-    df = apply_missingness(dataset, mt, mr, seed)
+    df = apply_mask(dataset, mt, mr, seed)
     return pd.DataFrame(df.to_numpy(), columns=df.columns.tolist(), index=df.index)
 
 def _imputation_worker(dataset, imp, seed):
     return apply_imputation(dataset, imp, seed)
 
-def compute_mel_dict(datasets, tda_methods):
+def compute_filtration_params(datasets, tda_methods):
+    '''
+    Cutoff and parameters (KD bandwidth) of each filtration, computed from the
+    original cloud and shared by every perturbed version of that dataset.
+    Returns {key: {tda: (max_edge_length, params)}}.
+    '''
     return {
         key: {
-            tda: get_max_edge_length(np.array(dataset[DATA]), tda)
+            tda: (get_filtration_cutoff(np.array(dataset[DATA]), tda), get_filtration_params(np.array(dataset[DATA]), tda))
             for tda in tda_methods
         }
         for key, dataset in datasets.items()
     }
 
-def compute_original_persistence_intervals(datasets, tda_methods, mel_dict):
+def compute_original_persistence_intervals(datasets, tda_methods, filtration_params):
     def _iter(datasets, tda_methods):
         for key, dataset in datasets.items():
             for tda in tda_methods:
@@ -91,7 +93,7 @@ def compute_original_persistence_intervals(datasets, tda_methods, mel_dict):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_ph_worker, np.array(dataset[DATA]), tda, mel_dict[key][tda]): (key, tda)
+                executor.submit(_ph_worker, np.array(dataset[DATA]), tda, *filtration_params[key][tda]): (key, tda)
                 for key, tda, dataset in tasks
             }
             for fut in as_completed(futures):
@@ -99,7 +101,7 @@ def compute_original_persistence_intervals(datasets, tda_methods, mel_dict):
                 res[key][tda] = fut.result()
     else:
         for key, tda, dataset in tasks:
-            res[key][tda] = apply_persistent_homology(np.array(dataset[DATA]), tda, mel_dict[key][tda])
+            res[key][tda] = _ph_worker(np.array(dataset[DATA]), tda, *filtration_params[key][tda])
 
     return res
 
@@ -192,7 +194,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
                 res[seed][key][mt][mr] = fut.result()
     else:
         for seed, key, mt, mr, dataset in tasks:
-            res[seed][key][mt][mr] = apply_missingness(dataset, mt, mr, seed)
+            res[seed][key][mt][mr] = apply_mask(dataset, mt, mr, seed)
 
     # Deterministic masks are shared by all seeds, so stochastic methods are repeated on the same mask
     for seed in SEEDS[1:]:
@@ -251,7 +253,7 @@ def impute_missing_values(data, imputation_methods):
 
     return res
 
-def compute_persistence_intervals(data, tda_methods, determinism=IMPUTATION):
+def compute_persistence_intervals(data, tda_methods, filtration_params, determinism=IMPUTATION):
     def _iter(data, tda_methods):
         for seed, key_dict in data.items():
             for key, mt_dict in key_dict.items():
@@ -279,7 +281,7 @@ def compute_persistence_intervals(data, tda_methods, determinism=IMPUTATION):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_ph_imputed_worker, tda_dict, tda): (seed, key, mt, mr, imp, tda)
+                executor.submit(_ph_worker, tda_dict, tda, *filtration_params[key][tda]): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, tda_dict in tasks
             }
             for fut in as_completed(futures):
@@ -287,8 +289,7 @@ def compute_persistence_intervals(data, tda_methods, determinism=IMPUTATION):
                 res[seed][key][mt][mr][imp][tda] = fut.result()
     else:
         for seed, key, mt, mr, imp, tda, tda_dict in tasks:
-            mel = get_max_edge_length(np.array(tda_dict), tda)
-            res[seed][key][mt][mr][imp][tda] = apply_persistent_homology(tda_dict, tda, mel)
+            res[seed][key][mt][mr][imp][tda] = _ph_worker(tda_dict, tda, *filtration_params[key][tda])
 
     return res
 
@@ -456,8 +457,8 @@ def experiment(experiment, missingness_types, missing_rates, imputation_methods,
     # Original datasets
     log('Preparing original datasets...')
     start_time = time.time()
-    mel_dict = compute_mel_dict(datasets, tda_methods)
-    original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods, mel_dict)
+    filtration_params = compute_filtration_params(datasets, tda_methods)
+    original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods, filtration_params)
     normalized_original_persistence_intervals = normalize_original_persistence_intervals(original_persistence_intervals, datasets)
     comparisons = list(dict.fromkeys({WS: PD, BN: PD, L2PL: DIAGRAM, L2PI: DIAGRAM}[metric] for metric in metrics))
     original_comparable = prepare_original_data(normalized_original_persistence_intervals, comparisons)
@@ -478,7 +479,7 @@ def experiment(experiment, missingness_types, missing_rates, imputation_methods,
     # Compute persistence intervals
     log('Computing persistence intervals...')
     start_time = time.time()
-    persistence_intervals = compute_persistence_intervals(imputed_data, tda_methods)
+    persistence_intervals = compute_persistence_intervals(imputed_data, tda_methods, filtration_params)
     normalized_persistence_intervals = normalize_persistence_intervals(persistence_intervals, datasets)
     log(f'Computed persistence intervals in {time.time() - start_time:.2f} seconds')
 

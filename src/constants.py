@@ -82,10 +82,18 @@ TABCSDI = 'tabcsdi_imputation'
 OTIMPUTE = 'otimpute_imputation'
 COMPLETE_CASE = 'complete_case_analysis'
 RANDOM_SUBSAMPLE = 'random_subsample'
+RANDOM_SUBSAMPLE_70 = 'random_subsample_70'
+RANDOM_SUBSAMPLE_90 = 'random_subsample_90'
+MATCHED_JITTER = 'matched_jitter'
+FRESH_SAMPLE = 'fresh_sample'
 SHUFFLED_GROUND_TRUTH = 'shuffled_ground_truth'
 VR = 'vietoris_rips'
 DTMC = 'distance_to_a_measure_chazal'
-KD = 'kernel_distance'
+KDM = 'kernel_distance_to_measure'
+KDM_H025 = 'kernel_distance_to_measure_h0.25'
+KDM_H05 = 'kernel_distance_to_measure_h0.5'
+KDM_H2 = 'kernel_distance_to_measure_h2'
+KDM_SILVERMAN = 'kernel_distance_to_measure_silverman'
 PD = 'persistence_diagram'
 DIAGRAM = 'diagram'
 PL = 'persistence_landscape'
@@ -120,8 +128,8 @@ COLLECTIONS = {
     MISSINGNESS_TYPE: [MCAR, MAR, MNAR],
     MISSING_RATE: [5, 10, 25],
     IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
-    BASELINE_METHOD: [COMPLETE_CASE, RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH],
-    TDA_METHOD: [VR, DTMC, KD],
+    BASELINE_METHOD: [COMPLETE_CASE, RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH, RANDOM_SUBSAMPLE_70, RANDOM_SUBSAMPLE_90, MATCHED_JITTER, FRESH_SAMPLE],
+    TDA_METHOD: [VR, DTMC, KDM, KDM_H025, KDM_H05, KDM_H2, KDM_SILVERMAN],
     MANIFOLD: [SPHERE, SWISS_ROLL, TORUS],
     TIME_SERIES: [BOSTON_WEATHER, HUNGARIAN_CHICKENPOX, INDIAN_STOCK_MARKET, RMFTSA_LADATA, STOCK, TREASURY, WEATHER_IZMIR],
     REGRESSION: [CONCRETE_DATA, RED_WINE_QUALITY, WHITE_WINE_QUALITY],
@@ -187,10 +195,18 @@ LABEL: Dict[str, str] = {
     OTIMPUTE: 'OTImpute',
     COMPLETE_CASE: 'Complete-Case Analysis',
     RANDOM_SUBSAMPLE: 'Random Subsample',
+    RANDOM_SUBSAMPLE_70: 'Random Subsample (70%)',
+    RANDOM_SUBSAMPLE_90: 'Random Subsample (90%)',
+    MATCHED_JITTER: 'RMSE-Matched Jitter',
+    FRESH_SAMPLE: 'Fresh Sample',
     SHUFFLED_GROUND_TRUTH: 'Shuffled Ground Truth',
     VR: 'Vietoris-Rips Filtration',
     DTMC: r'Distance To a Measure ($k = \lceil m n \rceil,\, m = 0.05$)',
-    KD: 'Kernel Distance',
+    KDM: r'Kernel Distance to a Measure ($h$ = median distance)',
+    KDM_H025: r'Kernel Distance to a Measure ($h$ = 0.25 $\times$ median distance)',
+    KDM_H05: r'Kernel Distance to a Measure ($h$ = 0.5 $\times$ median distance)',
+    KDM_H2: r'Kernel Distance to a Measure ($h$ = 2 $\times$ median distance)',
+    KDM_SILVERMAN: r"Kernel Distance to a Measure ($h$ by Silverman's rule)",
     PD: 'Persistence Diagram',
     PL: 'Persistence Landscape',
     PI: 'Persistence Image',

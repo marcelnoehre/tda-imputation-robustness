@@ -6,14 +6,17 @@ from src.logger import log
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS, repeated
 from src.constants import *
-from src.config import WORKERS, MIN_BASELINE_POINTS
+from src.config import SEEDS, WORKERS, MIN_BASELINE_POINTS, SUBSAMPLE_FRACTIONS
 from src.compute import (
     apply_complete_case,
     apply_random_subsample,
     apply_shuffled_ground_truth,
+    apply_imputation,
+    apply_matched_jitter,
+    apply_fresh_sample,
 )
 from src.pipeline import (
-    compute_mel_dict,
+    compute_filtration_params,
     compute_original_persistence_intervals,
     normalize_original_persistence_intervals,
     prepare_original_data,
@@ -29,22 +32,32 @@ BASELINE_DETERMINISM = {
     COMPLETE_CASE: True,
     RANDOM_SUBSAMPLE: False,
     SHUFFLED_GROUND_TRUTH: False,
+    RANDOM_SUBSAMPLE_70: False,
+    RANDOM_SUBSAMPLE_90: False,
+    MATCHED_JITTER: False,
+    FRESH_SAMPLE: False,
 }
 
 def _baseline_determinism():
     return {m: {DETERMINISTIC: BASELINE_DETERMINISM[m]} for m in COLLECTIONS[BASELINE_METHOD]}
 
-def _baseline_worker(method, dataset_data, missing_df, seed):
+def _baseline_worker(method, key, mt, dataset_data, missing_df, seed):
     '''
     Apply a baseline method to a dataset with missing values, returning the
     resulting array. Used by apply_baseline_methods for parallelization.
     '''
     if method == COMPLETE_CASE:
         arr, _ = apply_complete_case(missing_df)
-    elif method == RANDOM_SUBSAMPLE:
-        arr, _ = apply_random_subsample(dataset_data, seed)
-    else:
+    elif method in SUBSAMPLE_FRACTIONS:
+        arr, _ = apply_random_subsample(dataset_data, seed, SUBSAMPLE_FRACTIONS[method])
+    elif method == SHUFFLED_GROUND_TRUTH:
         arr = apply_shuffled_ground_truth(dataset_data, missing_df, seed)
+    elif method == MATCHED_JITTER:
+        # the kNN imputation of the same mask, as cached by the imputation experiments (kNN is deterministic)
+        imputed = apply_imputation(missing_df, KNN, SEEDS[0] if MISSINGNESS[mt][DETERMINISTIC] else seed)
+        arr = apply_matched_jitter(dataset_data, missing_df, imputed, seed)
+    else:
+        arr = apply_fresh_sample(key, seed)
     return arr
 
 def apply_baseline_methods(datasets, data_missing_values, baseline_methods):
@@ -59,6 +72,8 @@ def apply_baseline_methods(datasets, data_missing_values, baseline_methods):
                 for mt, mr_dict in mt_dict.items():
                     for mr, missing_df in mr_dict.items():
                         for method in baseline_methods:
+                            if method == FRESH_SAMPLE and key not in COLLECTIONS[MANIFOLD]:
+                                continue
                             if repeated(seed, mt, BASELINE_DETERMINISM[method]):
                                 yield seed, key, mt, mr, method, missing_df
 
@@ -75,7 +90,7 @@ def apply_baseline_methods(datasets, data_missing_values, baseline_methods):
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_baseline_worker, method, np.array(datasets[key][DATA]), missing_df, seed): (seed, key, mt, mr, method)
+                executor.submit(_baseline_worker, method, key, mt, np.array(datasets[key][DATA]), missing_df, seed): (seed, key, mt, mr, method)
                 for seed, key, mt, mr, method, missing_df in tasks
             }
             for fut in as_completed(futures):
@@ -83,7 +98,7 @@ def apply_baseline_methods(datasets, data_missing_values, baseline_methods):
                 arrays[seed][key][mt][mr][method] = fut.result()
     else:
         for seed, key, mt, mr, method, missing_df in tasks:
-            arrays[seed][key][mt][mr][method] = _baseline_worker(method, np.array(datasets[key][DATA]), missing_df, seed)
+            arrays[seed][key][mt][mr][method] = _baseline_worker(method, key, mt, np.array(datasets[key][DATA]), missing_df, seed)
 
     return arrays
 
@@ -113,10 +128,11 @@ def _filter_tiny_baselines(baseline_arrays, min_points=MIN_BASELINE_POINTS):
         log(f'Skipped {dropped} baseline combination(s) with fewer than {min_points} points remaining')
     return kept
 
-def experiment_baselines(experiment, missingness_types, missing_rates, tda_methods, metrics, datasets=None):
+def experiment_baselines(experiment, missingness_types, missing_rates, tda_methods, metrics, baseline_methods, datasets=None):
     '''
-    Random-subsample / complete-case / shuffled-ground-truth baselines,
-    compared against original persistent homology the same way real
+    Reference methods (complete-case analysis, random subsamples, shuffled
+    ground truth, RMSE-matched jitter, fresh manifold samples; see
+    baseline_methods), compared against original persistent homology the same way real
     imputation methods are. Uses the IMPUTATION_METHOD column/schema so
     results can be directly concatenated with impact_missingness_types_rates
     and impact_imputation_methods for comparison.
@@ -132,8 +148,8 @@ def experiment_baselines(experiment, missingness_types, missing_rates, tda_metho
 
     log('Preparing original datasets...')
     start_time = time.time()
-    mel_dict = compute_mel_dict(datasets, tda_methods)
-    original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods, mel_dict)
+    filtration_params = compute_filtration_params(datasets, tda_methods)
+    original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods, filtration_params)
     normalized_original_persistence_intervals = normalize_original_persistence_intervals(original_persistence_intervals, datasets)
     comparisons = list(dict.fromkeys({WS: PD, BN: PD, L2PL: DIAGRAM, L2PI: DIAGRAM}[metric] for metric in metrics))
     original_comparable = prepare_original_data(normalized_original_persistence_intervals, comparisons)
@@ -146,7 +162,6 @@ def experiment_baselines(experiment, missingness_types, missing_rates, tda_metho
 
     log('Computing baseline methods...')
     start_time = time.time()
-    baseline_methods = COLLECTIONS[BASELINE_METHOD]
     baseline_arrays = apply_baseline_methods(datasets, data_missing_values, baseline_methods)
     baseline_arrays = _filter_tiny_baselines(baseline_arrays)
     log(f'Computed baseline methods in {time.time() - start_time:.2f} seconds')
@@ -154,7 +169,7 @@ def experiment_baselines(experiment, missingness_types, missing_rates, tda_metho
     log('Computing persistence intervals...')
     start_time = time.time()
     determinism = _baseline_determinism()
-    persistence_intervals = compute_persistence_intervals(baseline_arrays, tda_methods, determinism=determinism)
+    persistence_intervals = compute_persistence_intervals(baseline_arrays, tda_methods, filtration_params, determinism=determinism)
     normalized_persistence_intervals = normalize_persistence_intervals(persistence_intervals, datasets, determinism=determinism)
     log(f'Computed persistence intervals in {time.time() - start_time:.2f} seconds')
 

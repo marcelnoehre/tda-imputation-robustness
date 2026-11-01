@@ -25,8 +25,11 @@ def embed(data, ambient, seed):
     q, _ = np.linalg.qr(np.random.default_rng([seed, 1]).random((ambient, ambient)))
     return base @ q
 
+def _embedded(sample, sample_seed):
+    return embed(sample(n=MANIFOLD_PARAMS['samples'], seed=sample_seed), MANIFOLD_PARAMS['ambient'], MANIFOLD_PARAMS['seed'])
+
 def _manifold(sample):
-    data = embed(sample(n=MANIFOLD_PARAMS['samples'], seed=MANIFOLD_PARAMS['seed']), MANIFOLD_PARAMS['ambient'], MANIFOLD_PARAMS['seed'])
+    data = _embedded(sample, MANIFOLD_PARAMS['seed'])
     return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
 
 def torus():
@@ -46,6 +49,22 @@ def sphere():
     Generate a sphere dataset.
     """
     return _manifold(tadasets.sphere)
+
+MANIFOLD_SAMPLERS = {TORUS: tadasets.torus, SWISS_ROLL: tadasets.swiss_roll, SPHERE: tadasets.sphere}
+
+def fresh_sample(key, seed):
+    """
+    Draw a new sample of a synthetic manifold: same size, rotation and standardisation as the original,
+    sample seed [manifold seed, seed]. Used as the sampling-noise floor.
+
+    :param str key: The manifold key.
+    :param int seed: The seed of the new sample.
+
+    :return np.ndarray: The standardised sample.
+    """
+    sample = MANIFOLD_SAMPLERS[key]
+    scaler = StandardScaler().fit(_embedded(sample, MANIFOLD_PARAMS['seed']))
+    return scaler.transform(_embedded(sample, [MANIFOLD_PARAMS['seed'], seed]))
 
 def get_data(id):
     """

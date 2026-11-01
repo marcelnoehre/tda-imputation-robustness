@@ -1,24 +1,33 @@
 from src.cache import memory
-from src.tda import TDA, max_edge_length_for
+from src.tda import TDA, max_edge_length_for, filtration_params
 from src.normalize import normalize_by_diameter
 from src.missingness import MISSINGNESS
 from src.imputation import IMPUTATION
-from src.robustness import complete_case_analysis, random_subsample, shuffled_ground_truth
+from src.robustness import complete_case_analysis, random_subsample, shuffled_ground_truth, matched_jitter
+from src.data import fresh_sample
 from src.constants import FUNCTION, DATA, TARGET
 
 
+# Renamed from get_max_edge_length when the cutoff rule of the weighted filtrations changed (PLAN 1), so that
+# stale cache entries are not reused.
 @memory.cache
-def get_max_edge_length(data, tda):
+def get_filtration_cutoff(data, tda):
     return max_edge_length_for(data, tda)
 
 
 @memory.cache
-def apply_persistent_homology(data, tda, max_edge_length):
-    return TDA[tda][FUNCTION](data, max_edge_length)
+def apply_persistent_homology(data, tda, max_edge_length, **params):
+    return TDA[tda][FUNCTION](data, max_edge_length, **params)
 
 
+def get_filtration_params(data, tda):
+    return filtration_params(data, tda)
+
+
+# Renamed from apply_missingness when the MNAR column choice became seeded, so that the unseeded MNAR masks in
+# the cache are not reused (MCAR/MAR masks are recomputed identically, so their downstream entries still hit).
 @memory.cache
-def apply_missingness(dataset, mt, mr, seed):
+def apply_mask(dataset, mt, mr, seed):
     return MISSINGNESS[mt][FUNCTION](dataset[DATA], dataset[TARGET], mr, seed)
 
 
@@ -43,10 +52,20 @@ def apply_complete_case(missing_df):
 
 
 @memory.cache
-def apply_random_subsample(dataset_data, seed):
-    return random_subsample(dataset_data, seed)
+def apply_random_subsample(dataset_data, seed, fraction):
+    return random_subsample(dataset_data, seed, fraction)
 
 
 @memory.cache
 def apply_shuffled_ground_truth(dataset_data, missing_df, seed):
     return shuffled_ground_truth(dataset_data, missing_df, seed)
+
+
+@memory.cache
+def apply_matched_jitter(dataset_data, missing_df, imputed, seed):
+    return matched_jitter(dataset_data, missing_df, imputed, seed)
+
+
+@memory.cache
+def apply_fresh_sample(key, seed):
+    return fresh_sample(key, seed)

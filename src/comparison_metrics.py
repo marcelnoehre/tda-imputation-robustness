@@ -11,13 +11,13 @@ from src.imputation import IMPUTATION
 from src.metrics import METRICS
 from src.constants import *
 from src.config import SEEDS, WORKERS
-from src.compute import apply_missingness, apply_imputation
+from src.compute import apply_mask, apply_imputation
 
 def _compare(metric, original, imputed):
     return METRICS[metric][FUNCTION](original, imputed)
 
 def _apply_missingness(dataset, mt, mr, seed):
-    df = apply_missingness(dataset, mt, mr, seed)
+    df = apply_mask(dataset, mt, mr, seed)
     return pd.DataFrame(df.to_numpy(), columns=df.columns.tolist(), index=df.index)
 
 def _apply_imputation(dataset, imp, seed):
@@ -53,7 +53,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
                 res[seed][key][mt][mr] = fut.result()
     else:
         for seed, key, mt, mr, dataset in tasks:
-            res[seed][key][mt][mr] = apply_missingness(dataset, mt, mr, seed)
+            res[seed][key][mt][mr] = apply_mask(dataset, mt, mr, seed)
 
     # Deterministic masks are shared by all seeds, so stochastic methods are repeated on the same mask
     for seed in SEEDS[1:]:

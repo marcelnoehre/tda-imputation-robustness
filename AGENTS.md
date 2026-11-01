@@ -16,6 +16,7 @@ Code and results for the paper *The Robustness of Topological Data Analysis Unde
 | `notebooks/tmlr_figures.ipynb` | Reads `results/`, writes every results table and figure of the paper to `figures/tmlr/`, and prints the statistics quoted in the text |
 | `figures/tmlr/` | Generated output; copy into the paper's `tables/` and `figures/` |
 | `sort_results.py` | Sorts a results CSV into canonical order |
+| `tests/` | Unit tests on toy clouds (`uv run pytest`, a few seconds) |
 
 ## Experiments
 
@@ -37,6 +38,7 @@ Distances: Wasserstein, bottleneck, L² on persistence landscapes, L² on persis
 
 ```bash
 uv sync                               # environment (.venv, Python >= 3.11)
+uv run pytest                         # unit tests (filtrations, cutoffs, shared vectorisation grids)
 python main.py                        # all experiments, all datasets (takes long)
 python main.py 223 666                # only these OpenML IDs (-1/-2/-3 = torus/swiss roll/sphere)
 python main.py -e baseline            # only these experiments (names from config/experiments.yaml)

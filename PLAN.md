@@ -43,18 +43,24 @@ These affect items 3, 5 and 6 and the existing growth results, so resolve them f
 - **Target construction:** a weighted Rips filtration with Euclidean distances and weights f(x_i) = √(κ(P,P) + k(x_i,x_i) − 2κ(P,x_i)), where κ(P,x) = (1/n) Σ_j k(x_j,x). This is the Anai et al. construction used for DTM, with the DTM replaced by the kernel distance, so DTM and KD differ only in the density estimator.
 
 Tasks:
-- [ ] Add `kernel_distance_to_measure(data, h)` to `src/tda.py`, returning the weights f(x_i). Note k(x,x) = 1 for the Gaussian kernel.
-- [ ] Build the filtration. Either:
+- [x] Add `kernel_distance_to_measure(data, h)` to `src/tda.py`, returning the weights f(x_i). Note k(x,x) = 1 for the Gaussian kernel.
+  - User decision: the vertex function is **h·d_K(P,x)** (distance-like, 1-Lipschitz in the Euclidean distance like the DTM; h→∞ gives the distance to the centroid, h→0 a constant, i.e. shifted VR). Unscaled d_K ∈ [0, √2] would be small against the edge lengths (torus, h = median: 2·d_K ≤ 1.6 vs edges up to ~3). Implemented as `kernel_distance_to_measure(distances, h)`; unit tests check both limits and the 1-Lipschitz property.
+- [x] Build the filtration. Either:
   - use `gudhi.weighted_rips_complex.WeightedRipsComplex(distance_matrix, weights)` and compute persistence with GUDHI, converting to the giotto diagram format used by `transform_pd`; or
   - use giotto `WeightedRipsPersistence` with precomputed weights, if it accepts them.
 
   Check that the weight convention (radius vs. diameter, p = 2) matches `distance_to_a_measure` exactly.
-- [ ] Bandwidth: median heuristic h = median pairwise Euclidean distance (outcome-independent) as the main setting. Add a sweep h ∈ {0.25, 0.5, 1, 2} × median, plus Silverman as a documented column.
-- [ ] `max_edge_length_for(KD)`: use Euclidean distances like DTM (the weights shift filtration values; reuse the DTM handling of `effective_mel`).
-- [ ] New method keys in `constants.py` (e.g. `KDM` plus a bandwidth-variant suffix); keep the old `KD` under a renamed key (`KD_RKHS`) only if the paper keeps it as a reference column.
-- [ ] **[user]** Run `topological_metrics_filtration` (kNN, MAR, 5/10/25%) for the new KD at all bandwidths (the agent adds the call to `main.py`).
-- [ ] Notebook: Table `filtration` with the new KD; the appendix bandwidth sweep replaces or extends `kd.tex`.
-- [ ] Paper: rewrite the KD paragraph in `setup.tex` (construction plus bandwidth) and RQ6 in `results.tex`; update the `limitations.tex` sentence on bandwidth.
+  - One builder `tda.weighted_rips_complex(data, tda, cutoff, bandwidth)` (giotto `WeightedRipsPersistence`, precomputed Euclidean distances, callable vertex weights 2·f, p = 2) for DTM and every KD variant; `vertex_weights` is the only difference. giotto-ph doubles Anai et al.'s values (diameter convention), and its DTM is 2·√(Σ_kNN d² / (k+1)); our `distance_to_measure` reproduces it, so DTM through the shared builder equals giotto's own `weights='DTM'` (unit test `test_dtm_matches_giotto`).
+- [x] Bandwidth: median heuristic h = median pairwise Euclidean distance (outcome-independent) as the main setting. Add a sweep h ∈ {0.25, 0.5, 1, 2} × median, plus Silverman as a documented column.
+  - In `config/experiments.yaml` (`filtration.kernel_distance.bandwidths`). User decision: h is computed **once from the original cloud** and shared by all its perturbed versions (`tda.filtration_params`).
+- [x] `max_edge_length_for(KD)`: use Euclidean distances like DTM (the weights shift filtration values; reuse the DTM handling of `effective_mel`).
+  - Found: the old DTM rule max(VR cutoff, max k-NN distance) lies below many DTM vertex values, so **42% (torus) / 46% (sphere) of the vertices never entered** and torus/sphere had no H2 bars (real data: 0–1%). A weighted-MST rule (2.5·τ₀ of the weighted complex) was too expensive (torus DTM 34 s instead of 0.2 s; "W + VR cutoff" took 707 s for one 1000-point sphere KD diagram; a 5000-point DTM diagram ran > 40 min). User decision: cutoff = **max(VR cutoff, largest doubled vertex value)** for DTM and KD, so every vertex enters; H0/H1 bars equal those of the large cutoffs on torus/sphere, only late H2 bars are clipped, ≤ 1.5 s per 1000-point diagram. The cached cutoff function was renamed (`get_filtration_cutoff`) so that stale DTM cutoffs are not reused. **DTM results are stale** (`topological_metrics_filtration`).
+  - User decision (also affects VR): **every diagram of a dataset uses the original cloud's cutoff** (before, each imputed/baseline cloud used its own MST cutoff). Per-cloud cutoffs clip long bars at different values, so manifold BN H2 mostly measured the cutoff difference (sphere MAR 5%: 0.0173 own vs 0.0017 shared; torus 0.0072 vs 0.0029); H1/WS and real data barely changed. Also needed for d_B ≤ 2e_∞ (item 6). `compute_filtration_params` computes (cutoff, params) once per (dataset, filtration); originals keep their cache keys, **every imputed/baseline diagram is recomputed**.
+- [x] New method keys in `constants.py` (e.g. `KDM` plus a bandwidth-variant suffix); keep the old `KD` under a renamed key (`KD_RKHS`) only if the paper keeps it as a reference column.
+  - `KDM` (h = median), `KDM_H025`, `KDM_H05`, `KDM_H2`, `KDM_SILVERMAN`. User decision: the old RKHS-metric `KD` is **dropped** (code and paper). Verified: 16 unit tests (`uv run pytest`); `main.py -1 -e topological_metrics_filtration` runs all 7 filtrations on the torus in 27 s.
+- [ ] **[user]** Run `topological_metrics_filtration` (kNN, MAR, 5/10/25%) for the new KD at all bandwidths (the agent adds the call to `main.py`). (In config; see "Runs needed".)
+- [ ] Notebook (runs): Table `filtration` with the new KD; the appendix bandwidth sweep replaces or extends `kd.tex`.
+- [ ] Paper: rewrite the KD paragraph in `setup.tex` (construction plus bandwidth) and RQ6 in `results.tex`; update the `limitations.tex` sentence on bandwidth. (setup text done; RQ6/limitations need the runs, see "Paper changes")
 - **Done when:** DTM and KD share one code path apart from the weight function (unit test: on a toy cloud, both run through the same filtration builder), and Table `filtration` reports median-heuristic KD with the sweep in the appendix.
 
 ---
@@ -78,16 +84,16 @@ Tasks:
 
 | Item | Current implementation | Action |
 |------|------------------------|--------|
-| PH on 3.5k–5k points | No point subsampling. VR via giotto/ripser with `collapse_edges=True` and `max_edge_length` = 2.5 × the longest MST edge of a 500-point subsample (seed 42) of the original (`_max_edge_length`) | State it. Check how giotto treats essential bars (expected: deaths set to `max_edge_length`); state whether they are clipped before WS/BN |
+| PH on 3.5k–5k points | No point subsampling. VR via giotto/ripser with `collapse_edges=True` and `max_edge_length` = 2.5 × the longest MST edge of a 500-point subsample (seed 42) of the original (`_max_edge_length`) | State it. Check how giotto treats essential bars (expected: deaths set to `max_edge_length`); state whether they are clipped before WS/BN. **Checked:** giotto (`infinity_values=None`) sets the death of every feature alive at the cutoff to the cutoff, and `reduced_homology=True` drops the one infinite H0 bar; WS/BN see the clipped bars. **Fixed (item 1 decision):** imputed/baseline clouds used their *own* cutoff; now all use the original's. DTM/KD cutoff = max(VR cutoff, largest vertex value) |
 | Diagram scaling | Births/deaths divided by the diameter of the original cloud (`normalize.py`) | State it (it matters for item 6) |
-| Wasserstein | `persim.wasserstein`: optimal matching, sum of L∞ costs (p = 1, q = ∞) | Verify, then state p and the ground metric |
-| PI | giotto `PersistenceImage` defaults (`sigma=0.1`, `n_bins=100`, `weight_function=None`), fitted per diagram (see 0.2) | Fix 0.2, then state σ, resolution and weight |
+| Wasserstein | `persim.wasserstein`: optimal matching, sum of L∞ costs (p = 1, q = ∞) | Verify, then state p and the ground metric. **Verified: p = 1 with the Euclidean ground metric (q = 2)**, diagonal cost (d − b)/√2, non-finite deaths ignored. BN (GUDHI) uses q = ∞. `ph.tex` updated (item 6) |
+| PI | giotto `PersistenceImage` defaults (`sigma=0.1`, `n_bins=100`, `weight_function=None`), fitted per diagram (see 0.2) | Fix 0.2, then state σ, resolution and weight. Grid now fitted on the original; points outside it are clipped onto its border; images are divided by the pixel area. σ is in filtration units and much wider than the grid (see Questions) |
 | PL | giotto `PersistenceLandscape` defaults (`n_layers=1`, `n_bins=100`), fitted per diagram (see 0.2) | Fix 0.2, then state layers and resolution |
-| DTM | k = ⌈0.05 n⌉ neighbours, p = 2, giotto `WeightedRipsPersistence(weights='DTM')` | State it |
+| DTM | k = ⌈0.05 n⌉ neighbours, p = 2, giotto `WeightedRipsPersistence(weights='DTM')` | State it. Now our own weights through the shared builder (identical to giotto's 'DTM'): f = √(Σ_kNN d² / (k+1)) (r = 2, the point itself counted in the mass), vertex values doubled (diameter convention), p = 2 |
 | MCAR | Random half of the columns (`random.seed(seed)`); mdatagen `mMCAR` with the rate scaled by d/(d/2), so the overall rate equals MR | State it |
-| MAR | mdatagen `mMAR(n_xmiss=d//2).correlated(MR)`, no seed (deterministic) | Verify in mdatagen 0.2.0 which columns are masked, which drive the mechanism, and whether MR is overall or per column |
-| MNAR | mdatagen `mMNAR(n_xmiss=d//2).random(MR, deterministic=True)` | Same verification |
-| Paired design | Masks are computed once per (seed, dataset, mechanism, rate) and shared by all imputers and baselines (`introduce_missingness`) | State it |
+| MAR | mdatagen `mMAR(n_xmiss=d//2).correlated(MR)`, no seed (deterministic) | Verify in mdatagen 0.2.0 which columns are masked, which drive the mechanism, and whether MR is overall or per column. **Verified:** features are paired by correlation; in each pair one feature is masked in the rows where its partner has its lowest 2·MR values (1.5·MR in a triple), so the overall rate is exactly MR and the masked column rate 2·MR. Deterministic (reproducible, independent of global RNG state) |
+| MNAR | mdatagen `mMNAR(n_xmiss=d//2).random(MR, deterministic=True)` | Same verification. **Verified:** d/2 features are drawn with `np.random.choice` from the **unseeded global RNG**; each is masked at its own lowest n·d·MR/(d/2) values (self-masking), overall rate exactly MR. `deterministic=True` refers to self-masking, not to the RNG. **Fixed (user decision):** the column choice is seeded with the run seed (global state restored afterwards), so MNAR is stochastic like MCAR (10 masks). The cached mask function was renamed (`apply_mask`) so the unseeded masks are not reused; MCAR/MAR masks recompute identically. **All MNAR results are stale** |
+| Paired design | Masks are computed once per (seed, dataset, mechanism, rate) and shared by all imputers and baselines (`introduce_missingness`) | State it. Since 0.3, the deterministic MAR mask is shared by all seeds |
 | Standardisation | `StandardScaler` on the complete data **before** masking (`data.py::preprocess`): a leak | Preferred: standardise on observed entries after masking and evaluate in the original scale. Otherwise state the leak and argue it is negligible (z-scoring is a per-column affine map) |
 | kNN | `KNNImputer(n_neighbors=min(⌊√n⌋, n/2))` | State it |
 | RF | `IterativeImputer(estimator=RandomForestRegressor(n_estimators=30, max_depth=15))`, default `max_iter=10`; not the missForest port | State it; adjust "missForest" in `imputers.tex` |
@@ -106,13 +112,16 @@ Tasks:
 ## 3. Noise-floor confound
 
 - **Now:** the noise floor is an 80% random subsample (`robustness.py::random_subsample`, `SUBSAMPLE_FRACTION = 0.8`). It changes the cardinality, which mainly moves H0 and the PI distances (see RQ1).
-- [ ] **RMSE-matched jitter** (`robustness.py::matched_jitter`): perturb only the masked entries with N(0, σ²), where σ is the masked-entry kNN RMSE at the same (dataset, mechanism, rate, seed). Requires 0.1. The ratio d_topo(imputer)/d_topo(jitter) shows whether imputation error is topologically more or less harmful than unstructured error of the same size.
+- [x] **RMSE-matched jitter** (`robustness.py::matched_jitter`): perturb only the masked entries with N(0, σ²), where σ is the masked-entry kNN RMSE at the same (dataset, mechanism, rate, seed). Requires 0.1. The ratio d_topo(imputer)/d_topo(jitter) shows whether imputation error is topologically more or less harmful than unstructured error of the same size.
   - Scope: kNN, VR, MAR, 13 rates, no new imputations (reuse the cached kNN output for σ).
   - Add it as a baseline method in `robustness_pipeline.py` (needs access to the kNN imputation of the same mask).
-- [ ] **Fresh sample** (manifolds only): resample n points with a different seed (same rotation) as the true sampling-noise floor.
-- [ ] **Subsample at 70/80/90%:** parametrise `random_subsample` by fraction. Report MR* and the ordering in Table `baseline` for each fraction.
-- [ ] **[user]** Run the extended `experiment_baselines` (jitter, fresh sample, 70/80/90% subsample) once the agent has added the calls to `main.py`.
-- [ ] Notebook: add jitter and fresh-sample columns to Table `baseline`, or a new table. Check that MR* and the Table `baseline` ordering hold; if not, rewrite the RQ1 claims against the matched reference.
+  - `MATCHED_JITTER`: σ = masked-entry RMSE of the kNN imputation of the same mask, read through the cached `apply_imputation` (no new imputations once `topological_metrics_mr` has run), noise seeded per run seed.
+- [x] **Fresh sample** (manifolds only): resample n points with a different seed (same rotation) as the true sampling-noise floor.
+  - `data.fresh_sample(key, seed)`: sample seed [42, seed], same rotation, scaled with the original's `StandardScaler`; skipped for real datasets.
+- [x] **Subsample at 70/80/90%:** parametrise `random_subsample` by fraction. Report MR* and the ordering in Table `baseline` for each fraction.
+  - `RANDOM_SUBSAMPLE` stays the 80% key; `RANDOM_SUBSAMPLE_70/90` added (`baselines.subsample_fractions` in the config). New experiment `baseline_reference` (MAR, 13 rates, VR) → `results/baseline_reference_results.csv`; `experiment_baselines` now takes `baseline_methods`. Verified: smoke runs (torus + concrete, MCAR/MAR 10%, 2 seeds, WORKERS 1 and 4): identical values in serial and parallel mode, fresh sample only on manifolds.
+- [ ] **[user]** Run the extended `experiment_baselines` (jitter, fresh sample, 70/80/90% subsample) once the agent has added the calls to `main.py`. (See "Runs needed".)
+- [ ] Notebook (runs): add jitter and fresh-sample columns to Table `baseline`, or a new table. Check that MR* and the Table `baseline` ordering hold; if not, rewrite the RQ1 claims against the matched reference.
 - **Done when:** the RQ1 statements are tied to a same-cardinality reference and the subsample sensitivity is reported.
 
 ---
@@ -121,7 +130,8 @@ Tasks:
 
 - **Now:** baselines (SGT, RS, CCA) exist only for VR, so Table `filtration` reports only β (stability), with no sensitivity.
 - [ ] **[user]** Run `experiment_baselines('baseline_filtration', [MAR], [5, 10, 25], [DTMC, KD_new], …)`. The function already takes `tda_methods`; the same masks give a paired design with Table `filtration`.
-- [ ] Notebook: add ρ = d_topo/d_SGT and d_topo/d_RS next to β in Table `filtration` for each filtration.
+  - Added to the config as `baseline_filtration` (DTM, KDM; RS and SGT; 10 seeds) → `results/baseline_filtration_results.csv`; smoke-tested on the torus (18 s). VR's SGT/RS at 5/10/25% come from `baseline`.
+- [ ] Notebook (runs): add ρ = d_topo/d_SGT and d_topo/d_RS next to β in Table `filtration` for each filtration.
 - [ ] Paper: present Finding 8 as a stability–sensitivity pair. If DTM's ρ is close to 1, say that its lower β partly reflects smoothing.
 - Depends on item 1 (KD construction).
 
@@ -145,13 +155,16 @@ Tasks:
 ## 6. Theory and the max-displacement error
 
 - **Now:** `ph.tex` states function-based stability (d_W ≤ C_p ‖f − g‖_∞). Finding 3 explains BN/PL vs WS/PI only by max-type vs sum-type aggregation.
-- [ ] `ph.tex`: replace this with Rips stability for point clouds (Chazal, de Silva & Oudot 2014). With the identity correspondence between X and X̂, |d(x_i, x_j) − d(x̂_i, x̂_j)| ≤ 2e_∞, so d_B(D(X), D(X̂)) ≤ 2 d_GH(X, X̂) ≤ 2e_∞ under the diameter (edge-length) convention used by ripser/giotto. State the convention. Our diagrams are divided by diam(X) (`normalize.py`), so the bound in our units is 2e_∞/diam(X).
-- [ ] Fix the Wasserstein statement: the stability constants depend on the space (number of points, dimension), not only on p. Diagonal matching costs (d − b)/2 under the L∞ ground metric.
-- [ ] Compute e_∞ = max_i ‖x_i − x̂_i‖₂ for every imputed cloud. Add it as a comparison metric (`MAXDISP` in `metrics.py` and `comparison_metrics`) on kNN, 3 mechanisms and 13 rates.
+- [x] `ph.tex`: replace this with Rips stability for point clouds (Chazal, de Silva & Oudot 2014). With the identity correspondence between X and X̂, |d(x_i, x_j) − d(x̂_i, x̂_j)| ≤ 2e_∞, so d_B(D(X), D(X̂)) ≤ 2 d_GH(X, X̂) ≤ 2e_∞ under the diameter (edge-length) convention used by ripser/giotto. State the convention. Our diagrams are divided by diam(X) (`normalize.py`), so the bound in our units is 2e_∞/diam(X).
+  - Done in the paper, with `Chazal2014` added to `main.bib`; compiles. Also states the equivalent argument (both filtrations live on the same full simplex, values differ by ≤ 2e_∞). The bound needs a common cutoff, which is now the case (item 1 decision).
+- [x] Fix the Wasserstein statement: the stability constants depend on the space (number of points, dimension), not only on p. Diagonal matching costs (d − b)/2 under the L∞ ground metric.
+  - Verified the code: `persim.wasserstein` is **W₁ with the Euclidean ground metric** (q = 2, diagonal cost (d − b)/√2), whereas `ph.tex` defined W_p with ‖·‖_∞. `ph.tex` now defines W_p with a ground metric q, states both diagonal costs, and says \WS = W₁ with q = 2. Stability paragraph cites Skraba & Turner and Cohen-Steiner et al. 2010 for the space-dependent constants; the landscape sentence now uses ‖λ − λ'‖_∞ ≤ d_B (Bubenik).
+- [x] Compute e_∞ = max_i ‖x_i − x̂_i‖₂ for every imputed cloud. Add it as a comparison metric (`MAXDISP` in `metrics.py` and `comparison_metrics`) on kNN, 3 mechanisms and 13 rates.
+  - `metrics.compute_max_displacement`, key `MAXDISP`, in the `comparison_metrics` experiment of the config. Verified on a hand example (5.0) and a smoke run (torus kNN 10%: MCAR 0.53, MAR 2.47). First look: 2e_∞/diam is far from tight (0.07–1.0 vs BN ≤ 0.045 on torus/sphere/concrete/treasury).
 - [ ] **[user]** Run `comparison_metrics` with `MAXDISP`; it is cheap, since the imputations are cached. Combine this with the 0.1 re-run.
-- [ ] Notebook: tightness τ = d_B / (2e_∞ / diam X), shown as a distribution over datasets and rates. Account for `max_edge_length` truncation and clipped essential bars, which can break the bound in edge cases, and report any violations.
-- [ ] Add e_∞ (and β_e∞) to Table `growth` and Figure `growth_by_family` as the theory-relevant reference next to RMSE (over all entries, see 0.1).
-- [ ] Rewrite Finding 3 as a claim in the form "BN/PL track e_∞ with elasticity …, whereas WS/PI track RMSE", using within-dataset Δβ against both references.
+- [ ] Notebook (runs): tightness τ = d_B / (2e_∞ / diam X), shown as a distribution over datasets and rates. Account for `max_edge_length` truncation and clipped essential bars, which can break the bound in edge cases, and report any violations.
+- [ ] (runs) Add e_∞ (and β_e∞) to Table `growth` and Figure `growth_by_family` as the theory-relevant reference next to RMSE (over all entries, see 0.1).
+- [ ] (runs) Rewrite Finding 3 as a claim in the form "BN/PL track e_∞ with elasticity …, whereas WS/PI track RMSE", using within-dataset Δβ against both references.
 
 ---
 
@@ -163,7 +176,15 @@ Running list of every change the paper (`paper/robustness_tda`) needs, with the 
 - [ ] **0.2** (runs) all PL/PI numbers in RQ1–RQ6, Tables `baseline`, `imputation`, `growth`, `mechanism`, `filtration` and Figures `growth_by_family`, `pairwise_imputers`, `redundancy_retention` change once PL/PI are recomputed on a shared grid. Re-check every PI claim (e.g. RQ1 "PI ratios 0.23/0.36", "PI exceeds the noise floor only at 10–30%").
 - [ ] **2.1** `tables/kd.tex`: manifold rows change with the seeded rotation (superseded by the item 1 rewrite of `kd.tex`; copy from `figures/tmlr/` once item 1 is done).
 - [ ] **2.1/2.3** reproducibility paragraph: mention `config/experiments.yaml` (full grid + hyperparameters), the pinned environment (`uv.lock`, `requirements.txt`), and that every random component, incl. the manifold rotation, is seeded.
-- [x] **0.3** `setup.tex`: the seeds sentence now says which settings are repeated over 10 seeds and that MAR/MNAR masks are shared (with a `% TODO(PLAN 0.3)` until the re-runs are in). Check `limitations.tex` ("10 seeds for each non-deterministic method") and the compute statement once the runs are done.
+- [x] **1** `setup.tex`: DTM/KD paragraph rewritten (weighted Rips of Anai et al., f = DTM or h·d_K, Gaussian kernel, median-heuristic bandwidth with the sweep in the appendix, cutoff rule, cutoff and bandwidth shared from the original). Leaves `% TODO(PLAN 1)` for the appendix label.
+- [ ] **1** (runs) `results.tex` RQ6 (Finding 8 and the KD paragraph: the Silverman/√2 degeneracy argument no longer applies), `limitations.tex` (bandwidth sentence, "between Vietoris–Rips and the kernel distance"), abstract ("DTM significantly outperforms VR"), appendix `kd.tex` → bandwidth-sweep table. DTM numbers change too (all vertices now enter; shared cutoff).
+- [ ] **1/4** (runs) Finding 8 as a stability–sensitivity pair (ρ next to β in Table `filtration`).
+- [ ] **2.3** (runs) everything that uses MNAR: Table `mechanism`, RQ5 text ("MNAR/MCAR ratio 0.78–1.26", "SGT lower under MNAR for 14–15 of 15"), RQ1 mechanism sentence, Table `baseline` if it uses MNAR. MNAR is now averaged over 10 masks.
+- [ ] **shared cutoff** (runs) all imputed/baseline diagrams change; manifold BN H2 values drop most (they mostly measured the cutoff difference). Re-check every BN H2 statement, e.g. RQ3 "BN H2 Δβ" and Table `growth`.
+- [ ] **3** (runs) RQ1 / Finding 1 against the same-cardinality references (jitter, fresh sample) and the 70/90% subsample sensitivity; `limitations.tex` "noise floor estimated from an 80% subsample".
+- [x] **6** `ph.tex`: Rips stability d_B ≤ 2e_∞ (diameter convention; 2e_∞/diam X in our units), space-dependent Wasserstein constants, W_p defined with a ground metric q, diagonal costs (d − b)/2 (q = ∞) and (d − b)/√2 (q = 2), \WS = W₁ with q = 2, landscape bound ‖λ − λ'‖_∞ ≤ d_B. `Chazal2014` added to `main.bib`. Paper compiles.
+- [ ] **6** (runs) Finding 3 in terms of e_∞ vs RMSE; e_∞ in Table `growth` and Figure `growth_by_family`; tightness τ = d_B/(2e_∞/diam X) (appendix or text).
+- [x] **0.3** `setup.tex`: the seeds sentence now says which settings are repeated over 10 seeds and that the MAR mask is shared (MNAR is stochastic since the 2.3 fix) (with a `% TODO(PLAN 0.3)` until the re-runs are in). Check `limitations.tex` ("10 seeds for each non-deterministic method") and the compute statement once the runs are done.
 - [x] **0.1** `results.tex` RQ3: "MAE naturally has a steeper growth rate than RMSE ($\beta = 1.18$ vs.\ 0.65)": explain it, since over all entries MAE scales with MR and RMSE with $\sqrt{\MR}$ for a fixed per-cell error.
 
 ## Waiting for user
@@ -174,8 +195,15 @@ Items here are blocked on the user. Agents add to this section (see `CLAUDE.md`)
 - **(0.2 / 2.3) PI bandwidth.** giotto's `sigma=0.1` is in filtration units, but the normalised diagrams span ~0.003 (H0), ~0.025 (H1) and ~0.08 (H2). σ is therefore 4–400× the grid extent, and the image is one broad blob (torus: min/max pixel 0.14–0.77; correlation of original and imputed image 0.92–1.00). PI then mostly measures the difference in feature counts, which explains its cardinality sensitivity in RQ1. Options: keep σ = 0.1 and state it; or set σ relative to the grid (e.g. σ = 0.01 → H1 correlation 0.99, H2 0.55). Decide before the PL/PI re-run.
 
 ### Runs needed
-Exact `main.py` calls in the order they should run, with the result files they write.
-- (none yet)
+Exact `main.py` calls in the order they should run, with the result files they write. Set `runtime.workers` in `config/experiments.yaml` first. Because of 0.2 (shared PL/PI grid), 0.3 (10 seeds), the shared original cutoff (item 1) and the seeded MNAR (2.3), **every result file must be regenerated**; the original diagrams and the MCAR/MAR imputations stay cached. Decide the PI σ question first (or accept that PI columns are recomputed later; diagrams are cached, so that is only the distance step).
+1. `python main.py -e comparison_metrics` → `results/comparison_metrics_results.csv` (RMSE, MAE, MAXDISP; kNN; 3 mechanisms × 13 rates; 10 seeds for MCAR/MNAR). Cheap; also caches the kNN imputations that `baseline_reference` needs.
+2. `python main.py -e topological_metrics_mr` → `results/topological_metrics_mr_results.csv`.
+3. `python main.py -e baseline` → `results/baseline_results.csv`.
+4. `python main.py -e baseline_reference` → `results/baseline_reference_results.csv` (RS 70/90%, matched jitter, fresh sample; MAR, 13 rates). Needs step 1.
+5. `python main.py -e topological_metrics_filtration` → `results/topological_metrics_filtration_results.csv` (VR, DTM, KDM + 4 bandwidth variants).
+6. `python main.py -e baseline_filtration` → `results/baseline_filtration_results.csv` (RS/SGT for DTM and KDM; MAR 5/10/25%).
+7. `python main.py -e topological_metrics` → `results/topological_metrics_results.csv` (all 9 imputers; RF/MICE/GAIN/TabCSDI/OT now 10 seeds; the most expensive run).
+(`python main.py` without `-e` runs all of them in config order.) Item 5's synthetic sweep will add its own run.
 
 ## Order and dependencies
 

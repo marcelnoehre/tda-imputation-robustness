@@ -10,6 +10,7 @@ from mdatagen.multivariate.mMNAR import mMNAR
 from src.constants import *
 from src.config import SEEDS, N_JOBS, MISSING_FEATURE_FRACTION
 import random
+import numpy as np
 
 def _n_missing_features(df):
     return int(df.shape[1] * MISSING_FEATURE_FRACTION)
@@ -34,13 +35,19 @@ def multivariat_mar(df, target, missing_rate):
         n_Threads=N_JOBS
     ).correlated(missing_rate)
 
-def multivariat_mnar(df, target, missing_rate):
-    return mMNAR(
-        X=df,
-        y=target,
-        n_xmiss=_n_missing_features(df),
-        n_Threads=N_JOBS
-    ).random(missing_rate, deterministic=True).drop(columns=[TARGET])
+def multivariat_mnar(df, target, missing_rate, seed):
+    # mdatagen draws the masked columns from the global NumPy generator; seed it for this call only
+    state = np.random.get_state()
+    np.random.seed(seed)
+    try:
+        return mMNAR(
+            X=df,
+            y=target,
+            n_xmiss=_n_missing_features(df),
+            n_Threads=N_JOBS
+        ).random(missing_rate, deterministic=True).drop(columns=[TARGET])
+    finally:
+        np.random.set_state(state)
 
 def repeated(seed, mt, method_deterministic):
     """A (mechanism, method) pair runs for every seed as soon as either of them is stochastic.
@@ -50,5 +57,5 @@ def repeated(seed, mt, method_deterministic):
 MISSINGNESS = {
     MCAR: {FUNCTION: lambda df, target, missing_rate, seed: multivariat_mcar(df, target, missing_rate, seed), DETERMINISTIC: False},
     MAR: {FUNCTION: lambda df, target, missing_rate, _: multivariat_mar(df, target, missing_rate), DETERMINISTIC: True},
-    MNAR: {FUNCTION: lambda df, target, missing_rate, _: multivariat_mnar(df, target, missing_rate), DETERMINISTIC: True}
+    MNAR: {FUNCTION: lambda df, target, missing_rate, seed: multivariat_mnar(df, target, missing_rate, seed), DETERMINISTIC: False}
 }

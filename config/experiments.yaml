@@ -67,12 +67,20 @@ imputation:
 filtration:
   homology_dimensions: [0, 1, 2]
   max_edge_length:
-    mst_scale_factor: 2.5      # cutoff = 2.5 * longest MST edge
+    mst_scale_factor: 2.5      # cutoff = 2.5 * longest MST edge of the filtration values (at least the largest vertex value)
     subsample: 500             # MST computed on a random subsample of this size
     subsample_seed: 42
+  weighted_rips:               # DTM and kernel distance (Anai et al.); vertex values are doubled like VR edges
+    p: 2                       # vertex and edge values combine as radii (t^p - f^p)^(1/p)
   dtm:
     m: 0.05                    # k = ceil(m * n) nearest neighbours
-    p: 2
+  kernel_distance:             # Gaussian kernel; vertex function h * d_K(P, x)
+    bandwidths:                # h as a multiple of the median pairwise distance of the cloud, or Silverman's rule
+      KDM: 1.0
+      KDM_H025: 0.25
+      KDM_H05: 0.5
+      KDM_H2: 2.0
+      KDM_SILVERMAN: silverman # h = (n (d + 2) / 4)^(-1 / (d + 4))
 
 vectorization:
   landscape:
@@ -83,8 +91,13 @@ vectorization:
     n_bins: 100
 
 baselines:
-  subsample_fraction: 0.8
+  subsample_fractions:         # random subsample (RS) of the clean data
+    RANDOM_SUBSAMPLE: 0.8
+    RANDOM_SUBSAMPLE_70: 0.7
+    RANDOM_SUBSAMPLE_90: 0.9
   min_points: 10
+  # MATCHED_JITTER: N(0, sigma^2) on the masked entries, sigma = masked-entry kNN RMSE of the same mask
+  # FRESH_SAMPLE: new sample of a synthetic manifold (sample seed [manifold seed, seed], same rotation and scaling)
 
 # One entry per result file results/<name>_results.csv; run in this order by main.py.
 experiments:
@@ -113,7 +126,7 @@ experiments:
     missingness_types: [MAR]
     missing_rates: main
     imputation_methods: [KNN]
-    tda_methods: [VR, DTMC, KD]
+    tda_methods: [VR, DTMC, KDM, KDM_H025, KDM_H05, KDM_H2, KDM_SILVERMAN]
     metrics: [WS, BN, L2PL, L2PI]
   baseline:
     driver: baseline
@@ -121,3 +134,18 @@ experiments:
     missing_rates: sweep
     tda_methods: [VR]
     metrics: [WS, BN, L2PL, L2PI]
+    baseline_methods: [COMPLETE_CASE, RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH]
+  baseline_reference:
+    driver: baseline
+    missingness_types: [MAR]
+    missing_rates: sweep
+    tda_methods: [VR]
+    metrics: [WS, BN, L2PL, L2PI]
+    baseline_methods: [RANDOM_SUBSAMPLE_70, RANDOM_SUBSAMPLE_90, MATCHED_JITTER, FRESH_SAMPLE]
+  baseline_filtration:
+    driver: baseline
+    missingness_types: [MAR]
+    missing_rates: main
+    tda_methods: [DTMC, KDM]
+    metrics: [WS, BN, L2PL, L2PI]
+    baseline_methods: [RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH]
