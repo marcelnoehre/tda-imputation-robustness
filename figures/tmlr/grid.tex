@@ -1,0 +1,29 @@
+\begin{table}[h]
+    \centering
+    \caption{Experimental grid. Levels of each factor and the research questions whose experiments use them; generated from the experiment configuration.}
+    \label{tab:grid}
+    \small
+    \begin{tabular}{l p{0.62\linewidth} l}
+        \toprule
+        Factor & Levels & Used in \\
+        \midrule
+        Datasets & 18 study datasets (Table~\ref{tab:datasets}) & RQ1--RQ6 \\
+         & 27 synthetic variants (redundancy, ambient noise, nonlinear embedding) & RQ4 \\
+        Mechanisms & MAR & RQ1--RQ6 \\
+         & MCAR, MNAR & RQ1, RQ3--RQ5 \\
+        Missing rates & 13 rates, 1--40\% & RQ1, RQ3--RQ5 \\
+         & 5, 10, 25\% & RQ2, RQ6 \\
+        Imputers & $k$NN & RQ2--RQ6 \\
+         & Constant, Mean, Median, RF, MICE, GAIN, TabCSDI, OT-Impute & RQ2 \\
+        Filtrations & VR & RQ1--RQ6 \\
+         & DTM ($m = 0.05$), KD ($h = 1 \times$ median), KD ($h = 0.25 \times$ median), KD ($h = 0.5 \times$ median), KD ($h = 2 \times$ median), KD ($h$ = Silverman) & RQ6 \\
+        Measures & \WS, \BN, \PL, \PI & RQ1--RQ6 \\
+         & RMSE, MAE, $e_\infty$ & RQ3, RQ5 \\
+        References & \RS\ (80\%), \SGT & RQ1, RQ3--RQ6 \\
+         & \CCA & RQ1, RQ3--RQ5 \\
+         & \RS\ (70\%), \RS\ (90\%), matched jitter, fresh sample & RQ1 \\
+        Dimensions & \Hd{0}, \Hd{1}, \Hd{2} & RQ1--RQ6 \\
+        Seeds & 10 for every setting with a stochastic component (MCAR and MNAR masks, stochastic imputers, references) & RQ1--RQ6 \\
+        \bottomrule
+    \end{tabular}
+\end{table}

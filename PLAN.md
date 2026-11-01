@@ -78,7 +78,8 @@ Tasks:
 - [ ] Zenodo (deferred to step 7, once the grid is final): archive original and imputed diagrams (from `.cache/`, exported to a documented HDF5/NPZ layout), all `results/*.csv`, and the config. Add the DOI to `README.md` and the paper.
 
 ### 2.2 Table "Experimental grid" (paper, appendix or setup)
-- [ ] Rows: datasets, mechanisms, rates, imputers, filtrations, measures, dimensions, references, seeds. Columns: levels, and which RQ/table uses them. Generate it from `config/experiments.yaml` in the notebook, so it can't drift from the code.
+- [x] Rows: datasets, mechanisms, rates, imputers, filtrations, measures, dimensions, references, seeds. Columns: levels, and which RQ/table uses them. Generate it from `config/experiments.yaml` in the notebook, so it can't drift from the code.
+  - New notebook section "experimental grid" writes `figures/tmlr/grid.tex` from `src/config.py` (levels grouped by the RQs of the experiments using them; experiment → RQ map `USED_IN` in the notebook). Copied to the paper (`tables/grid.tex`, new appendix subsection, referenced from `setup.tex`); paper compiles. Full notebook re-run: all other tables unchanged.
 
 ### 2.3 State explicitly in the paper (current values from the code; verify the marked ones)
 
@@ -140,13 +141,15 @@ Tasks:
 ## 5. Non-degenerate synthetic condition
 
 - **Now (verified):** `tadasets.{torus,sphere,swiss_roll}(n=1000, ambient=20, seed=42)` pads the 3-d sample to 20 columns and multiplies by Q from the QR decomposition of an **unseeded** uniform 20×20 matrix. This is equivalent to X = S Qᵀ with Q ∈ ℝ^{20×3} orthonormal (the first three rows of the rotation). `preprocess` then z-scores each column. Rank 3 means a leave-one-out R² of 1.
-- [ ] Document this embedding in `setup.tex` (including the z-scoring after rotation).
-- [ ] Add a generator `src/data.py::synthetic(manifold, m_noise, sigma, embedding, seed)`, seeded throughout:
+- [x] Document this embedding in `setup.tex` (including the z-scoring after rotation).
+  - Done (X = S Qᵀ, Q ∈ ℝ^{20×3} orthonormal, seeded rotation, rank 3, z-scoring after the rotation).
+- [x] Add a generator `src/data.py::synthetic(manifold, m_noise, sigma, embedding, seed)`, seeded throughout:
   - **Redundancy sweep:** 3 intrinsic coordinates plus linear mixtures in 20 − m columns, and m ∈ {0, 4, 8, 12, 16} columns of i.i.d. noise. Report the realised mean leave-one-out R² for each setting.
   - **Ambient-noise sweep:** X + σZ with σ ∈ {0, 0.05, 0.1, 0.2} × the manifold diameter.
   - Optional: a nonlinear embedding (a random 2-layer tanh network from ℝ³ to ℝ²⁰, seeded).
-- [ ] **[user]** Run kNN/VR/MAR at 13 rates on every variant, plus the SGT/RS baselines (ρ needs SGT).
-- [ ] Notebook: figure of ρ against R² across the sweep, overlaid on the 18 study datasets. Fit within the sweep (it is the controlled test).
+  - Implemented with separate seeded streams for sample, rotation, noise columns, ambient noise and the tanh weights; `synthetic(m)` with defaults is bit-identical to the study manifold (shares its cache). Sweep in the config (`data.synthetic_sweep`): m ∈ {0, 4, 8, 12, 16}, σ ∈ {0.05, 0.1, 0.2} × diameter of the 3-d sample, tanh embedding; 27 variants (keys like `torus_noise8`, `sphere_sigma0.1`, `swiss_roll_tanh`). Realised mean LOO R²: noise columns 1.00 / 0.80 / 0.60 / 0.41 / 0.22; σ = 0.05/0.1/0.2: 0.60–0.70 / 0.30–0.42 / 0.09–0.15; tanh 1.00 (still linearly predictable, so it tests nonlinearity, not redundancy). Experiments `synthetic_topological` (kNN, VR, MAR, 13 rates) and `synthetic_baseline` (RS, SGT; 10 seeds); `main.py` runs them with their generated datasets (skipped when dataset IDs are given unless named with `-e`). Smoke-tested on two variants at 10%: runs; the 40 RS/SGT diagrams on full-rank noisy clouds took ~12 min under CPU contention, so expect this run to take hours.
+- [ ] **[user]** Run kNN/VR/MAR at 13 rates on every variant, plus the SGT/RS baselines (ρ needs SGT). (See "Runs needed".)
+- [ ] Notebook (runs): figure of ρ against R² across the sweep, overlaid on the 18 study datasets. Fit within the sweep (it is the controlled test).
 - [ ] Paper: Finding 6 gets the controlled test; the 15-point correlation becomes supporting evidence.
 - Cost: 3 manifolds × (5 + 4 + 1) variants × 3 mechanisms or MAR only × 13 rates, kNN only, n = 1000, so a small run compared with the main grid.
 
@@ -175,6 +178,9 @@ Running list of every change the paper (`paper/robustness_tda`) needs, with the 
 - [x] **0.1** `setup.tex`: "computed between $X$ and $\widehat{X}$ on the masked entries" is wrong. RMSE/MAE are computed over all $n \times d$ entries (observed ones contribute zero), i.e. $\lVert X - \widehat{X} \rVert_F / \sqrt{nd}$, the total perturbation, matching the whole-diagram topological distances. Mention RMSE$_\text{all}$ = $\sqrt{\MR}\,$RMSE$_\text{masked}$.
 - [ ] **0.2** (runs) all PL/PI numbers in RQ1–RQ6, Tables `baseline`, `imputation`, `growth`, `mechanism`, `filtration` and Figures `growth_by_family`, `pairwise_imputers`, `redundancy_retention` change once PL/PI are recomputed on a shared grid. Re-check every PI claim (e.g. RQ1 "PI ratios 0.23/0.36", "PI exceeds the noise floor only at 10–30%").
 - [ ] **2.1** `tables/kd.tex`: manifold rows change with the seeded rotation (superseded by the item 1 rewrite of `kd.tex`; copy from `figures/tmlr/` once item 1 is done).
+- [x] **5** `setup.tex`: manifold embedding documented (pad + seeded rotation, X = S Qᵀ, rank 3, z-scoring after rotation).
+- [ ] **5** (runs) RQ4 / Finding 6: controlled test (ρ vs R² across the synthetic sweep, fitted within the sweep), the 15-dataset correlation as supporting evidence; new figure; `limitations.tex` ("This relationship is correlational …").
+- [x] **2.2** appendix: new subsection "Experimental Grid" with `tables/grid.tex` (copy of `figures/tmlr/grid.tex`), referenced from `setup.tex`. Re-copy whenever the config changes.
 - [ ] **2.1/2.3** reproducibility paragraph: mention `config/experiments.yaml` (full grid + hyperparameters), the pinned environment (`uv.lock`, `requirements.txt`), and that every random component, incl. the manifold rotation, is seeded.
 - [x] **1** `setup.tex`: DTM/KD paragraph rewritten (weighted Rips of Anai et al., f = DTM or h·d_K, Gaussian kernel, median-heuristic bandwidth with the sweep in the appendix, cutoff rule, cutoff and bandwidth shared from the original). Leaves `% TODO(PLAN 1)` for the appendix label.
 - [ ] **1** (runs) `results.tex` RQ6 (Finding 8 and the KD paragraph: the Silverman/√2 degeneracy argument no longer applies), `limitations.tex` (bandwidth sentence, "between Vietoris–Rips and the kernel distance"), abstract ("DTM significantly outperforms VR"), appendix `kd.tex` → bandwidth-sweep table. DTM numbers change too (all vertices now enter; shared cutoff).
@@ -203,7 +209,8 @@ Exact `main.py` calls in the order they should run, with the result files they w
 5. `python main.py -e topological_metrics_filtration` → `results/topological_metrics_filtration_results.csv` (VR, DTM, KDM + 4 bandwidth variants).
 6. `python main.py -e baseline_filtration` → `results/baseline_filtration_results.csv` (RS/SGT for DTM and KDM; MAR 5/10/25%).
 7. `python main.py -e topological_metrics` → `results/topological_metrics_results.csv` (all 9 imputers; RF/MICE/GAIN/TabCSDI/OT now 10 seeds; the most expensive run).
-(`python main.py` without `-e` runs all of them in config order.) Item 5's synthetic sweep will add its own run.
+8. `python main.py -e synthetic_topological synthetic_baseline` → `results/synthetic_topological_results.csv`, `results/synthetic_baseline_results.csv` (27 synthetic variants, MAR, 13 rates; kNN and RS/SGT). Several hours.
+(`python main.py` without `-e` runs all of them in config order.)
 
 ## Order and dependencies
 
