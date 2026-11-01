@@ -71,6 +71,12 @@ python main.py -e baseline topological_metrics_mr
 | -2         | swiss_roll                  | Swiss Roll (Synthetic)      |
 | -3         | sphere                      | Sphere (Synthetic)          |
 
+## Dataset Selection and Archive
+
+`python scripts/select_datasets.py` reproduces the selection of the 15 OpenML datasets (automatic filters plus the manual exclusion lists) and checks it against `src/constants.py`.
+
+After the experiments, `python scripts/export_archive.py archive/` writes every original and reconstructed persistence diagram to `archive/diagrams.h5` (layout in the script's docstring), together with `results/*.csv` and the configuration, for the Zenodo archive.
+
 ## Reproduce the Paper
 
 `main.py` runs every experiment used in the paper and writes one file per experiment to `results/`:

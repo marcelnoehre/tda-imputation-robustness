@@ -16,6 +16,8 @@ Code and results for the paper *The Robustness of Topological Data Analysis Unde
 | `notebooks/tmlr_figures.ipynb` | Reads `results/`, writes every results table and figure of the paper to `figures/tmlr/`, and prints the statistics quoted in the text |
 | `figures/tmlr/` | Generated output; copy into the paper's `tables/` and `figures/` |
 | `sort_results.py` | Sorts a results CSV into canonical order |
+| `scripts/select_datasets.py` | Reproduces the OpenML dataset selection (filters and manual ID lists) |
+| `scripts/export_archive.py` | Exports all diagrams (HDF5), results and config for the Zenodo archive, after the runs |
 | `tests/` | Unit tests on toy clouds (`uv run pytest`, a few seconds) |
 
 ## Experiments
