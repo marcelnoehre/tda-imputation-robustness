@@ -5,7 +5,8 @@ from sklearn.datasets import fetch_openml
 from sklearn.preprocessing import StandardScaler
 
 from src.constants import *
-from src.config import MANIFOLD_PARAMS
+from scipy.spatial.distance import pdist
+from src.config import MANIFOLD_PARAMS, SYNTHETIC_SWEEP
 from src.utils import numeric_target_mapping
 
 def embed(data, ambient, seed):
@@ -65,6 +66,60 @@ def fresh_sample(key, seed):
     sample = MANIFOLD_SAMPLERS[key]
     scaler = StandardScaler().fit(_embedded(sample, MANIFOLD_PARAMS['seed']))
     return scaler.transform(_embedded(sample, [MANIFOLD_PARAMS['seed'], seed]))
+
+def _tanh_embed(data, ambient, seed):
+    """Random 2-layer tanh network from the standardised sample to `ambient` dimensions (hidden width = ambient)."""
+    rng = np.random.default_rng([seed, 4])
+    z = (data - data.mean(axis=0)) / data.std(axis=0)
+    hidden = np.tanh(z @ rng.normal(0, 1 / np.sqrt(data.shape[1]), (data.shape[1], ambient)) + rng.normal(0, 1, ambient))
+    return hidden @ rng.normal(0, 1 / np.sqrt(ambient), (ambient, ambient))
+
+def synthetic(manifold, m_noise=0, sigma=0.0, embedding='linear', seed=MANIFOLD_PARAMS['seed']):
+    """
+    Synthetic manifold with controlled feature redundancy and ambient noise, seeded throughout.
+    The 3-d sample is embedded in ambient - m_noise columns (linear: seeded random rotation as for the study
+    manifolds, so every column is a linear mixture of the 3 intrinsic coordinates; tanh: a random 2-layer network),
+    m_noise columns of i.i.d. N(0, 1) noise are appended, and N(0, (sigma * diameter)^2) noise is added to every
+    column, with the diameter of the 3-d sample. synthetic(m) with the defaults equals the study manifold m.
+
+    :param str manifold: TORUS, SWISS_ROLL or SPHERE.
+    :param int m_noise: Number of pure-noise columns.
+    :param float sigma: Ambient noise level, relative to the manifold diameter.
+    :param str embedding: 'linear' or 'tanh'.
+    :param int seed: Seed of the sample, the embedding and the noise (separate streams).
+
+    :return dict: The dataset (DATA as a DataFrame), not yet standardised.
+    """
+    n, ambient = MANIFOLD_PARAMS['samples'], MANIFOLD_PARAMS['ambient']
+    sample = MANIFOLD_SAMPLERS[manifold](n=n, seed=seed)
+    data = (embed if embedding == 'linear' else _tanh_embed)(sample, ambient - m_noise, seed)
+    data = np.hstack([data, np.random.default_rng([seed, 2]).standard_normal((n, m_noise))])
+    if sigma:
+        data = data + sigma * pdist(sample).max() * np.random.default_rng([seed, 3]).standard_normal(data.shape)
+    return {DATA: pd.DataFrame(data, columns=[f'X{i}' for i in range(data.shape[1])])}
+
+def synthetic_variants():
+    """
+    Keys and generator arguments of the controlled synthetic sweep (config: synthetic_sweep): for every manifold,
+    the redundancy sweep over pure-noise columns, the ambient-noise sweep and the nonlinear embedding.
+    """
+    variants = {}
+    for manifold in SYNTHETIC_SWEEP['manifolds']:
+        for m in SYNTHETIC_SWEEP['noise_columns']:
+            variants[f'{manifold}_noise{m}'] = dict(manifold=manifold, m_noise=m)
+        for sigma in SYNTHETIC_SWEEP['ambient_noise']:
+            variants[f'{manifold}_sigma{sigma}'] = dict(manifold=manifold, sigma=sigma)
+        if SYNTHETIC_SWEEP['nonlinear']:
+            variants[f'{manifold}_tanh'] = dict(manifold=manifold, embedding='tanh')
+    return variants
+
+def get_synthetic_datasets():
+    """
+    Generate and preprocess every variant of the synthetic sweep.
+
+    :return dict: Dictionary containing the preprocessed variants.
+    """
+    return {key: preprocess(synthetic(**args), key) for key, args in synthetic_variants().items()}
 
 def get_data(id):
     """

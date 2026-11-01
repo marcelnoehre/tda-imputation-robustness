@@ -14,7 +14,12 @@ data:
     samples: 1000
     ambient: 20        # 3-d sample padded to 20 columns and rotated by a seeded random orthogonal matrix
     seed: 42           # sampling and rotation
-  # OpenML datasets are standardised (z-score per column) after loading, see src/data.py::preprocess
+  synthetic_sweep:             # controlled redundancy / noise test (PLAN 5), src/data.py::synthetic
+    manifolds: [TORUS, SWISS_ROLL, SPHERE]
+    noise_columns: [0, 4, 8, 12, 16]   # pure N(0, 1) columns replacing linear mixtures (0 = the study manifold)
+    ambient_noise: [0.05, 0.1, 0.2]    # sigma relative to the manifold diameter, added to all 20 columns
+    nonlinear: true                    # random 2-layer tanh embedding instead of the rotation
+  # all data are standardised (z-score per column) after loading/generation, see src/data.py::preprocess
 
 missingness:
   missing_feature_fraction: 0.5   # MCAR, MAR and MNAR mask floor(d / 2) columns
@@ -147,5 +152,21 @@ experiments:
     missingness_types: [MAR]
     missing_rates: main
     tda_methods: [DTMC, KDM]
+    metrics: [WS, BN, L2PL, L2PI]
+    baseline_methods: [RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH]
+  synthetic_topological:
+    driver: topological
+    datasets: synthetic_sweep
+    missingness_types: [MAR]
+    missing_rates: sweep
+    imputation_methods: [KNN]
+    tda_methods: [VR]
+    metrics: [WS, BN, L2PL, L2PI]
+  synthetic_baseline:
+    driver: baseline
+    datasets: synthetic_sweep
+    missingness_types: [MAR]
+    missing_rates: sweep
+    tda_methods: [VR]
     metrics: [WS, BN, L2PL, L2PI]
     baseline_methods: [RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH]

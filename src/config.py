@@ -12,18 +12,21 @@ def resolve(names):
     return [getattr(constants, name) for name in names]
 
 def experiments():
-    """Experiments in config order as (result name, driver, keyword arguments of the driver)."""
+    """
+    Experiments in config order as (result name, driver, keyword arguments of the driver, dataset set).
+    The dataset set is None for the study datasets, or the name of a generated set (e.g. 'synthetic_sweep').
+    """
     res = []
     for name, spec in CONFIG['experiments'].items():
         kwargs = {}
         for arg, value in spec.items():
-            if arg == 'driver':
+            if arg in ('driver', 'datasets'):
                 continue
             if arg == 'missing_rates':
                 kwargs[arg] = CONFIG['missing_rates'][value] if isinstance(value, str) else value
             else:
                 kwargs[arg] = resolve(value)
-        res.append((name, spec['driver'], kwargs))
+        res.append((name, spec['driver'], kwargs, spec.get('datasets')))
     return res
 
 SEEDS = list(CONFIG['seeds'])
@@ -31,6 +34,7 @@ WORKERS = CONFIG['runtime']['workers']
 N_JOBS = CONFIG['runtime']['n_jobs']
 
 MANIFOLD_PARAMS = CONFIG['data']['manifolds']
+SYNTHETIC_SWEEP = {**CONFIG['data']['synthetic_sweep'], 'manifolds': resolve(CONFIG['data']['synthetic_sweep']['manifolds'])}
 MISSING_FEATURE_FRACTION = CONFIG['missingness']['missing_feature_fraction']
 IMPUTATION_PARAMS = CONFIG['imputation']
 DIMENSIONS = list(CONFIG['filtration']['homology_dimensions'])
