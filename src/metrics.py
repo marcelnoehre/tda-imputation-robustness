@@ -19,6 +19,12 @@ def compute_mae(X: np.ndarray, Y: np.ndarray):
     diff = np.abs(X - Y)
     return np.mean(diff)
 
+def compute_max_displacement(X: np.ndarray, Y: np.ndarray):
+    # e_inf = max_i |x_i - y_i|_2, the quantity in the Rips stability bound d_B <= 2 e_inf
+    if X.shape != Y.shape:
+        raise ValueError(f'Arrays must have same shape, got {X.shape} vs {Y.shape}')
+    return np.linalg.norm(X - Y, axis=1).max()
+
 def compute_wasserstein_distance(X, Y):
     return wasserstein(X, Y)
 
@@ -49,6 +55,7 @@ def _image_l2(X, Y, dim):
 METRICS = {
     RMSE: {FUNCTION: lambda X, Y: compute_rmse(X, Y)},
     MAE: {FUNCTION: lambda X, Y: compute_mae(X, Y)},
+    MAXDISP: {FUNCTION: lambda X, Y: compute_max_displacement(X, Y)},
     WS: {FUNCTION: lambda X, Y, dim: compute_wasserstein_distance(X[PD][dim], transform_pd(Y)[dim])},
     BN: {FUNCTION: lambda X, Y, dim: compute_bottleneck_distance(X[PD][dim], transform_pd(Y)[dim])},
     L2PL: {FUNCTION: lambda X, Y, dim: _landscape_l2(X, Y, dim)},

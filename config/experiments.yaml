@@ -93,7 +93,7 @@ experiments:
     missingness_types: [MCAR, MAR, MNAR]
     missing_rates: sweep
     imputation_methods: [KNN]
-    metrics: [RMSE, MAE]
+    metrics: [RMSE, MAE, MAXDISP]
   topological_metrics:
     driver: topological
     missingness_types: [MAR]

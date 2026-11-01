@@ -26,7 +26,7 @@ def sort(path):
         sort_columns.append(DIMENSION)
 
     df_sorted = df.sort_values(by=sort_columns)
-    columns = sort_columns.copy() + [col for col in [MAE, RMSE, WS, BN, L2PL, L2PI] if col in df.columns]
+    columns = sort_columns.copy() + [col for col in [MAE, RMSE, MAXDISP, WS, BN, L2PL, L2PI] if col in df.columns]
     df_sorted = df_sorted[columns]
     df_sorted.to_csv(path, index=False)
 

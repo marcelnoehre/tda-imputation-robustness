@@ -96,6 +96,7 @@ L2PL = 'l2_distance_landscape'
 L2PI = 'l2_distance_image'
 RMSE = 'root_mean_square_error'
 MAE = 'mean_absolute_error'
+MAXDISP = 'max_displacement'
 
 ### PIPELINE ###
 DETERMINISTIC = 'deterministic'
@@ -202,6 +203,7 @@ LABEL: Dict[str, str] = {
     2: r'H$_2$',
     RMSE: 'Root Mean Square Error',
     MAE: 'Mean Absolute Error',
+    MAXDISP: 'Maximum Displacement',
     DATASET: 'Dataset',
     MISSINGNESS_TYPE: 'Type of Missingness',
     MISSING_RATE: 'Missing Rate [%]',
