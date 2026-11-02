@@ -1,3 +1,6 @@
+import warnings
+# mdatagen 0.2.0 imports the deprecated pkg_resources when it is imported; harmless, so only this warning is silenced
+warnings.filterwarnings('ignore', message='pkg_resources is deprecated', category=UserWarning)
 from multiprocessing.pool import ThreadPool
 import mdatagen.multivariate.mMAR as _mmar_mod
 import mdatagen.multivariate.mMNAR as _mnar_mod
