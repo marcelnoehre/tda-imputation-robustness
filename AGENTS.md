@@ -63,8 +63,8 @@ The kernel must be the project's `.venv` interpreter. If uvx's own Python is pic
 - The **dataset is the statistical unit**. Compute per-dataset log-ratios, then report medians over datasets. Use Wilcoxon signed-rank tests (Holm-corrected within a table or comparison family), Friedman mean ranks, and Mann–Whitney for synthetic vs. real-world data.
 - Exact zeros are kept finite by adding ε = 1% of the median positive value of each (dataset, filtration, distance, dimension) group. Never drop zeros instead, because that changes the ratios.
 - **Growth** is measured by the elasticity β, the log–log slope of error against missing rate. Compare it with RMSE **within each dataset** (Δβ = β_topo − β_RMSE). RMSE/MAE are only a reference and are never used to rank imputers.
-- **Retention** is ρ = d_topo / d_SGT.
-- Tables are written as LaTeX using the paper's macros (`\WS`, `\BN`, `\PL`, `\PI`, `\Hd{}`, `\SGT`, `\RS`, `\CCA`, `\TOPO`, `\IMP`, `\sig{}`, `\MR`). Five of the six generated tables must stay byte-identical to the paper's copies, so port wording changes made in the paper back into the notebook.
+- **Relative topological error** is ρ = d_topo / d_SGT (called retention in earlier versions).
+- Tables are written as LaTeX using the paper's macros (`\WS`, `\BN`, `\PL`, `\PI`, `\Hd{}`, `\SGT`, `\RS`, `\CCA`, `\TOPO`, `\IMP`, `\sig{}`, `\MR`). All generated tables except the obsolete `kd.tex` must stay byte-identical to the paper's copies, so port wording changes made in the paper back into the notebook.
 - Figures are drawn at print size in Latin Modern, with no titles (captions live in LaTeX). Widths: `growth_by_family` at `\linewidth`, `redundancy_retention` at `0.62\linewidth`, `pairwise_imputers` at `0.6\linewidth`. The pairwise figure is drawn on a 0.75\linewidth canvas, and its tight bounding box makes it about that size.
 
 ## Known issues
