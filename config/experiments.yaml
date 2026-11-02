@@ -80,7 +80,11 @@ filtration:
   weighted_rips:               # DTM and kernel distance (Anai et al.); vertex values are doubled like VR edges
     p: 2                       # vertex and edge values combine as radii (t^p - f^p)^(1/p)
   dtm:
-    m: 0.05                    # k = ceil(m * n) nearest neighbours
+    masses:                    # smoothing scale m, k = ceil(m * n) nearest neighbours; DTMC (m = 0.05) is the main setting
+      DTMC: 0.05
+      DTMC_M001: 0.01
+      DTMC_M01: 0.1
+      DTMC_M02: 0.2
   kernel_distance:             # Gaussian kernel; vertex function h * d_K(P, x)
     bandwidths:                # h as a multiple of the median pairwise distance of the cloud, or Silverman's rule
       KDM: 1.0
@@ -139,7 +143,7 @@ experiments:
     missingness_types: [MAR]
     missing_rates: main
     imputation_methods: [KNN]
-    tda_methods: [VR, DTMC, KDM, KDM_H025, KDM_H05, KDM_H2, KDM_SILVERMAN]
+    tda_methods: [VR, DTMC, DTMC_M001, DTMC_M01, DTMC_M02, KDM, KDM_H025, KDM_H05, KDM_H2, KDM_SILVERMAN]
     metrics: [WS, BN, L2PL, L2PI]
   baseline:
     driver: baseline
@@ -193,3 +197,11 @@ experiments:
     tda_methods: [VR]
     metrics: [WS, BN, L2PL, L2PI]
     baseline_methods: [RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH]
+  mice_spread:                   # within-imputation spread of MICE (10 draws = 10 seeds on the same MAR mask), PLAN 19
+    driver: spread
+    datasets: [-1, 4353, 42367, 43384]   # torus, Concrete Data, Treasury, Diabetes
+    missingness_types: [MAR]
+    missing_rates: main
+    imputation_methods: [MICE]
+    tda_methods: [VR]
+    metrics: [WS, BN]

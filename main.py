@@ -5,12 +5,14 @@ from src.config import WORKERS, N_JOBS, CONFIG, experiments
 from src.comparison_metrics import comparison_metrics
 from src.pipeline import experiment
 from src.robustness_pipeline import experiment_baselines
+from src.spread_pipeline import experiment_spread
 from src.data import get_data, preprocess, get_dataset_set
 
 DRIVERS = {
     'comparison_metrics': comparison_metrics,
     'topological': experiment,
     'baseline': experiment_baselines,
+    'spread': experiment_spread,
 }
 
 def process_args():

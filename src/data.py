@@ -125,10 +125,12 @@ def get_dataset_set(name):
     """
     Generated or restricted dataset sets that experiments can name in the config (`datasets:`).
 
-    :param str name: 'synthetic_sweep' or 'manifolds'.
+    :param name: 'synthetic_sweep', 'manifolds', or a list of dataset IDs.
 
     :return dict: Dictionary containing the preprocessed datasets.
     """
+    if isinstance(name, list):
+        return {DATASETS[id]: preprocess(get_data(id), DATASETS[id]) for id in name}
     if name == 'synthetic_sweep':
         return get_synthetic_datasets()
     if name == 'manifolds':

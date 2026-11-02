@@ -58,8 +58,8 @@ def filtration_params(data, tda):
 def vertex_weights(data, distances, tda, bandwidth=None):
     """Vertex function f of the weighted Rips filtration (Anai et al.); the filtrations differ only here."""
     n, d = np.shape(data)
-    if tda == DTMC:
-        return distance_to_measure(distances, min(math.ceil(DTM_PARAMS['m'] * n), n - 1))
+    if tda in DTM_PARAMS['masses']:
+        return distance_to_measure(distances, min(math.ceil(DTM_PARAMS['masses'][tda] * n), n - 1))
     if tda in KD_PARAMS['bandwidths']:
         return kernel_distance_to_measure(distances, kernel_bandwidth(distances, d, tda) if bandwidth is None else bandwidth)
     raise ValueError(f'{tda} is not a weighted Rips filtration')
@@ -182,7 +182,7 @@ def persistence_image(pd_fit, pd):
 
 TDA = {
     VR: {FUNCTION: lambda data, mel: vietoris_rips_complex(data, mel)},
-    DTMC: {FUNCTION: lambda data, mel: weighted_rips_complex(data, DTMC, mel)},
+    **{dtm: {FUNCTION: lambda data, mel, dtm=dtm: weighted_rips_complex(data, dtm, mel)} for dtm in DTM_PARAMS['masses']},
     **{kd: {FUNCTION: lambda data, mel, bandwidth, kd=kd: weighted_rips_complex(data, kd, mel, bandwidth)} for kd in KD_PARAMS['bandwidths']},
     PD: {FUNCTION: lambda data: transform_pd(data)},
     DIAGRAM: {FUNCTION: lambda data: np.asarray(data)}

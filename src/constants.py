@@ -90,6 +90,9 @@ FRESH_SAMPLE = 'fresh_sample'
 SHUFFLED_GROUND_TRUTH = 'shuffled_ground_truth'
 VR = 'vietoris_rips'
 DTMC = 'distance_to_a_measure_chazal'
+DTMC_M001 = 'distance_to_a_measure_m0.01'
+DTMC_M01 = 'distance_to_a_measure_m0.1'
+DTMC_M02 = 'distance_to_a_measure_m0.2'
 KDM = 'kernel_distance_to_measure'
 KDM_H025 = 'kernel_distance_to_measure_h0.25'
 KDM_H05 = 'kernel_distance_to_measure_h0.5'
@@ -133,7 +136,7 @@ COLLECTIONS = {
     MISSING_RATE: [5, 10, 25],
     IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE, NO_IMPUTATION],
     BASELINE_METHOD: [COMPLETE_CASE, RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH, RANDOM_SUBSAMPLE_70, RANDOM_SUBSAMPLE_90, MATCHED_JITTER, FRESH_SAMPLE],
-    TDA_METHOD: [VR, DTMC, KDM, KDM_H025, KDM_H05, KDM_H2, KDM_SILVERMAN],
+    TDA_METHOD: [VR, DTMC, DTMC_M001, DTMC_M01, DTMC_M02, KDM, KDM_H025, KDM_H05, KDM_H2, KDM_SILVERMAN],
     MANIFOLD: [SPHERE, SWISS_ROLL, TORUS],
     TIME_SERIES: [BOSTON_WEATHER, HUNGARIAN_CHICKENPOX, INDIAN_STOCK_MARKET, RMFTSA_LADATA, STOCK, TREASURY, WEATHER_IZMIR],
     REGRESSION: [CONCRETE_DATA, RED_WINE_QUALITY, WHITE_WINE_QUALITY],
@@ -207,6 +210,9 @@ LABEL: Dict[str, str] = {
     SHUFFLED_GROUND_TRUTH: 'Shuffled Ground Truth',
     VR: 'Vietoris-Rips Filtration',
     DTMC: r'Distance To a Measure ($k = \lceil m n \rceil,\, m = 0.05$)',
+    DTMC_M001: r'Distance To a Measure ($m = 0.01$)',
+    DTMC_M01: r'Distance To a Measure ($m = 0.1$)',
+    DTMC_M02: r'Distance To a Measure ($m = 0.2$)',
     KDM: r'Kernel Distance to a Measure ($h$ = median distance)',
     KDM_H025: r'Kernel Distance to a Measure ($h$ = 0.25 $\times$ median distance)',
     KDM_H05: r'Kernel Distance to a Measure ($h$ = 0.5 $\times$ median distance)',

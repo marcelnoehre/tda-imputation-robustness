@@ -21,7 +21,7 @@ def cloud():
 def test_dtm_matches_giotto(cloud):
     """Our DTM weights in the shared builder reproduce giotto-tda's own 'DTM' weighted Rips filtration."""
     D = pairwise_distances(cloud)
-    k = math.ceil(DTM_PARAMS['m'] * len(cloud))
+    k = math.ceil(DTM_PARAMS['masses'][DTMC] * len(cloud))
     mel = tda.max_edge_length_for(cloud, DTMC)
     giotto = WeightedRipsPersistence(metric='precomputed', homology_dimensions=DIMENSIONS, max_edge_weight=mel,
                                      collapse_edges=True, weights='DTM', weight_params={'n_neighbors': k, 'p': 2}
@@ -34,13 +34,13 @@ def test_dtm_and_kd_share_one_builder(cloud, monkeypatch):
     """DTM and every KD bandwidth run through weighted_rips_complex and differ only in the vertex function."""
     calls = []
     monkeypatch.setattr(tda, 'weighted_rips_complex', lambda data, method, mel, bandwidth=None: calls.append(method))
-    methods = [DTMC, *KD_PARAMS['bandwidths']]
+    methods = [*DTM_PARAMS['masses'], *KD_PARAMS['bandwidths']]
     for method in methods:
         tda.TDA[method][FUNCTION](cloud, 1.0, **tda.filtration_params(cloud, method))
     assert calls == methods
 
 
-@pytest.mark.parametrize('method', [DTMC, KDM, KDM_H025, KDM_H2, KDM_SILVERMAN])
+@pytest.mark.parametrize('method', [DTMC, DTMC_M001, DTMC_M02, KDM, KDM_H025, KDM_H2, KDM_SILVERMAN])
 def test_every_vertex_enters_before_the_cutoff(cloud, method):
     D = pairwise_distances(cloud)
     weights = 2 * tda.vertex_weights(cloud, D, method)

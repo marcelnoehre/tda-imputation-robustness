@@ -188,6 +188,12 @@ Second list of review points (2026-11-02). Only 9 and 10 change what the runs co
 - [~] **11 Figures.** Figure 3 moved into RQ3; Table 3 replaced in the text by `baseline_lines.pdf` (table in the appendix). Open (runs): line plot for Table 7 (needs the new KD keys and the DTM/KD references). Original note: line plots instead of Tables 3 and 7 (tables to the appendix); move Figure 3 to RQ3.
 - [x] **12–18** paper-only items done (see "Paper changes"); open: compute statement (user), result-dependent rewrites of Findings 2/8 and the contributions' headline findings (TODOs).
 
+## Optional review items 19–21
+
+- [x] **19 MI spread.** New driver `src/spread_pipeline.py::experiment_spread` (`spread` in `main.py`): MICE draws one imputation per seed, and on the deterministic MAR mask the 10 seeds are 10 independent draws; it computes all pairwise WS/BN distances among their diagrams and compares the median with the mean distance to the original diagram. Experiment `mice_spread` (torus, Concrete Data, Treasury, Diabetes; MAR 5/10/25%; VR) → `results/mice_spread_{pairs,results}.csv`; reuses the cached MICE diagrams of `topological_metrics`. Dataset sets can now be lists of IDs. Notebook section writes `mice_spread.tex` once the file exists. Smoke test (torus, 3 draws, MAR 10%): runs; ratio spread/error for BN H0 ≈ 1.0, WS H0 ≈ 0.25.
+- [x] **20 GAIN/TabCSDI.** Chose the reviewer's second option (no new deep-imputer runs): `limitations.tex` states the fixed configuration and cites Grinsztajn et al. 2022 (new bib entry, DOI checked) and the imputation benchmarks (Jäger et al. 2021, Jarrett et al. 2022). A small tuning grid remains possible if wanted.
+- [x] **21 DTM sweep.** DTM variants `DTMC_M001`, `DTMC_M01`, `DTMC_M02` (m = 0.01/0.1/0.2; `DTMC` stays m = 0.05) in `filtration.dtm.masses`, built like the KD bandwidths, added to `topological_metrics_filtration` (kNN, MAR, 5/10/25%). Unit tests cover them (shared builder, every vertex enters). Appendix table after the runs (TODO in `setup.tex`). Risk: large m gives large vertex values, hence a larger cutoff and slower diagrams, as for large KD bandwidths.
+
 ## Paper changes
 
 Running list of every change the paper (`paper/robustness_tda`) needs, with the PLAN item that causes it. `[x]` = edited in the paper (possibly as a `% TODO(PLAN x.y)` placeholder), `[ ]` = still to do, `(runs)` = needs the user's runs first.
@@ -241,12 +247,13 @@ Exact `main.py` calls in the order they should run, with the result files they w
 2. `python main.py -e topological_metrics_mr` → `results/topological_metrics_mr_results.csv`.
 3. `python main.py -e baseline` → `results/baseline_results.csv`.
 4. `python main.py -e baseline_reference` → `results/baseline_reference_results.csv` (RS 70/90%, matched jitter, fresh sample; MAR, 13 rates). Needs step 1.
-5. `python main.py -e topological_metrics_filtration` → `results/topological_metrics_filtration_results.csv` (VR, DTM, KDM + 4 bandwidth variants).
+5. `python main.py -e topological_metrics_filtration` → `results/topological_metrics_filtration_results.csv` (VR, DTM with m = 0.05 + 3 smoothing scales, KDM + 4 bandwidth variants).
 6. `python main.py -e baseline_filtration` → `results/baseline_filtration_results.csv` (RS/SGT for DTM and KDM; MAR 5/10/25%).
 7. `python main.py -e topological_metrics` → `results/topological_metrics_results.csv` (all 9 imputers; RF/MICE/GAIN/TabCSDI/OT now 10 seeds; the most expensive run).
 8. `python main.py -e topological_metrics_no_imputation` → `results/topological_metrics_no_imputation_*.csv` (imputation-free baseline, MAR, 13 rates; cheap).
 9. `python main.py -e topological_metrics_manifolds` → `results/topological_metrics_manifolds_*.csv` (Betti recovery; 3 manifolds × 10 methods × 3 mechanisms × 5/10/25%; the deep imputers take a few hours).
-10. `python main.py -e synthetic_topological synthetic_baseline` → `results/synthetic_topological_results.csv`, `results/synthetic_baseline_results.csv` (27 synthetic variants, MAR, 13 rates; kNN and RS/SGT). Several hours.
+10. `python main.py -e mice_spread` → `results/mice_spread_{pairs,results}.csv` (needs run 7; only pairwise distances are new, cheap).
+11. `python main.py -e synthetic_topological synthetic_baseline` → `results/synthetic_topological_results.csv`, `results/synthetic_baseline_results.csv` (27 synthetic variants, MAR, 13 rates; kNN and RS/SGT). Several hours.
 (`python main.py` without `-e` runs all of them in config order.)
 
 ## Order and dependencies

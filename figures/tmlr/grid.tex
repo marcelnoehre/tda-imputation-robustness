@@ -9,6 +9,7 @@
         \midrule
         Datasets & 18 study datasets (Table~\ref{tab:datasets}) & RQ1--RQ6 \\
          & 3 synthetic manifolds & RQ2, RQ5 \\
+         & 4 study datasets (Torus, Concrete Data, Treasury, Diabetes) & RQ2 \\
          & 27 synthetic variants (redundancy, ambient noise, nonlinear embedding) & RQ4 \\
         Mechanisms & MAR & RQ1--RQ6 \\
          & MCAR, MNAR & RQ1--RQ5 \\
@@ -18,7 +19,7 @@
          & no imputation (nan-Euclidean VR) & RQ2--RQ3, RQ5 \\
          & Constant, Mean, Median, RF, MICE, GAIN, TabCSDI, OT-Impute & RQ2, RQ5 \\
         Filtrations & VR & RQ1--RQ6 \\
-         & DTM ($m = 0.05$), KD ($h = 1 \times$ median), KD ($h = 0.25 \times$ median), KD ($h = 0.5 \times$ median), KD ($h = 2 \times$ median), KD ($h$ = Silverman) & RQ6 \\
+         & DTM ($m = 0.05$), DTM ($m = 0.01$), DTM ($m = 0.1$), DTM ($m = 0.2$), KD ($h = 1 \times$ median), KD ($h = 0.25 \times$ median), KD ($h = 0.5 \times$ median), KD ($h = 2 \times$ median), KD ($h$ = Silverman) & RQ6 \\
         Measures & \WS, \BN, \PL, \PI & RQ1--RQ6 \\
          & Betti numbers & RQ2, RQ5 \\
          & RMSE, MAE, $e_\infty$ & RQ3, RQ5 \\
