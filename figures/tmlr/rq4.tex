@@ -1,31 +1,31 @@
 \begin{table}[h]
     \centering
-    \caption{Dataset properties and relative topological error $\rho$ ($k$NN, VR, MAR): linear and $k$NN-regression redundancy (mean $R^2$ of predicting each feature from the others), intrinsic dimension (TwoNN, PCA participation ratio), and RMSE (geometric mean over 13 rates).}
+    \caption{Dataset properties and relative topological error $\rho$ ($k$NN, VR, MAR): linear and $k$NN-regression redundancy (mean $R^2$ of predicting each feature from the others), TwoNN intrinsic dimension, and RMSE (geometric mean over 13 rates).}
     \label{tab:rq4}
     \footnotesize
     \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{l l cccccc}
+    \begin{tabular}{l l ccccc}
         \toprule
-        Dataset & Type & $R^2_\text{lin}$ & $R^2_{k\mathrm{NN}}$ & ID$_\text{TwoNN}$ & ID$_\text{PR}$ & \RMSE & $\rho$ \\
+        Dataset & Type & $R^2_\text{lin}$ & $R^2_{k\mathrm{NN}}$ & ID$_\text{TwoNN}$ & \RMSE & $\rho$ \\
         \midrule
-        Sphere                      & Synthetic   & 1.00 & 0.99                               & 2.0  & 2.8 & 0.164 & 0.20 \\
-        Swiss Roll                  & Synthetic   & 1.00 & 0.99                               & 2.0  & 2.4 & 0.200 & 0.21 \\
-        Torus                       & Synthetic   & 1.00 & 0.99                               & 1.9  & 2.4 & 0.198 & 0.22 \\
-        Stock                       & Time series & 0.83 & -5.42                              & 3.6  & 3.0 & 0.188 & 0.27 \\
-        Treasury                    & Time series & 0.98 & 0.99                               & 3.5  & 1.4 & 0.138 & 0.28 \\
-        Indian Stock Market         & Time series & 0.84 & -2.22                              & 3.0  & 2.1 & 0.247 & 0.41 \\
-        Weather Izmir               & Time series & 0.53 & 0.54                               & 5.8  & 4.6 & 0.203 & 0.73 \\
-        Boston Weather Data         & Time series & 0.83 & 0.75                               & 7.5  & 4.8 & 0.239 & 0.73 \\
-        Hungarian Chickenpox        & Time series & 0.59 & 0.34                               & 11.9 & 3.4 & 0.090 & 0.81 \\
-        RMFTSA LA Data              & Time series & 0.79 & 0.59                               & 6.8  & 3.2 & 0.202 & 0.81 \\
-        Concrete Data               & Regression  & 0.75 & -184807566852810139681167507456.00 & 1.1  & 5.8 & 0.217 & 0.50 \\
-        White Wine Quality          & Regression  & 0.50 & 0.37                               & 3.4  & 6.6 & 0.291 & 0.66 \\
-        Red Wine Quality            & Regression  & 0.57 & 0.41                               & 3.3  & 6.3 & 0.315 & 0.75 \\
-        Gender Recognition by Voice & Classif.    & 0.83 & 0.52                               & 6.1  & 4.1 & 0.225 & 0.39 \\
-        Debutanizer                 & Classif.    & 0.52 & -0.02                              & 3.9  & 3.9 & 0.281 & 0.75 \\
-        Football Player Position    & Classif.    & 0.36 & 0.43                               & 7.6  & 7.1 & 0.238 & 0.90 \\
-        Diabetes                    & Classif.    & 0.25 & 0.24                               & 5.7  & 6.0 & 0.265 & 0.99 \\
-        Air Quality and Pollution   & Classif.    & 0.62 & 0.60                               & 7.5  & 2.9 & 0.153 & 1.38 \\
+        Sphere                      & Synthetic   & 1.00 & 0.99 & 2.0  & 0.164 & 0.20 \\
+        Swiss Roll                  & Synthetic   & 1.00 & 0.99 & 2.0  & 0.200 & 0.21 \\
+        Torus                       & Synthetic   & 1.00 & 0.99 & 1.9  & 0.198 & 0.22 \\
+        Stock                       & Time series & 0.83 & 0.95 & 3.6  & 0.188 & 0.27 \\
+        Treasury                    & Time series & 0.98 & 0.99 & 3.5  & 0.138 & 0.28 \\
+        Indian Stock Market         & Time series & 0.84 & 0.94 & 3.0  & 0.247 & 0.41 \\
+        Weather Izmir               & Time series & 0.53 & 0.54 & 5.8  & 0.203 & 0.73 \\
+        Boston Weather Data         & Time series & 0.83 & 0.76 & 7.5  & 0.239 & 0.73 \\
+        Hungarian Chickenpox        & Time series & 0.59 & 0.54 & 11.9 & 0.090 & 0.81 \\
+        RMFTSA LA Data              & Time series & 0.79 & 0.71 & 6.8  & 0.202 & 0.81 \\
+        Concrete Data               & Regression  & 0.75 & 0.64 & 1.1  & 0.217 & 0.50 \\
+        White Wine Quality          & Regression  & 0.50 & 0.43 & 3.4  & 0.291 & 0.66 \\
+        Red Wine Quality            & Regression  & 0.57 & 0.50 & 3.3  & 0.315 & 0.75 \\
+        Gender Recognition by Voice & Classif.    & 0.83 & 0.76 & 6.1  & 0.225 & 0.39 \\
+        Debutanizer                 & Classif.    & 0.52 & 0.61 & 3.9  & 0.281 & 0.75 \\
+        Football Player Position    & Classif.    & 0.36 & 0.43 & 7.6  & 0.238 & 0.90 \\
+        Diabetes                    & Classif.    & 0.25 & 0.23 & 5.7  & 0.265 & 0.99 \\
+        Air Quality and Pollution   & Classif.    & 0.62 & 0.60 & 7.5  & 0.153 & 1.38 \\
         \bottomrule
     \end{tabular}
 \end{table}
