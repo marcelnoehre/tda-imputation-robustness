@@ -14,8 +14,25 @@ _SCALAR_TYPES = (bool, int, float, np.bool_, np.integer, np.floating)
 _MISS = object()
 
 
+def _canonical(obj):
+    """
+    Content-only form of a function argument for hashing. joblib hashes the pickled object, which for a DataFrame
+    includes its internal block layout: a DataFrame loaded from the cache then hashes differently from the freshly
+    computed one, and every downstream entry misses once. Equal content now gives an equal key.
+    """
+    if isinstance(obj, pd.DataFrame):
+        return ('DataFrame', np.ascontiguousarray(obj.to_numpy()), tuple(map(str, obj.columns)), np.asarray(obj.index))
+    if isinstance(obj, np.ndarray):
+        return np.ascontiguousarray(obj)
+    if isinstance(obj, dict):
+        return ('dict', tuple(sorted((str(k), _canonical(v)) for k, v in obj.items())))
+    if isinstance(obj, (list, tuple)):
+        return ('sequence', tuple(_canonical(v) for v in obj))
+    return obj
+
+
 def _entry_dir(func, args, kwargs):
-    key = joblib.hash((args, kwargs), coerce_mmap=True)
+    key = joblib.hash((_canonical(args), _canonical(kwargs)), coerce_mmap=True)
     return os.path.join(_CACHE_DIR, func.__module__, func.__qualname__, key)
 
 

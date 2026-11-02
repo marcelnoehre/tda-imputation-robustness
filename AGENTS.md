@@ -70,6 +70,7 @@ The kernel must be the project's `.venv` interpreter. If uvx's own Python is pic
 
 - The results in `results/` were produced while the manifold rotation (`tadasets.embed`) was unseeded, so their synthetic data cannot be reproduced exactly. `src/data.py::embed` now draws the rotation from a seeded generator.
 - Until the re-runs of PLAN 0.3 are in, the results CSVs contain one seed per imputer (only the RS/SGT baselines under MCAR have 9). Cause, fixed in the code: extra seeds ran only when both the mechanism and the method were stochastic. `SEEDS` now holds 10 seeds (`range(1, 11)`).
+- Cache keys before 2026-11-02 hashed the pickled arguments, so a DataFrame loaded from the cache (e.g. a mask) hashed differently from the freshly computed one and every downstream entry (imputations) was recomputed once on the second run. `src/cache.py::_canonical` now hashes content only; `tests/test_cache.py` checks that a second run (serial, then parallel) adds no cache entry. Caches written before this change are not reused.
 - OpenML ID 43000 (`cnn_stock_pred_dji`) returned the same matrix as `hungarian_chickenpox`, so it is excluded from the code and the results.
 
 ## Git
