@@ -11,7 +11,7 @@ from src.compute import (
     apply_complete_case,
     apply_random_subsample,
     apply_shuffled_ground_truth,
-    apply_imputation,
+    apply_imputation_observed_scale,
     apply_matched_jitter,
     apply_fresh_sample,
 )
@@ -54,7 +54,7 @@ def _baseline_worker(method, key, mt, dataset_data, missing_df, seed):
         arr = apply_shuffled_ground_truth(dataset_data, missing_df, seed)
     elif method == MATCHED_JITTER:
         # the kNN imputation of the same mask, as cached by the imputation experiments (kNN is deterministic)
-        imputed = apply_imputation(missing_df, KNN, SEEDS[0] if MISSINGNESS[mt][DETERMINISTIC] else seed)
+        imputed = apply_imputation_observed_scale(missing_df, KNN, SEEDS[0] if MISSINGNESS[mt][DETERMINISTIC] else seed)
         arr = apply_matched_jitter(dataset_data, missing_df, imputed, seed)
     else:
         arr = apply_fresh_sample(key, seed)

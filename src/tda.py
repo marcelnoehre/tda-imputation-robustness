@@ -119,7 +119,22 @@ def persistence_landscape(pd_fit, pd):
     return _on_common_grid(PersistenceLandscape(**LANDSCAPE_PARAMS, n_jobs=N_JOBS), pd_fit, pd)
 
 def persistence_image(pd_fit, pd):
-    return _on_common_grid(PersistenceImage(**IMAGE_PARAMS, n_jobs=N_JOBS), pd_fit, pd)
+    """
+    Persistence images on the grid fitted to pd_fit. The Gaussian width of each homology dimension is
+    IMAGE_PARAMS['sigma_pixels'] pixels of that dimension's persistence axis, so it scales with the diagram.
+    """
+    grid = PersistenceImage(n_bins=IMAGE_PARAMS['n_bins'], n_jobs=N_JOBS).fit(pd_fit)
+    images_fit, images = [], []
+    for dim in DIMENSIONS:
+        persistence = grid.samplings_[dim][1]
+        step = (persistence[-1] - persistence[0]) / (len(persistence) - 1)
+        # a degenerate axis (step 0) gives an empty image in giotto-tda; sigma only has to be positive
+        sigma = max(IMAGE_PARAMS['sigma_pixels'] * step, np.finfo(float).tiny)
+        image_fit, image, _ = _on_common_grid(PersistenceImage(sigma=sigma, n_bins=IMAGE_PARAMS['n_bins'], n_jobs=N_JOBS), pd_fit, pd)
+        i = list(grid.homology_dimensions_).index(dim)
+        images_fit.append(image_fit[i])
+        images.append(image[i])
+    return np.stack(images_fit), np.stack(images), grid.samplings_
 
 TDA = {
     VR: {FUNCTION: lambda data, mel: vietoris_rips_complex(data, mel)},

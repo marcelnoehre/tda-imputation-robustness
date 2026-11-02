@@ -96,3 +96,16 @@ def test_kd_bandwidth_is_fixed_by_the_original(cloud):
     D = pairwise_distances(moved)
     assert np.allclose(tda.vertex_weights(moved, D, KDM, h), tda.kernel_distance_to_measure(D, h))
     assert not np.allclose(tda.vertex_weights(moved, D, KDM), tda.kernel_distance_to_measure(D, h))
+
+
+def test_image_sigma_scales_with_the_diagram(cloud):
+    """sigma is fixed in pixels of the original grid: scaling a diagram by c only rescales its image by 1/c^2."""
+    mel = tda.max_edge_length_for(cloud, VR)
+    X = tda.vietoris_rips_complex(cloud, mel)
+    c = 3.0
+    Xc = X.copy()
+    Xc[0, :, :2] *= c
+    pi, _, _ = tda.persistence_image(X, X)
+    pi_c, _, _ = tda.persistence_image(Xc, Xc)
+    # equal up to pixel assignment of points on bin edges (giotto truncates coordinates to pixels)
+    assert np.abs(pi_c * c**2 - pi).max() <= 1e-2 * np.abs(pi).max()

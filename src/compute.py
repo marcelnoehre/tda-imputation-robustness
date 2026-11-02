@@ -2,7 +2,7 @@ from src.cache import memory
 from src.tda import TDA, max_edge_length_for, filtration_params
 from src.normalize import normalize_by_diameter
 from src.missingness import MISSINGNESS
-from src.imputation import IMPUTATION
+from src.imputation import impute
 from src.robustness import complete_case_analysis, random_subsample, shuffled_ground_truth, matched_jitter
 from src.data import fresh_sample
 from src.constants import FUNCTION, DATA, TARGET
@@ -31,9 +31,11 @@ def apply_mask(dataset, mt, mr, seed):
     return MISSINGNESS[mt][FUNCTION](dataset[DATA], dataset[TARGET], mr, seed)
 
 
+# Renamed from apply_imputation when imputation moved to the scale of the observed entries (PLAN 2.3), so that
+# imputations of the leaky complete-data scaling in the cache are not reused.
 @memory.cache
-def apply_imputation(dataset, imp, seed):
-    return IMPUTATION[imp][FUNCTION](dataset, seed)
+def apply_imputation_observed_scale(dataset, imp, seed):
+    return impute(dataset, imp, seed)
 
 
 @memory.cache

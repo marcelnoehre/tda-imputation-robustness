@@ -24,7 +24,7 @@ from src.compute import (
     get_filtration_params,
     apply_persistent_homology,
     apply_mask,
-    apply_imputation,
+    apply_imputation_observed_scale,
     apply_normalize,
     apply_prepare_for_comparison,
 )
@@ -62,7 +62,7 @@ def _missingness_worker(dataset, mt, mr, seed):
     return pd.DataFrame(df.to_numpy(), columns=df.columns.tolist(), index=df.index)
 
 def _imputation_worker(dataset, imp, seed):
-    return apply_imputation(dataset, imp, seed)
+    return apply_imputation_observed_scale(dataset, imp, seed)
 
 def compute_filtration_params(datasets, tda_methods):
     '''
@@ -243,13 +243,13 @@ def impute_missing_values(data, imputation_methods):
                 res[seed][key][mt][mr][imp] = fut.result()
     else:
         for seed, key, mt, mr, imp, imp_dict in pool_tasks:
-            res[seed][key][mt][mr][imp] = apply_imputation(imp_dict, imp, seed)
+            res[seed][key][mt][mr][imp] = apply_imputation_observed_scale(imp_dict, imp, seed)
 
     # Torch methods run sequentially: each already saturates all CPU cores via OMP.
     # Concurrent execution would divide those cores, making each task slower with no
     # net throughput gain.
     for seed, key, mt, mr, imp, imp_dict in seq_tasks:
-        res[seed][key][mt][mr][imp] = apply_imputation(imp_dict, imp, seed)
+        res[seed][key][mt][mr][imp] = apply_imputation_observed_scale(imp_dict, imp, seed)
 
     return res
 

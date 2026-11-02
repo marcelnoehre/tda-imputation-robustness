@@ -11,7 +11,7 @@ from src.imputation import IMPUTATION
 from src.metrics import METRICS
 from src.constants import *
 from src.config import SEEDS, WORKERS
-from src.compute import apply_mask, apply_imputation
+from src.compute import apply_mask, apply_imputation_observed_scale
 
 def _compare(metric, original, imputed):
     return METRICS[metric][FUNCTION](original, imputed)
@@ -21,7 +21,7 @@ def _apply_missingness(dataset, mt, mr, seed):
     return pd.DataFrame(df.to_numpy(), columns=df.columns.tolist(), index=df.index)
 
 def _apply_imputation(dataset, imp, seed):
-    return apply_imputation(dataset, imp, seed)
+    return apply_imputation_observed_scale(dataset, imp, seed)
 
 def introduce_missingness(datasets, missingness_types, missing_rates):
     def _iter(datasets, missingness_types, missing_rates):
@@ -101,10 +101,10 @@ def impute_missing_values(data, imputation_methods):
                 res[seed][key][mt][mr][imp] = fut.result()
     else:
         for seed, key, mt, mr, imp, imp_dict in pool_tasks:
-            res[seed][key][mt][mr][imp] = apply_imputation(imp_dict, imp, seed)
+            res[seed][key][mt][mr][imp] = apply_imputation_observed_scale(imp_dict, imp, seed)
 
     for seed, key, mt, mr, imp, imp_dict in seq_tasks:
-        res[seed][key][mt][mr][imp] = apply_imputation(imp_dict, imp, seed)
+        res[seed][key][mt][mr][imp] = apply_imputation_observed_scale(imp_dict, imp, seed)
 
     return res
 

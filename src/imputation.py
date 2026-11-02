@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import pandas as pd
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import SimpleImputer, KNNImputer, IterativeImputer
 from sklearn.ensemble import RandomForestRegressor
@@ -380,3 +381,20 @@ IMPUTATION = {
     TABCSDI: {FUNCTION: lambda data, seed: impute_tabcsdi(data, seed), DETERMINISTIC: False},
     OTIMPUTE: {FUNCTION: lambda data, seed: impute_ot(data, seed), DETERMINISTIC: False},
 }
+def impute(missing_df, imp, seed):
+    """
+    Impute a masked dataset in the scale of its observed entries: every column is z-scored with the mean and
+    standard deviation of its observed values, imputed, and mapped back to the evaluation scale. No imputer thus
+    sees statistics of the hidden values, except Constant, which fills the complete-data mean (0 in the evaluation
+    scale) as an oracle reference.
+    """
+    if imp == CONSTANT:
+        return IMPUTATION[imp][FUNCTION](missing_df, seed)
+    X = np.asarray(missing_df, dtype=np.float64)
+    observed = ~np.isnan(X)
+    mean, std = np.nanmean(X, axis=0), np.nanstd(X, axis=0)
+    std[std == 0] = 1.0
+    scaled = pd.DataFrame((X - mean) / std, columns=missing_df.columns, index=missing_df.index)
+    out = np.asarray(IMPUTATION[imp][FUNCTION](scaled, seed), dtype=np.float64) * std + mean
+    out[observed] = X[observed]
+    return out

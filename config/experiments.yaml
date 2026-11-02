@@ -92,7 +92,7 @@ vectorization:
     n_layers: 1
     n_bins: 100
   image:
-    sigma: 0.1                 # in filtration units (diagrams are divided by the diameter of the original cloud)
+    sigma_pixels: 2            # Gaussian width = 2 pixels of the persistence axis of each original diagram's grid
     n_bins: 100
 
 baselines:
