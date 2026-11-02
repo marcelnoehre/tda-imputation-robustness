@@ -85,7 +85,7 @@ def _run_all(monkeypatch, workers, tmp_path):
     P.experiment('topo', [MCAR, MAR, MNAR], [10], [MEAN, KNN, RF], [VR, DTMC, KDM], [WS, BN, L2PL, L2PI], ds)
     R.experiment_baselines('base', [MAR, MNAR], [10], [VR], [WS, L2PI], [COMPLETE_CASE, RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH, MATCHED_JITTER], ds)
     CM.comparison_metrics('cmp', [MCAR, MAR], [10], [KNN], [RMSE, MAXDISP], ds)
-    return {f: pd.read_csv(tmp_path / 'results' / f'{f}_results.csv') for f in ('topo', 'base', 'cmp')}
+    return {f'{f}{kind}': pd.read_csv(tmp_path / 'results' / f'{f}_{kind}.csv') for f in ('topo', 'base', 'cmp') for kind in ('results', 'distances')}
 
 
 def test_second_run_is_served_from_the_cache(cache_dir, tmp_path, monkeypatch):
@@ -97,6 +97,17 @@ def test_second_run_is_served_from_the_cache(cache_dir, tmp_path, monkeypatch):
     assert _entries(cache_dir) == entries
     for name in first:
         # parallel mode collects results in completion order
-        ids = [c for c in (DATASET, MISSINGNESS_TYPE, MISSING_RATE, IMPUTATION_METHOD, TDA_METHOD, DIMENSION) if c in first[name]]
+        ids = [c for c in (DATASET, MISSINGNESS_TYPE, MISSING_RATE, IMPUTATION_METHOD, TDA_METHOD, DIMENSION, SEED) if c in first[name]]
         sort = lambda df: df.sort_values(ids).reset_index(drop=True)
         pd.testing.assert_frame_equal(sort(first[name]), sort(second[name]))
+
+
+def test_per_seed_distances_match_the_aggregated_results(cache_dir, tmp_path, monkeypatch):
+    """The per-seed tables hold exactly the values the result tables aggregate."""
+    out = _run_all(monkeypatch, 1, tmp_path)
+    for name, metric in (('topo', WS), ('base', L2PI), ('cmp', RMSE)):
+        res, dist = out[f'{name}results'], out[f'{name}distances']
+        ids = [c for c in (DATASET, MISSINGNESS_TYPE, MISSING_RATE, IMPUTATION_METHOD, TDA_METHOD, DIMENSION) if c in res]
+        agg = dist.groupby(ids).agg(n=(SEED, 'size'), mean=(metric, 'mean')).reset_index().merge(res, on=ids)
+        assert len(agg) == len(res)
+        assert (agg.n == agg[N_SEEDS]).all() and np.allclose(agg['mean'], agg[metric])

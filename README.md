@@ -91,4 +91,6 @@ After the experiments, `python scripts/export_archive.py archive/` writes every 
 | `topological_metrics_filtration_results.csv` | kNN, VR/DTM/KD, MAR, 5/10/25% |
 | `baseline_results.csv` | Shuffled ground truth, random subsample, complete-case analysis |
 
+Each experiment also writes `<experiment>_distances.csv` with the per-seed values before aggregation (one row per dataset, mechanism, rate, method, filtration, dimension and seed), so the results can be re-analysed without recomputation.
+
 `notebooks/tmlr_figures.ipynb` reads these files and writes all results tables and figures of the paper to `figures/tmlr/`, and prints the statistics quoted in the text.

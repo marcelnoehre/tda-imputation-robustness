@@ -12,7 +12,8 @@ Code and results for the paper *The Robustness of Topological Data Analysis Unde
 | `src/` | Pipeline: data loading (`data.py`), masking (`missingness.py`), imputers (`imputation.py`), filtrations and vectorisations (`tda.py`), distances (`metrics.py`), baselines (`robustness.py`), experiment drivers (`pipeline.py`, `comparison_metrics.py`, `robustness_pipeline.py`), disk cache (`cache.py`) |
 | `config/experiments.yaml` | Single source of truth for the experimental grid, seeds, worker count and every hyperparameter (read by `src/config.py`) |
 | `src/constants.py` | Dataset IDs, method keys and labels |
-| `results/*_results.csv` | Raw experiment output, one file per experiment (see below) |
+| `results/*_results.csv` | Experiment output aggregated over seeds, one file per experiment (see below) |
+| `results/*_distances.csv` | Per-seed values behind each `*_results.csv` (archived on Zenodo; the notebook reads only `*_results.csv`) |
 | `notebooks/tmlr_figures.ipynb` | Reads `results/`, writes every results table and figure of the paper to `figures/tmlr/`, and prints the statistics quoted in the text |
 | `figures/tmlr/` | Generated output; copy into the paper's `tables/` and `figures/` |
 | `sort_results.py` | Sorts a results CSV into canonical order |

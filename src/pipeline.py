@@ -452,6 +452,27 @@ def store_results(results, filename):
 
     pd.DataFrame(rows).to_csv(f'results/{filename}.csv', index=False)
 
+def store_distances(distances, filename):
+    '''
+    Per-seed distances before aggregation, one row per (dataset, mechanism,
+    rate, method, filtration, dimension, seed), so that the results can be
+    re-analysed without recomputation. Settings that did not run for a seed
+    (deterministic in every component) have no row for it.
+    '''
+    rows = []
+    for seed, key_dict in distances.items():
+        for dataset, mt_dict in key_dict.items():
+            for mt, mr_dict in mt_dict.items():
+                for mr, imp_dict in mr_dict.items():
+                    for imp, tda_dict in imp_dict.items():
+                        for tda, dim_dict in tda_dict.items():
+                            for dim, metrics in dim_dict.items():
+                                if metrics:
+                                    rows.append({DATASET: dataset, MISSINGNESS_TYPE: mt, MISSING_RATE: mr, IMPUTATION_METHOD: imp,
+                                                 TDA_METHOD: tda, DIMENSION: dim, SEED: seed, **metrics})
+
+    pd.DataFrame(rows).to_csv(f'results/{filename}.csv', index=False)
+
 def experiment(experiment, missingness_types, missing_rates, imputation_methods, tda_methods, metrics, datasets = None):
     initial_time = start_time = time.time()
 
@@ -503,4 +524,5 @@ def experiment(experiment, missingness_types, missing_rates, imputation_methods,
     log('Storing results...')
     os.makedirs('results', exist_ok=True)
     store_results(results, f'{experiment}_results')
+    store_distances(distances, f'{experiment}_distances')
     log(f'Experiment {experiment} completed in {time.time() - initial_time:.2f} seconds')

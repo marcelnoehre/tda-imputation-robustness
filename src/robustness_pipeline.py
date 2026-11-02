@@ -26,6 +26,7 @@ from src.pipeline import (
     compute_distances,
     compute_seedwise_statistics,
     store_results,
+    store_distances,
 )
 
 BASELINE_DETERMINISM = {
@@ -183,4 +184,5 @@ def experiment_baselines(experiment, missingness_types, missing_rates, tda_metho
     log('Storing results...')
     os.makedirs('results', exist_ok=True)
     store_results(results, f'{experiment}_results')
+    store_distances(distances, f'{experiment}_distances')
     log(f'Experiment {experiment} completed in {time.time() - initial_time:.2f} seconds')

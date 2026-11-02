@@ -209,6 +209,23 @@ def store_results(results, filename):
 
     pd.DataFrame(rows).to_csv(f'results/{filename}.csv', index=False)
 
+def store_distances(distance_data, filename):
+    '''
+    Per-seed imputation errors before aggregation, one row per (dataset,
+    mechanism, rate, method, seed).
+    '''
+    rows = []
+    for seed, key_dict in distance_data.items():
+        for dataset, mt_dict in key_dict.items():
+            for mt, mr_dict in mt_dict.items():
+                for mr, imp_dict in mr_dict.items():
+                    for imp, metrics in imp_dict.items():
+                        if metrics:
+                            rows.append({DATASET: dataset, MISSINGNESS_TYPE: mt, MISSING_RATE: mr, IMPUTATION_METHOD: imp,
+                                         SEED: seed, **metrics})
+
+    pd.DataFrame(rows).to_csv(f'results/{filename}.csv', index=False)
+
 def comparison_metrics(comparison_metrics, missingness_types, missing_rates, imputation_methods, metrics, datasets=None):
     initial_time = start_time = time.time()
 
@@ -248,4 +265,5 @@ def comparison_metrics(comparison_metrics, missingness_types, missing_rates, imp
     log('Storing results...')
     os.makedirs('results', exist_ok=True)
     store_results(results, f'{comparison_metrics}_results')
+    store_distances(distance_data, f'{comparison_metrics}_distances')
     log(f'Distances computed in {time.time() - initial_time:.2f} seconds')

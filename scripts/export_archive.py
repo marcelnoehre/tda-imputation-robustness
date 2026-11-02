@@ -12,8 +12,8 @@ Layout of archive/diagrams.h5 (diagrams are divided by the diameter of the origi
 
 Every /<dataset>/<filtration> group has the attributes `cutoff` (in the units before division), `diameter` and,
 for the kernel distance, `bandwidth`. Mechanisms, methods and filtrations use the keys of src/constants.py; a
-deterministic setting is stored under the first seed only. The archive also holds results/*.csv and
-config/experiments.yaml.
+deterministic setting is stored under the first seed only. The archive also holds results/*.csv (the
+aggregated `<experiment>_results.csv` and the per-seed `<experiment>_distances.csv`) and config/experiments.yaml.
 """
 import argparse
 import os

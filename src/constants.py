@@ -118,6 +118,7 @@ BASELINE_METHOD = 'baseline_method'
 TDA_METHOD = 'tda_method'
 DIMENSION = 'dimension'
 N_SEEDS = 'n_seeds'
+SEED = 'seed'
 
 ### COLLECTIONS ###
 COLLECTIONS = {
