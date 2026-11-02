@@ -45,6 +45,7 @@ WEIGHTED_RIPS_PARAMS = CONFIG['filtration']['weighted_rips']
 DTM_PARAMS = CONFIG['filtration']['dtm']
 KD_PARAMS = {'bandwidths': {getattr(constants, name): h for name, h in CONFIG['filtration']['kernel_distance']['bandwidths'].items()}}
 LANDSCAPE_PARAMS = CONFIG['vectorization']['landscape']
+BETTI_PARAMS = CONFIG['betti']
 IMAGE_PARAMS = CONFIG['vectorization']['image']
 SUBSAMPLE_FRACTIONS = {getattr(constants, name): f for name, f in CONFIG['baselines']['subsample_fractions'].items()}
 MIN_BASELINE_POINTS = CONFIG['baselines']['min_points']

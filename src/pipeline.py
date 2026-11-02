@@ -3,7 +3,7 @@ import time
 import numpy as np
 import pandas as pd
 from scipy.stats import t as t_dist, sem as scipy_sem
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import as_completed
 from src.logger import log, timed, Progress
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS, repeated
@@ -15,13 +15,15 @@ from src.metrics import (
     landscape_l2_distance,
     persistence_image_l2_distance,
 )
-from src.tda import persistence_landscape, persistence_image
-from src.utils import transform_pd
+from src.tda import persistence_landscape, persistence_image, betti_numbers
+from src.utils import transform_pd, process_pool
+from src.normalize import diameter
 from src.constants import *
 from src.config import SEEDS, WORKERS, DIMENSIONS
 from src.compute import (
     get_filtration_cutoff,
     get_filtration_params,
+    get_betti_thresholds,
     apply_persistent_homology,
     apply_mask,
     apply_imputation_observed_scale,
@@ -33,6 +35,9 @@ def _compare_all(metrics, orig, imputed):
     pd_Y = transform_pd(imputed) if WS in metrics or BN in metrics else None
     pl_X, pl_Y, pl_grid = persistence_landscape(orig[DIAGRAM], imputed) if L2PL in metrics else (None, None, None)
     pi_X, pi_Y, pi_grid = persistence_image(orig[DIAGRAM], imputed) if L2PI in metrics else (None, None, None)
+    if BETTI in metrics:
+        thresholds, cutoff = orig[BETTI][:-1], orig[BETTI][-1]
+        betti_Y, betti_X = betti_numbers(imputed[0], cutoff, thresholds), betti_numbers(orig[DIAGRAM][0], cutoff, thresholds)
     results = {dim: {} for dim in DIMENSIONS}
     for dim in DIMENSIONS:
         for metric in metrics:
@@ -44,6 +49,8 @@ def _compare_all(metrics, orig, imputed):
                 results[dim][metric] = landscape_l2_distance(pl_X[dim], pl_Y[dim], pl_grid[dim])
             elif metric == L2PI:
                 results[dim][metric] = persistence_image_l2_distance(pi_X[dim], pi_Y[dim], pi_grid[dim])
+            elif metric == BETTI:
+                results[dim][BETTI], results[dim][BETTI_CLEAN] = betti_Y[dim], betti_X[dim]
             else:
                 results[dim][metric] = METRICS[metric][FUNCTION](orig, imputed, dim)
     return results
@@ -78,6 +85,19 @@ def compute_filtration_params(datasets, tda_methods):
         for key, dataset in datasets.items()
     }
 
+def attach_betti_thresholds(original_comparable, datasets, filtration_params):
+    '''
+    Add, for every original diagram, the bootstrap thresholds of its dimensions
+    and its normalised cutoff (needed by the BETTI metric).
+    '''
+    for key, tda_dict in original_comparable.items():
+        data = np.array(datasets[key][DATA])
+        for tda, comparable in tda_dict.items():
+            cutoff, params = filtration_params[key][tda]
+            thresholds = get_betti_thresholds(data, tda, cutoff, **params)
+            comparable[BETTI] = np.append(thresholds, cutoff / diameter(data))
+            log(f'Betti numbers of the clean {key} ({tda}): {betti_numbers(comparable[DIAGRAM][0], comparable[BETTI][-1], thresholds)}')
+
 def compute_original_persistence_intervals(datasets, tda_methods, filtration_params):
     def _iter(datasets, tda_methods):
         for key, dataset in datasets.items():
@@ -92,7 +112,7 @@ def compute_original_persistence_intervals(datasets, tda_methods, filtration_par
 
     progress = Progress('Persistent homology of the original clouds', len(tasks))
     if WORKERS > 1:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _ph_worker, np.array(dataset[DATA]), tda, *filtration_params[key][tda]): (key, tda)
                 for key, tda, dataset in tasks
@@ -122,7 +142,7 @@ def normalize_original_persistence_intervals(original, datasets):
 
     progress = Progress('Normalizing the original diagrams', len(tasks))
     if WORKERS > 1:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _normalize_worker, pd_dict, datasets[key][DATA]): (key, tda)
                 for key, tda, pd_dict in tasks
@@ -153,7 +173,7 @@ def prepare_original_data(original, comparison_types):
 
     progress = Progress('Preparing the original diagrams', len(tasks))
     if WORKERS > 1:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _prepare_worker, tda_dict[tda], ct): (key, tda, ct)
                 for key, tda, tda_dict, ct in tasks
@@ -188,7 +208,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
 
     progress = Progress('Masking', len(tasks))
     if WORKERS > 1:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _missingness_worker, dataset, mt, mr, seed): (seed, key, mt, mr)
                 for seed, key, mt, mr, dataset in tasks
@@ -238,7 +258,7 @@ def impute_missing_values(data, imputation_methods):
     progress = Progress('Imputation', len(pool_tasks))
     if WORKERS > 1 and pool_tasks:
         # Fork is safe here: workers import torch but never call any torch op
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _imputation_worker, imp_dict, imp, seed): (seed, key, mt, mr, imp)
                 for seed, key, mt, mr, imp, imp_dict in pool_tasks
@@ -286,7 +306,7 @@ def compute_persistence_intervals(data, tda_methods, filtration_params, determin
 
     progress = Progress('Persistent homology', len(tasks))
     if WORKERS > 1:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _ph_worker, tda_dict, tda, *filtration_params[key][tda]): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, tda_dict in tasks
@@ -327,7 +347,7 @@ def normalize_persistence_intervals(data, datasets, determinism=IMPUTATION):
 
     progress = Progress('Normalizing diagrams', len(tasks))
     if WORKERS > 1:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _normalize_worker, normalize_dict, datasets[key][DATA]): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, normalize_dict in tasks
@@ -372,7 +392,7 @@ def compute_distances(original, data, metrics, determinism=IMPUTATION):
 
     progress = Progress('Distances', len(tasks))
     if WORKERS > 1:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _compare_all, metrics, original[key][tda], dim_dict): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, dim_dict in tasks
@@ -490,8 +510,10 @@ def experiment(experiment, missingness_types, missing_rates, imputation_methods,
     filtration_params = compute_filtration_params(datasets, tda_methods)
     original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods, filtration_params)
     normalized_original_persistence_intervals = normalize_original_persistence_intervals(original_persistence_intervals, datasets)
-    comparisons = list(dict.fromkeys({WS: PD, BN: PD, L2PL: DIAGRAM, L2PI: DIAGRAM}[metric] for metric in metrics))
+    comparisons = list(dict.fromkeys({WS: PD, BN: PD, L2PL: DIAGRAM, L2PI: DIAGRAM, BETTI: DIAGRAM}[metric] for metric in metrics))
     original_comparable = prepare_original_data(normalized_original_persistence_intervals, comparisons)
+    if BETTI in metrics:
+        attach_betti_thresholds(original_comparable, datasets, filtration_params)
     log(f'Prepared original data in {time.time() - start_time:.2f} seconds')
 
     # Introduce missingness

@@ -7,7 +7,8 @@ import h5py
 import joblib
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_CACHE_DIR = os.path.join(_ROOT, '.cache')
+# TDA_CACHE_DIR overrides the location; spawned worker processes inherit it from the environment
+_CACHE_DIR = os.environ.get('TDA_CACHE_DIR', os.path.join(_ROOT, '.cache'))
 
 _SCALAR_TYPES = (bool, int, float, np.bool_, np.integer, np.floating)
 

@@ -11,6 +11,8 @@ from src.constants import *
 
 @pytest.fixture
 def cache_dir(tmp_path, monkeypatch):
+    # the environment variable reaches spawned worker processes, the attribute this process
+    monkeypatch.setenv('TDA_CACHE_DIR', str(tmp_path / 'cache'))
     monkeypatch.setattr(cache, '_CACHE_DIR', str(tmp_path / 'cache'))
     return tmp_path / 'cache'
 
@@ -99,7 +101,7 @@ def test_second_run_is_served_from_the_cache(cache_dir, tmp_path, monkeypatch):
         # parallel mode collects results in completion order
         ids = [c for c in (DATASET, MISSINGNESS_TYPE, MISSING_RATE, IMPUTATION_METHOD, TDA_METHOD, DIMENSION, SEED) if c in first[name]]
         sort = lambda df: df.sort_values(ids).reset_index(drop=True)
-        pd.testing.assert_frame_equal(sort(first[name]), sort(second[name]))
+        pd.testing.assert_frame_equal(sort(first[name]), sort(second[name]), check_like=True)
 
 
 def test_per_seed_distances_match_the_aggregated_results(cache_dir, tmp_path, monkeypatch):

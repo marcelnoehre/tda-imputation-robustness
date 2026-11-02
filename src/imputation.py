@@ -380,15 +380,17 @@ IMPUTATION = {
     GAIN: {FUNCTION: lambda data, seed: impute_gain(data, seed), DETERMINISTIC: False},
     TABCSDI: {FUNCTION: lambda data, seed: impute_tabcsdi(data, seed), DETERMINISTIC: False},
     OTIMPUTE: {FUNCTION: lambda data, seed: impute_ot(data, seed), DETERMINISTIC: False},
+    # imputation-free reference: the masked matrix is kept, VR then runs on nan-Euclidean distances (src/tda.py)
+    NO_IMPUTATION: {FUNCTION: lambda data, _: np.asarray(data, dtype=np.float64), DETERMINISTIC: True},
 }
 def impute(missing_df, imp, seed):
     """
     Impute a masked dataset in the scale of its observed entries: every column is z-scored with the mean and
     standard deviation of its observed values, imputed, and mapped back to the evaluation scale. No imputer thus
     sees statistics of the hidden values, except Constant, which fills the complete-data mean (0 in the evaluation
-    scale) as an oracle reference.
+    scale) as an oracle reference. NO_IMPUTATION returns the masked matrix unchanged.
     """
-    if imp == CONSTANT:
+    if imp in (CONSTANT, NO_IMPUTATION):
         return IMPUTATION[imp][FUNCTION](missing_df, seed)
     X = np.asarray(missing_df, dtype=np.float64)
     observed = ~np.isnan(X)

@@ -3,10 +3,12 @@ import numpy as np
 from scipy.sparse.csgraph import minimum_spanning_tree
 from gtda.homology import VietorisRipsPersistence, WeightedRipsPersistence
 from gtda.diagrams import PersistenceLandscape, PersistenceImage
-from sklearn.metrics.pairwise import pairwise_distances
+from sklearn.metrics.pairwise import pairwise_distances, nan_euclidean_distances
+import gudhi
 from src.utils import as_batch, transform_pd
+from src.normalize import normalize_by_diameter
 from src.constants import *
-from src.config import N_JOBS, DIMENSIONS, MEL_PARAMS, WEIGHTED_RIPS_PARAMS, DTM_PARAMS, KD_PARAMS, LANDSCAPE_PARAMS, IMAGE_PARAMS
+from src.config import N_JOBS, DIMENSIONS, MEL_PARAMS, WEIGHTED_RIPS_PARAMS, DTM_PARAMS, KD_PARAMS, LANDSCAPE_PARAMS, IMAGE_PARAMS, BETTI_PARAMS
 
 def _max_edge_length(distances):
     n, size = len(distances), MEL_PARAMS['subsample']
@@ -77,6 +79,18 @@ def max_edge_length_for(data, tda):
     return max(cutoff, float(np.nextafter(weights.max(), np.inf)))
 
 def vietoris_rips_complex(data, max_edge_length):
+    data = np.asarray(data, dtype=np.float64)
+    if np.isnan(data).any():
+        # imputation-free reference: nan-Euclidean distances on the masked matrix (sqrt(d / #shared coordinates)
+        # times the distance on the shared coordinates); not a metric, which Vietoris-Rips tolerates
+        distances = np.nan_to_num(nan_euclidean_distances(data), nan=np.inf)
+        return VietorisRipsPersistence(
+            metric='precomputed',
+            homology_dimensions=DIMENSIONS,
+            max_edge_length=max_edge_length,
+            collapse_edges=True,
+            n_jobs=N_JOBS
+        ).fit_transform(distances[np.newaxis])
     return VietorisRipsPersistence(
         homology_dimensions=DIMENSIONS,
         max_edge_length=max_edge_length,
@@ -108,6 +122,36 @@ def weighted_rips_complex(data, tda, max_edge_length, bandwidth=None):
         weight_params={'p': WEIGHTED_RIPS_PARAMS['p']},
         n_jobs=N_JOBS
     ).fit_transform(distances[np.newaxis])
+
+def betti_thresholds(data, tda, max_edge_length, **params):
+    """
+    Bottleneck bootstrap (Chazal et al. 2018) on the clean cloud: per homology dimension, the quantile of the
+    bottleneck distance between the diagram of the cloud and those of random subsamples (same cutoff and
+    parameters), in the units of the normalised diagrams.
+    """
+    full = transform_pd(normalize_by_diameter(TDA[tda][FUNCTION](data, max_edge_length, **params), data))
+    rng = np.random.default_rng(BETTI_PARAMS['seed'])
+    size = int(BETTI_PARAMS['fraction'] * len(data))
+    distances = []
+    for _ in range(BETTI_PARAMS['subsamples']):
+        sub = np.asarray(data)[rng.choice(len(data), size, replace=False)]
+        diagram = transform_pd(normalize_by_diameter(TDA[tda][FUNCTION](sub, max_edge_length, **params), data))
+        distances.append([gudhi.bottleneck_distance(full[dim], diagram[dim]) for dim in DIMENSIONS])
+    return np.quantile(np.array(distances), BETTI_PARAMS['quantile'], axis=0)
+
+def betti_numbers(diagram, cutoff, thresholds):
+    """
+    Betti numbers read from a normalised diagram: a feature counts if it is alive at the (normalised) cutoff, i.e.
+    infinite within the truncated filtration, or if its persistence exceeds twice the bootstrap threshold of its
+    dimension. H0 adds the infinite component that giotto-tda removes (reduced homology).
+    """
+    diagram = np.asarray(diagram).reshape(-1, 3)
+    counts = []
+    for dim in DIMENSIONS:
+        bars = diagram[(diagram[:, 2] == dim) & (diagram[:, 1] > diagram[:, 0])]
+        alive = np.isclose(bars[:, 1], cutoff, rtol=1e-6)
+        counts.append(int(np.sum(alive | (bars[:, 1] - bars[:, 0] > 2 * thresholds[dim]))) + (dim == 0))
+    return counts
 
 def _on_common_grid(vectorizer, pd_fit, pd):
     # The grid is fitted once on pd_fit (the original diagram) and both diagrams are transformed with it,

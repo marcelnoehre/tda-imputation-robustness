@@ -3,7 +3,8 @@ import time
 import numpy as np
 import pandas as pd
 from scipy.stats import t as t_dist, sem as scipy_sem
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import as_completed
+from src.utils import process_pool
 from src.logger import log, timed, Progress
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS, repeated
@@ -44,7 +45,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
 
     progress = Progress('Masking', len(tasks))
     if WORKERS > 1:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr)
                 for seed, key, mt, mr, dataset in tasks
@@ -93,7 +94,7 @@ def impute_missing_values(data, imputation_methods):
 
     progress = Progress('Imputation', len(pool_tasks))
     if WORKERS > 1 and pool_tasks:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
                 for seed, key, mt, mr, imp, imp_dict in pool_tasks
@@ -138,7 +139,7 @@ def compute_distances(datasets, imputed_data, metrics):
 
     progress = Progress('Distances', len(tasks))
     if WORKERS > 1:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _compare, metric, np.asarray(datasets[key][DATA]), arr): (seed, key, mt, mr, imp, metric)
                 for seed, key, mt, mr, imp, metric, arr in tasks

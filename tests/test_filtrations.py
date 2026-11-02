@@ -109,3 +109,27 @@ def test_image_sigma_scales_with_the_diagram(cloud):
     pi_c, _, _ = tda.persistence_image(Xc, Xc)
     # equal up to pixel assignment of points on bin edges (giotto truncates coordinates to pixels)
     assert np.abs(pi_c * c**2 - pi).max() <= 1e-2 * np.abs(pi).max()
+
+
+def test_vr_on_a_masked_matrix_uses_nan_euclidean_distances(cloud):
+    """The imputation-free reference: VR on the masked matrix equals VR on its nan-Euclidean distance matrix."""
+    from sklearn.metrics.pairwise import nan_euclidean_distances
+    from gtda.homology import VietorisRipsPersistence
+    masked = cloud.copy()
+    masked[::7, 1] = np.nan
+    mel = tda.max_edge_length_for(cloud, VR)
+    expected = VietorisRipsPersistence(metric='precomputed', homology_dimensions=DIMENSIONS, max_edge_length=mel,
+                                       collapse_edges=True).fit_transform(nan_euclidean_distances(masked)[None])
+    assert np.allclose(tda.vietoris_rips_complex(masked, mel), expected)
+    assert np.allclose(tda.vietoris_rips_complex(cloud, mel), tda.vietoris_rips_complex(cloud.copy(), mel))
+
+
+def test_betti_numbers_of_a_circle():
+    """A clean, well-sampled circle has Betti numbers (1, 1, 0) under the counting rule."""
+    from src.normalize import normalize_by_diameter, diameter
+    t = np.linspace(0, 2 * np.pi, 120, endpoint=False)
+    circle = np.c_[np.cos(t), np.sin(t), np.zeros_like(t)] + 0.01 * np.random.default_rng(1).normal(size=(120, 3))
+    mel = tda.max_edge_length_for(circle, VR)
+    thresholds = tda.betti_thresholds(circle, VR, mel)
+    dg = normalize_by_diameter(tda.vietoris_rips_complex(circle, mel), circle)
+    assert tda.betti_numbers(dg[0], mel / diameter(circle), thresholds) == [1, 1, 0]

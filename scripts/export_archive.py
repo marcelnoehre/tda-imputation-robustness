@@ -27,7 +27,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 from src.constants import *
 from src.config import CONFIG_PATH, experiments
-from src.data import get_all_datasets, get_synthetic_datasets
+from src.data import get_all_datasets, get_dataset_set
 from src.imputation import IMPUTATION
 from src.normalize import diameter
 from src.pipeline import (
@@ -93,8 +93,8 @@ def export(out, names=None, datasets=None):
             if driver == 'comparison_metrics' or (names is not None and name not in names):
                 continue
             log(f'Exporting the diagrams of {name}...')
-            if dataset_set == 'synthetic_sweep':
-                export_experiment(f, driver, kwargs, get_synthetic_datasets())
+            if dataset_set is not None:
+                export_experiment(f, driver, kwargs, get_dataset_set(dataset_set))
             else:
                 study = study if study is not None else get_all_datasets()
                 export_experiment(f, driver, kwargs, study)

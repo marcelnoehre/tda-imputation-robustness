@@ -5,7 +5,7 @@ from src.config import WORKERS, N_JOBS, CONFIG, experiments
 from src.comparison_metrics import comparison_metrics
 from src.pipeline import experiment
 from src.robustness_pipeline import experiment_baselines
-from src.data import get_data, preprocess, get_synthetic_datasets
+from src.data import get_data, preprocess, get_dataset_set
 
 DRIVERS = {
     'comparison_metrics': comparison_metrics,
@@ -35,10 +35,10 @@ def main():
     for name, driver, kwargs, dataset_set in experiments():
         if selected is not None and name not in selected:
             continue
-        if dataset_set == 'synthetic_sweep':
-            # generated datasets; with dataset IDs on the command line, run only when named with -e
+        if dataset_set is not None:
+            # own dataset set; with dataset IDs on the command line, run only when named with -e
             if datasets is None or selected is not None:
-                DRIVERS[driver](name, **kwargs, datasets=get_synthetic_datasets())
+                DRIVERS[driver](name, **kwargs, datasets=get_dataset_set(dataset_set))
         else:
             DRIVERS[driver](f'{prefix}{name}', **kwargs, datasets=datasets)
 

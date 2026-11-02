@@ -176,6 +176,18 @@ Tasks:
 
 ---
 
+## Review round 2 (items 7–18)
+
+Second list of review points (2026-11-02). Only 9 and 10 change what the runs compute; the rest is notebook (after the runs) or paper-only work.
+
+- [x] **9 Imputation-free baseline.** `NO_IMPUTATION` keeps the masked matrix; `tda.vietoris_rips_complex` then runs VR on `nan_euclidean_distances` (not a metric, which VR tolerates; pairs without shared coordinates → ∞). New experiment `topological_metrics_no_imputation` (MAR, 13 rates, VR) → `results/topological_metrics_no_imputation_{results,distances}.csv`; also part of `topological_metrics_manifolds`. Unit test: VR on a masked matrix equals VR on its nan-Euclidean distance matrix. Smoke test (torus, MAR): runs; it is closer to the original than kNN at 25% (WS H1 0.56 vs 1.08).
+- [x] **10 Betti recovery.** Metric `BETTI` (plus `BETTI_CLEAN` for the clean diagram) counts, per dimension, features alive at the cutoff or with persistence > 2c, c = 95% quantile of a bottleneck bootstrap on the clean cloud (30 half-size subsamples, seed 42; `tda.betti_thresholds`, cached; config `betti`). User decision (2026-11-02): this rule, reported against both the ground truth and the clean diagram. Reason: the reviewer's bootstrap threshold alone misses the torus and sphere H2 voids (their bars are clipped at the cutoff); with "alive at the cutoff" the clean torus (1,2,1) and sphere (1,0,1) are exact, the clean Swiss roll gives (1,3,0) instead of (1,0,0) because VR bridges the gaps between the layers at the cutoff scale. New experiment `topological_metrics_manifolds` (3 manifolds, all 9 imputers + no imputation, MCAR/MAR/MNAR, 5/10/25% (agent default, user did not specify), 10 seeds) → `results/topological_metrics_manifolds_{results,distances}.csv`; the torus figure (clean, MNAR 25% kNN, MNAR 25% mean) can be drawn in the notebook from these settings. Unit test: a clean circle gives (1,1,0). Smoke test (torus, MCAR/MNAR 25%, 2 seeds): clean (1,2,1); MNAR kNN mostly (1,2,1), mean loses the loops.
+  - Found while testing: **fork deadlock**. With the bootstrap in the main process, every forked worker hung at 0% CPU inside scikit-learn's OpenMP code (`radius_neighbors`, called by giotto's VR). Fixed: all pools use the spawn start method (`utils.process_pool`); the cache directory can be set with `TDA_CACHE_DIR` (spawned workers do not inherit module patches). The old code had the same hazard after the PyTorch imputers ran in the main process; it may explain why the last run "did not feel right". Smoke test now 1:52 min; cache tests pass with spawned workers.
+- [ ] **7 Statistics hygiene** (notebook after the runs; text parts in the paper now): Holm families and test counts in captions, R² per β fit (flag < 0.8) and d(40%)/d(5%), Figure 3 normalised by the median of the three lowest rates, IQR tables, consensus-rank definition, Mann–Whitney rephrasing, per-dataset MR* table, PL-H0 jump (expected to vanish with the 0.2 grid fix; giotto removes the infinite H0 bar, so it is not essential-bar clipping).
+- [ ] **8 RQ4** (notebook after the runs): ρ ~ R² + log RMSE, partial Spearman, kNN-regression R², intrinsic dimension (TwoNN / participation ratio), type-stratified correlation.
+- [ ] **11 Figures** (notebook after the runs): line plots instead of Tables 3 and 7 (tables to the appendix); move Figure 3 to RQ3.
+- [ ] **12–18** paper-only items: see "Paper changes".
+
 ## Paper changes
 
 Running list of every change the paper (`paper/robustness_tda`) needs, with the PLAN item that causes it. `[x]` = edited in the paper (possibly as a `% TODO(PLAN x.y)` placeholder), `[ ]` = still to do, `(runs)` = needs the user's runs first.
@@ -220,7 +232,9 @@ Exact `main.py` calls in the order they should run, with the result files they w
 5. `python main.py -e topological_metrics_filtration` → `results/topological_metrics_filtration_results.csv` (VR, DTM, KDM + 4 bandwidth variants).
 6. `python main.py -e baseline_filtration` → `results/baseline_filtration_results.csv` (RS/SGT for DTM and KDM; MAR 5/10/25%).
 7. `python main.py -e topological_metrics` → `results/topological_metrics_results.csv` (all 9 imputers; RF/MICE/GAIN/TabCSDI/OT now 10 seeds; the most expensive run).
-8. `python main.py -e synthetic_topological synthetic_baseline` → `results/synthetic_topological_results.csv`, `results/synthetic_baseline_results.csv` (27 synthetic variants, MAR, 13 rates; kNN and RS/SGT). Several hours.
+8. `python main.py -e topological_metrics_no_imputation` → `results/topological_metrics_no_imputation_*.csv` (imputation-free baseline, MAR, 13 rates; cheap).
+9. `python main.py -e topological_metrics_manifolds` → `results/topological_metrics_manifolds_*.csv` (Betti recovery; 3 manifolds × 10 methods × 3 mechanisms × 5/10/25%; the deep imputers take a few hours).
+10. `python main.py -e synthetic_topological synthetic_baseline` → `results/synthetic_topological_results.csv`, `results/synthetic_baseline_results.csv` (27 synthetic variants, MAR, 13 rates; kNN and RS/SGT). Several hours.
 (`python main.py` without `-e` runs all of them in config order.)
 
 ## Order and dependencies

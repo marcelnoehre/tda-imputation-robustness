@@ -121,6 +121,20 @@ def get_synthetic_datasets():
     """
     return {key: preprocess(synthetic(**args), key) for key, args in synthetic_variants().items()}
 
+def get_dataset_set(name):
+    """
+    Generated or restricted dataset sets that experiments can name in the config (`datasets:`).
+
+    :param str name: 'synthetic_sweep' or 'manifolds'.
+
+    :return dict: Dictionary containing the preprocessed datasets.
+    """
+    if name == 'synthetic_sweep':
+        return get_synthetic_datasets()
+    if name == 'manifolds':
+        return {DATASETS[id]: preprocess(get_data(id), DATASETS[id]) for id in (-1, -2, -3)}
+    raise ValueError(f'Unknown dataset set: {name}')
+
 def get_data(id):
     """
     Fetch a dataset from OpenML by its ID.

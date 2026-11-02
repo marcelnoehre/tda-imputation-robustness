@@ -1,7 +1,8 @@
 import os
 import time
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import as_completed
+from src.utils import process_pool
 from src.logger import log, timed, Progress
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS, repeated
@@ -20,6 +21,7 @@ from src.pipeline import (
     compute_original_persistence_intervals,
     normalize_original_persistence_intervals,
     prepare_original_data,
+    attach_betti_thresholds,
     introduce_missingness,
     compute_persistence_intervals,
     normalize_persistence_intervals,
@@ -90,7 +92,7 @@ def apply_baseline_methods(datasets, data_missing_values, baseline_methods):
 
     progress = Progress('Reference methods', len(tasks))
     if WORKERS > 1:
-        with ProcessPoolExecutor(max_workers=WORKERS) as executor:
+        with process_pool(WORKERS) as executor:
             futures = {
                 executor.submit(timed, _baseline_worker, method, key, mt, np.array(datasets[key][DATA]), missing_df, seed): (seed, key, mt, mr, method)
                 for seed, key, mt, mr, method, missing_df in tasks
@@ -153,8 +155,10 @@ def experiment_baselines(experiment, missingness_types, missing_rates, tda_metho
     filtration_params = compute_filtration_params(datasets, tda_methods)
     original_persistence_intervals = compute_original_persistence_intervals(datasets, tda_methods, filtration_params)
     normalized_original_persistence_intervals = normalize_original_persistence_intervals(original_persistence_intervals, datasets)
-    comparisons = list(dict.fromkeys({WS: PD, BN: PD, L2PL: DIAGRAM, L2PI: DIAGRAM}[metric] for metric in metrics))
+    comparisons = list(dict.fromkeys({WS: PD, BN: PD, L2PL: DIAGRAM, L2PI: DIAGRAM, BETTI: DIAGRAM}[metric] for metric in metrics))
     original_comparable = prepare_original_data(normalized_original_persistence_intervals, comparisons)
+    if BETTI in metrics:
+        attach_betti_thresholds(original_comparable, datasets, filtration_params)
     log(f'Prepared original data in {time.time() - start_time:.2f} seconds')
 
     log('Introducing missingness...')

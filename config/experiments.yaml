@@ -97,6 +97,12 @@ vectorization:
     sigma_pixels: 2            # Gaussian width = 2 pixels of the persistence axis of each original diagram's grid
     n_bins: 100
 
+betti:                         # Betti-number recovery on the manifolds (metric BETTI, PLAN 10)
+  subsamples: 30               # bottleneck bootstrap (Chazal et al. 2018) on the clean cloud
+  fraction: 0.5                # subsample size relative to n
+  quantile: 0.95               # threshold c per dimension; a feature counts if alive at the cutoff or persistence > 2c
+  seed: 42
+
 baselines:
   subsample_fractions:         # random subsample (RS) of the clean data
     RANDOM_SUBSAMPLE: 0.8
@@ -149,6 +155,21 @@ experiments:
     tda_methods: [VR]
     metrics: [WS, BN, L2PL, L2PI]
     baseline_methods: [RANDOM_SUBSAMPLE_70, RANDOM_SUBSAMPLE_90, MATCHED_JITTER, FRESH_SAMPLE]
+  topological_metrics_no_imputation:
+    driver: topological
+    missingness_types: [MAR]
+    missing_rates: sweep
+    imputation_methods: [NO_IMPUTATION]
+    tda_methods: [VR]
+    metrics: [WS, BN, L2PL, L2PI]
+  topological_metrics_manifolds:
+    driver: topological
+    datasets: manifolds
+    missingness_types: [MCAR, MAR, MNAR]
+    missing_rates: main
+    imputation_methods: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE, NO_IMPUTATION]
+    tda_methods: [VR]
+    metrics: [WS, BN, L2PL, L2PI, BETTI]
   baseline_filtration:
     driver: baseline
     missingness_types: [MAR]

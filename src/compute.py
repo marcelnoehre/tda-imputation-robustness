@@ -1,5 +1,5 @@
 from src.cache import memory
-from src.tda import TDA, max_edge_length_for, filtration_params
+from src.tda import TDA, max_edge_length_for, filtration_params, betti_thresholds
 from src.normalize import normalize_by_diameter
 from src.missingness import MISSINGNESS
 from src.imputation import impute
@@ -71,3 +71,8 @@ def apply_matched_jitter(dataset_data, missing_df, imputed, seed):
 @memory.cache
 def apply_fresh_sample(key, seed):
     return fresh_sample(key, seed)
+
+
+@memory.cache
+def get_betti_thresholds(data, tda, max_edge_length, **params):
+    return betti_thresholds(data, tda, max_edge_length, **params)

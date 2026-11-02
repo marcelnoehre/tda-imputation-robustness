@@ -80,6 +80,7 @@ MICE = 'mice_imputation'
 GAIN = 'gain_imputation'
 TABCSDI = 'tabcsdi_imputation'
 OTIMPUTE = 'otimpute_imputation'
+NO_IMPUTATION = 'no_imputation_nan_euclidean'
 COMPLETE_CASE = 'complete_case_analysis'
 RANDOM_SUBSAMPLE = 'random_subsample'
 RANDOM_SUBSAMPLE_70 = 'random_subsample_70'
@@ -105,6 +106,8 @@ L2PI = 'l2_distance_image'
 RMSE = 'root_mean_square_error'
 MAE = 'mean_absolute_error'
 MAXDISP = 'max_displacement'
+BETTI = 'betti_number'
+BETTI_CLEAN = 'betti_number_clean'
 
 ### PIPELINE ###
 DETERMINISTIC = 'deterministic'
@@ -128,7 +131,7 @@ COLLECTIONS = {
            STOCK, SWISS_ROLL, TORUS, TREASURY, WEATHER_IZMIR, WHITE_WINE_QUALITY],
     MISSINGNESS_TYPE: [MCAR, MAR, MNAR],
     MISSING_RATE: [5, 10, 25],
-    IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
+    IMPUTATION_METHOD: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE, NO_IMPUTATION],
     BASELINE_METHOD: [COMPLETE_CASE, RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH, RANDOM_SUBSAMPLE_70, RANDOM_SUBSAMPLE_90, MATCHED_JITTER, FRESH_SAMPLE],
     TDA_METHOD: [VR, DTMC, KDM, KDM_H025, KDM_H05, KDM_H2, KDM_SILVERMAN],
     MANIFOLD: [SPHERE, SWISS_ROLL, TORUS],
@@ -194,6 +197,7 @@ LABEL: Dict[str, str] = {
     GAIN: 'GAIN',
     TABCSDI: 'TabCSDI',
     OTIMPUTE: 'OTImpute',
+    NO_IMPUTATION: 'No Imputation (nan-Euclidean)',
     COMPLETE_CASE: 'Complete-Case Analysis',
     RANDOM_SUBSAMPLE: 'Random Subsample',
     RANDOM_SUBSAMPLE_70: 'Random Subsample (70%)',
@@ -221,6 +225,8 @@ LABEL: Dict[str, str] = {
     RMSE: 'Root Mean Square Error',
     MAE: 'Mean Absolute Error',
     MAXDISP: 'Maximum Displacement',
+    BETTI: 'Betti Number',
+    BETTI_CLEAN: 'Betti Number (Clean)',
     DATASET: 'Dataset',
     MISSINGNESS_TYPE: 'Type of Missingness',
     MISSING_RATE: 'Missing Rate [%]',
