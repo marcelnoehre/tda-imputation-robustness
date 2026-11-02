@@ -18,7 +18,7 @@ Without uv, install the same pinned versions with `pip install -r requirements.t
 `config/experiments.yaml` holds the full experimental grid (experiments, mechanisms, missing rates, imputers, filtrations, distances), the seeds and every hyperparameter. `src/constants.py` only defines keys and labels.
 
 > [!WARNING]  
-> Before running experiments, set `runtime.workers` in `config/experiments.yaml` to your desired number of parallel workers (`workers > 1` requires `n_jobs: 1`).
+> Before running experiments, set `runtime.workers` in `config/experiments.yaml` (`workers > 1` requires `n_jobs: 1`). Rule of thumb: `min(cores - 1, RAM in GB / 4)`; each worker runs single-threaded and needs up to a few GB on the 5000-point datasets.
 
 Each stage logs its number of tasks, a progress line with elapsed and estimated remaining time every `runtime.progress_interval` seconds (also while a single long task runs), and every task slower than `runtime.slow_task` seconds with its dataset, mechanism, rate, method, filtration and seed.
 

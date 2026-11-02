@@ -4,7 +4,7 @@
 # delete the affected entries in .cache/ (e.g. .cache/src.compute/apply_imputation for an imputer).
 
 runtime:
-  workers: 30          # process pool size; workers > 1 requires n_jobs == 1
+  workers: 30          # process pool size; rule of thumb min(cores - 1, RAM in GB / 4); workers > 1 requires n_jobs == 1
   n_jobs: 1            # threads inside giotto-tda, scikit-learn and mdatagen
   progress_interval: 60   # seconds between progress lines of a stage
   slow_task: 60           # log every single task (e.g. one persistence diagram) that takes longer (seconds)
