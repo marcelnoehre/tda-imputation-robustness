@@ -32,6 +32,8 @@ def experiments():
 SEEDS = list(CONFIG['seeds'])
 WORKERS = CONFIG['runtime']['workers']
 N_JOBS = CONFIG['runtime']['n_jobs']
+PROGRESS_INTERVAL = CONFIG['runtime']['progress_interval']
+SLOW_TASK = CONFIG['runtime']['slow_task']
 
 MANIFOLD_PARAMS = CONFIG['data']['manifolds']
 SYNTHETIC_SWEEP = {**CONFIG['data']['synthetic_sweep'], 'manifolds': resolve(CONFIG['data']['synthetic_sweep']['manifolds'])}

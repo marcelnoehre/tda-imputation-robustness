@@ -6,6 +6,8 @@
 runtime:
   workers: 30          # process pool size; workers > 1 requires n_jobs == 1
   n_jobs: 1            # threads inside giotto-tda, scikit-learn and mdatagen
+  progress_interval: 60   # seconds between progress lines of a stage
+  slow_task: 60           # log every single task (e.g. one persistence diagram) that takes longer (seconds)
 
 seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 

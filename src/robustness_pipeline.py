@@ -2,7 +2,7 @@ import os
 import time
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from src.logger import log
+from src.logger import log, timed, Progress
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS, repeated
 from src.constants import *
@@ -87,18 +87,19 @@ def apply_baseline_methods(datasets, data_missing_values, baseline_methods):
         } for seed, key_dict in data_missing_values.items()
     }
 
+    progress = Progress('Reference methods', len(tasks))
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_baseline_worker, method, key, mt, np.array(datasets[key][DATA]), missing_df, seed): (seed, key, mt, mr, method)
+                executor.submit(timed, _baseline_worker, method, key, mt, np.array(datasets[key][DATA]), missing_df, seed): (seed, key, mt, mr, method)
                 for seed, key, mt, mr, method, missing_df in tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr, method = futures[fut]
-                arrays[seed][key][mt][mr][method] = fut.result()
+                arrays[seed][key][mt][mr][method] = progress(fut.result(), key, mt, f'{mr}%', method, f'seed {seed}')
     else:
         for seed, key, mt, mr, method, missing_df in tasks:
-            arrays[seed][key][mt][mr][method] = _baseline_worker(method, key, mt, np.array(datasets[key][DATA]), missing_df, seed)
+            arrays[seed][key][mt][mr][method] = progress(timed(_baseline_worker, method, key, mt, np.array(datasets[key][DATA]), missing_df, seed), key, mt, f'{mr}%', method, f'seed {seed}')
 
     return arrays
 

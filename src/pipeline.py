@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import t as t_dist, sem as scipy_sem
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from src.logger import log
+from src.logger import log, timed, Progress
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS, repeated
 from src.imputation import IMPUTATION
@@ -90,18 +90,19 @@ def compute_original_persistence_intervals(datasets, tda_methods, filtration_par
 
     tasks = list(_iter(datasets, tda_methods))
 
+    progress = Progress('Persistent homology of the original clouds', len(tasks))
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_ph_worker, np.array(dataset[DATA]), tda, *filtration_params[key][tda]): (key, tda)
+                executor.submit(timed, _ph_worker, np.array(dataset[DATA]), tda, *filtration_params[key][tda]): (key, tda)
                 for key, tda, dataset in tasks
             }
             for fut in as_completed(futures):
                 key, tda = futures[fut]
-                res[key][tda] = fut.result()
+                res[key][tda] = progress(fut.result(), key, tda)
     else:
         for key, tda, dataset in tasks:
-            res[key][tda] = _ph_worker(np.array(dataset[DATA]), tda, *filtration_params[key][tda])
+            res[key][tda] = progress(timed(_ph_worker, np.array(dataset[DATA]), tda, *filtration_params[key][tda]), key, tda)
 
     return res
 
@@ -119,18 +120,19 @@ def normalize_original_persistence_intervals(original, datasets):
 
     tasks = list(_iter(original))
 
+    progress = Progress('Normalizing the original diagrams', len(tasks))
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_normalize_worker, pd_dict, datasets[key][DATA]): (key, tda)
+                executor.submit(timed, _normalize_worker, pd_dict, datasets[key][DATA]): (key, tda)
                 for key, tda, pd_dict in tasks
             }
             for fut in as_completed(futures):
                 key, tda = futures[fut]
-                res[key][tda] = fut.result()
+                res[key][tda] = progress(fut.result(), key, tda)
     else:
         for key, tda, pd_dict in tasks:
-            res[key][tda] = apply_normalize(pd_dict, datasets[key][DATA])
+            res[key][tda] = progress(timed(apply_normalize, pd_dict, datasets[key][DATA]), key, tda)
     
     return res
 
@@ -149,18 +151,19 @@ def prepare_original_data(original, comparison_types):
 
     tasks = list(_iter(original, comparison_types))
 
+    progress = Progress('Preparing the original diagrams', len(tasks))
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_prepare_worker, tda_dict[tda], ct): (key, tda, ct)
+                executor.submit(timed, _prepare_worker, tda_dict[tda], ct): (key, tda, ct)
                 for key, tda, tda_dict, ct in tasks
             }
             for fut in as_completed(futures):
                 key, tda, ct = futures[fut]
-                res[key][tda][ct] = fut.result()
+                res[key][tda][ct] = progress(fut.result(), key, tda, ct)
     else:
         for key, tda, tda_dict, ct in tasks:
-            res[key][tda][ct] = apply_prepare_for_comparison(tda_dict[tda], ct)
+            res[key][tda][ct] = progress(timed(apply_prepare_for_comparison, tda_dict[tda], ct), key, tda, ct)
 
     return res
 
@@ -183,18 +186,19 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
 
     tasks = list(_iter(datasets, missingness_types, missing_rates))
 
+    progress = Progress('Masking', len(tasks))
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_missingness_worker, dataset, mt, mr, seed): (seed, key, mt, mr)
+                executor.submit(timed, _missingness_worker, dataset, mt, mr, seed): (seed, key, mt, mr)
                 for seed, key, mt, mr, dataset in tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr = futures[fut]
-                res[seed][key][mt][mr] = fut.result()
+                res[seed][key][mt][mr] = progress(fut.result(), key, mt, f'{mr}%', f'seed {seed}')
     else:
         for seed, key, mt, mr, dataset in tasks:
-            res[seed][key][mt][mr] = apply_mask(dataset, mt, mr, seed)
+            res[seed][key][mt][mr] = progress(timed(apply_mask, dataset, mt, mr, seed), key, mt, f'{mr}%', f'seed {seed}')
 
     # Deterministic masks are shared by all seeds, so stochastic methods are repeated on the same mask
     for seed in SEEDS[1:]:
@@ -231,25 +235,27 @@ def impute_missing_values(data, imputation_methods):
     pool_tasks = [(seed, key, mt, mr, imp, imp_dict) for seed, key, mt, mr, imp, imp_dict in tasks if imp not in TORCH_METHODS]
     seq_tasks  = [(seed, key, mt, mr, imp, imp_dict) for seed, key, mt, mr, imp, imp_dict in tasks if imp in TORCH_METHODS]
 
+    progress = Progress('Imputation', len(pool_tasks))
     if WORKERS > 1 and pool_tasks:
         # Fork is safe here: workers import torch but never call any torch op
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_imputation_worker, imp_dict, imp, seed): (seed, key, mt, mr, imp)
+                executor.submit(timed, _imputation_worker, imp_dict, imp, seed): (seed, key, mt, mr, imp)
                 for seed, key, mt, mr, imp, imp_dict in pool_tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr, imp = futures[fut]
-                res[seed][key][mt][mr][imp] = fut.result()
+                res[seed][key][mt][mr][imp] = progress(fut.result(), key, mt, f'{mr}%', imp, f'seed {seed}')
     else:
         for seed, key, mt, mr, imp, imp_dict in pool_tasks:
-            res[seed][key][mt][mr][imp] = apply_imputation_observed_scale(imp_dict, imp, seed)
+            res[seed][key][mt][mr][imp] = progress(timed(apply_imputation_observed_scale, imp_dict, imp, seed), key, mt, f'{mr}%', imp, f'seed {seed}')
 
     # Torch methods run sequentially: each already saturates all CPU cores via OMP.
     # Concurrent execution would divide those cores, making each task slower with no
     # net throughput gain.
+    progress = Progress('Imputation with GAIN/TabCSDI/OT-Impute (sequential)', len(seq_tasks))
     for seed, key, mt, mr, imp, imp_dict in seq_tasks:
-        res[seed][key][mt][mr][imp] = apply_imputation_observed_scale(imp_dict, imp, seed)
+        res[seed][key][mt][mr][imp] = progress(timed(apply_imputation_observed_scale, imp_dict, imp, seed), key, mt, f'{mr}%', imp, f'seed {seed}')
 
     return res
 
@@ -278,18 +284,19 @@ def compute_persistence_intervals(data, tda_methods, filtration_params, determin
 
     tasks = list(_iter(data, tda_methods))
 
+    progress = Progress('Persistent homology', len(tasks))
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_ph_worker, tda_dict, tda, *filtration_params[key][tda]): (seed, key, mt, mr, imp, tda)
+                executor.submit(timed, _ph_worker, tda_dict, tda, *filtration_params[key][tda]): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, tda_dict in tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr, imp, tda = futures[fut]
-                res[seed][key][mt][mr][imp][tda] = fut.result()
+                res[seed][key][mt][mr][imp][tda] = progress(fut.result(), key, mt, f'{mr}%', imp, tda, f'seed {seed}')
     else:
         for seed, key, mt, mr, imp, tda, tda_dict in tasks:
-            res[seed][key][mt][mr][imp][tda] = _ph_worker(tda_dict, tda, *filtration_params[key][tda])
+            res[seed][key][mt][mr][imp][tda] = progress(timed(_ph_worker, tda_dict, tda, *filtration_params[key][tda]), key, mt, f'{mr}%', imp, tda, f'seed {seed}')
 
     return res
 
@@ -318,18 +325,19 @@ def normalize_persistence_intervals(data, datasets, determinism=IMPUTATION):
 
     tasks = list(_iter(data))
 
+    progress = Progress('Normalizing diagrams', len(tasks))
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_normalize_worker, normalize_dict, datasets[key][DATA]): (seed, key, mt, mr, imp, tda)
+                executor.submit(timed, _normalize_worker, normalize_dict, datasets[key][DATA]): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, normalize_dict in tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr, imp, tda = futures[fut]
-                res[seed][key][mt][mr][imp][tda] = fut.result()
+                res[seed][key][mt][mr][imp][tda] = progress(fut.result(), key, mt, f'{mr}%', imp, tda, f'seed {seed}')
     else:
         for seed, key, mt, mr, imp, tda, normalize_dict in tasks:
-            res[seed][key][mt][mr][imp][tda] = apply_normalize(normalize_dict, datasets[key][DATA])
+            res[seed][key][mt][mr][imp][tda] = progress(timed(apply_normalize, normalize_dict, datasets[key][DATA]), key, mt, f'{mr}%', imp, tda, f'seed {seed}')
 
     return res
 
@@ -362,20 +370,21 @@ def compute_distances(original, data, metrics, determinism=IMPUTATION):
 
     tasks = list(_iter(data))
 
+    progress = Progress('Distances', len(tasks))
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_compare_all, metrics, original[key][tda], dim_dict): (seed, key, mt, mr, imp, tda)
+                executor.submit(timed, _compare_all, metrics, original[key][tda], dim_dict): (seed, key, mt, mr, imp, tda)
                 for seed, key, mt, mr, imp, tda, dim_dict in tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr, imp, tda = futures[fut]
-                for dim, metric_dict in fut.result().items():
+                for dim, metric_dict in progress(fut.result(), key, mt, f'{mr}%', imp, tda, f'seed {seed}').items():
                     for metric, value in metric_dict.items():
                         res[seed][key][mt][mr][imp][tda][dim][metric] = value
     else:
         for seed, key, mt, mr, imp, tda, dim_dict in tasks:
-            for dim, metric_dict in _compare_all(metrics, original[key][tda], dim_dict).items():
+            for dim, metric_dict in progress(timed(_compare_all, metrics, original[key][tda], dim_dict), key, mt, f'{mr}%', imp, tda, f'seed {seed}').items():
                 for metric, value in metric_dict.items():
                     res[seed][key][mt][mr][imp][tda][dim][metric] = value
 

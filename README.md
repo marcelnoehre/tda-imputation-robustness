@@ -20,6 +20,8 @@ Without uv, install the same pinned versions with `pip install -r requirements.t
 > [!WARNING]  
 > Before running experiments, set `runtime.workers` in `config/experiments.yaml` to your desired number of parallel workers (`workers > 1` requires `n_jobs: 1`).
 
+Each stage logs its number of tasks, a progress line with elapsed and estimated remaining time every `runtime.progress_interval` seconds (also while a single long task runs), and every task slower than `runtime.slow_task` seconds with its dataset, mechanism, rate, method, filtration and seed.
+
 Intermediate results are cached in `.cache/`, keyed by the function arguments but not by the configuration. After changing a hyperparameter, delete the affected cache entries.
 
 ## Run Experiments

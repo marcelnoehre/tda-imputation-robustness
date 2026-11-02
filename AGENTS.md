@@ -46,7 +46,7 @@ python main.py 223 666                # only these OpenML IDs (-1/-2/-3 = torus/
 python main.py -e baseline            # only these experiments (names from config/experiments.yaml)
 ```
 
-Set `runtime.workers` in `config/experiments.yaml` before running; `workers > 1` requires `n_jobs: 1`. Intermediate results are cached on disk in `.cache/` (keyed by the function arguments, not by the config), so re-runs only compute what is new. After changing a hyperparameter in the config, delete the affected cache entries.
+Set `runtime.workers` in `config/experiments.yaml` before running; `workers > 1` requires `n_jobs: 1`. Intermediate results are cached on disk in `.cache/` (keyed by the function arguments, not by the config), so re-runs only compute what is new. After changing a hyperparameter in the config, delete the affected cache entries. Progress logging (`src/logger.py::Progress`): every stage logs its task count, a progress line every `runtime.progress_interval` seconds, and each task slower than `runtime.slow_task` seconds with its label; these lines are the basis for runtime estimates.
 
 Regenerate the paper outputs (takes about 2 minutes; nbconvert is not a project dependency):
 

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import t as t_dist, sem as scipy_sem
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from src.logger import log
+from src.logger import log, timed, Progress
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS, repeated
 from src.imputation import IMPUTATION
@@ -42,18 +42,19 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
 
     tasks = list(_iter(datasets, missingness_types, missing_rates))
 
+    progress = Progress('Masking', len(tasks))
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr)
+                executor.submit(timed, _apply_missingness, dataset, mt, mr, seed): (seed, key, mt, mr)
                 for seed, key, mt, mr, dataset in tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr = futures[fut]
-                res[seed][key][mt][mr] = fut.result()
+                res[seed][key][mt][mr] = progress(fut.result(), key, mt, f'{mr}%', f'seed {seed}')
     else:
         for seed, key, mt, mr, dataset in tasks:
-            res[seed][key][mt][mr] = apply_mask(dataset, mt, mr, seed)
+            res[seed][key][mt][mr] = progress(timed(apply_mask, dataset, mt, mr, seed), key, mt, f'{mr}%', f'seed {seed}')
 
     # Deterministic masks are shared by all seeds, so stochastic methods are repeated on the same mask
     for seed in SEEDS[1:]:
@@ -90,21 +91,23 @@ def impute_missing_values(data, imputation_methods):
     pool_tasks = [(seed, key, mt, mr, imp, imp_dict) for seed, key, mt, mr, imp, imp_dict in tasks if imp not in TORCH_METHODS]
     seq_tasks  = [(seed, key, mt, mr, imp, imp_dict) for seed, key, mt, mr, imp, imp_dict in tasks if imp in TORCH_METHODS]
 
+    progress = Progress('Imputation', len(pool_tasks))
     if WORKERS > 1 and pool_tasks:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
+                executor.submit(timed, _apply_imputation, imp_dict, imp, seed): (seed, key, mt, mr, imp)
                 for seed, key, mt, mr, imp, imp_dict in pool_tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr, imp = futures[fut]
-                res[seed][key][mt][mr][imp] = fut.result()
+                res[seed][key][mt][mr][imp] = progress(fut.result(), key, mt, f'{mr}%', imp, f'seed {seed}')
     else:
         for seed, key, mt, mr, imp, imp_dict in pool_tasks:
-            res[seed][key][mt][mr][imp] = apply_imputation_observed_scale(imp_dict, imp, seed)
+            res[seed][key][mt][mr][imp] = progress(timed(apply_imputation_observed_scale, imp_dict, imp, seed), key, mt, f'{mr}%', imp, f'seed {seed}')
 
+    progress = Progress('Imputation with GAIN/TabCSDI/OT-Impute (sequential)', len(seq_tasks))
     for seed, key, mt, mr, imp, imp_dict in seq_tasks:
-        res[seed][key][mt][mr][imp] = apply_imputation_observed_scale(imp_dict, imp, seed)
+        res[seed][key][mt][mr][imp] = progress(timed(apply_imputation_observed_scale, imp_dict, imp, seed), key, mt, f'{mr}%', imp, f'seed {seed}')
 
     return res
 
@@ -133,18 +136,19 @@ def compute_distances(datasets, imputed_data, metrics):
 
     tasks = list(_iter(imputed_data, metrics))
 
+    progress = Progress('Distances', len(tasks))
     if WORKERS > 1:
         with ProcessPoolExecutor(max_workers=WORKERS) as executor:
             futures = {
-                executor.submit(_compare, metric, np.asarray(datasets[key][DATA]), arr): (seed, key, mt, mr, imp, metric)
+                executor.submit(timed, _compare, metric, np.asarray(datasets[key][DATA]), arr): (seed, key, mt, mr, imp, metric)
                 for seed, key, mt, mr, imp, metric, arr in tasks
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr, imp, metric = futures[fut]
-                res[seed][key][mt][mr][imp][metric] = fut.result()
+                res[seed][key][mt][mr][imp][metric] = progress(fut.result(), key, mt, f'{mr}%', imp, metric, f'seed {seed}')
     else:
         for seed, key, mt, mr, imp, metric, arr in tasks:
-            res[seed][key][mt][mr][imp][metric] = _compare(metric, np.asarray(datasets[key][DATA]), arr)
+            res[seed][key][mt][mr][imp][metric] = progress(timed(_compare, metric, np.asarray(datasets[key][DATA]), arr), key, mt, f'{mr}%', imp, metric, f'seed {seed}')
 
     return res
 
