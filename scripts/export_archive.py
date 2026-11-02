@@ -26,7 +26,7 @@ import numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 from src.constants import *
-from src.config import CONFIG_PATH, experiments
+from src.config import CONFIG_PATH, experiments, experiment_seeds, use_seeds
 from src.data import get_all_datasets, get_dataset_set
 from src.imputation import IMPUTATION
 from src.normalize import diameter
@@ -94,6 +94,7 @@ def export(out, names=None, datasets=None):
             if driver in ('comparison_metrics', 'spread') or (names is not None and name not in names):
                 continue
             log(f'Exporting the diagrams of {name}...')
+            use_seeds(experiment_seeds(name))
             if dataset_set is not None:
                 export_experiment(f, driver, kwargs, get_dataset_set(dataset_set))
             else:

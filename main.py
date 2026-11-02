@@ -1,7 +1,7 @@
 import argparse
 
 from src.constants import *
-from src.config import WORKERS, N_JOBS, CONFIG, experiments
+from src.config import WORKERS, N_JOBS, CONFIG, experiments, experiment_seeds, use_seeds
 from src.comparison_metrics import comparison_metrics
 from src.pipeline import experiment
 from src.robustness_pipeline import experiment_baselines
@@ -37,6 +37,7 @@ def main():
     for name, driver, kwargs, dataset_set in experiments():
         if selected is not None and name not in selected:
             continue
+        use_seeds(experiment_seeds(name))
         if dataset_set is not None:
             # own dataset set; with dataset IDs on the command line, run only when named with -e
             if datasets is None or selected is not None:

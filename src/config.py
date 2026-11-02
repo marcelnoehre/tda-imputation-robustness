@@ -20,7 +20,7 @@ def experiments():
     for name, spec in CONFIG['experiments'].items():
         kwargs = {}
         for arg, value in spec.items():
-            if arg in ('driver', 'datasets'):
+            if arg in ('driver', 'datasets', 'seeds'):
                 continue
             if arg == 'missing_rates':
                 kwargs[arg] = CONFIG['missing_rates'][value] if isinstance(value, str) else value
@@ -30,6 +30,19 @@ def experiments():
     return res
 
 SEEDS = list(CONFIG['seeds'])
+
+def experiment_seeds(name):
+    """Seeds of an experiment: its own `seeds` entry, else the global list."""
+    return list(CONFIG['experiments'][name].get('seeds', CONFIG['seeds']))
+
+def use_seeds(seeds):
+    """
+    Set the seeds of the following run in place, so every module that imported SEEDS sees them (main process
+    only; workers read the global list, but use at most SEEDS[0], which every seed list shares).
+    """
+    if seeds[0] != CONFIG['seeds'][0]:
+        raise ValueError(f'the first seed must be {CONFIG["seeds"][0]}: deterministic settings run under it only')
+    SEEDS[:] = seeds
 WORKERS = CONFIG['runtime']['workers']
 N_JOBS = CONFIG['runtime']['n_jobs']
 PROGRESS_INTERVAL = CONFIG['runtime']['progress_interval']

@@ -34,6 +34,7 @@ These affect items 3, 5 and 6 and the existing growth results, so resolve them f
 - [x] Find out why the stochastic imputers ran with one seed (was `SEEDS` reduced for the run?).
   - Not a reduced `SEEDS`, but a loop bug: every iterator ran extra seeds only if **both** the mechanism and the method were stochastic (`not det_mt or seed == S0` and `not det_method or seed == S0`). So all MAR/MNAR × imputer runs, kNN × MCAR, CCA × MCAR and RS/SGT × MAR/MNAR had one seed. Fixed with `missingness.repeated(seed, mt, method_deterministic)`: a pair repeats over all seeds as soon as either part is stochastic; deterministic MAR/MNAR masks are computed once and shared by all seeds. Verified by smoke runs (torus, MCAR/MAR 10%, 2 seeds, WORKERS 1 and 4) of all three drivers: n_seeds = 1 only for deterministic × deterministic pairs. Stale: n_seeds and all means in every result file.
 - [x] Decide (user): re-run with 10 seeds. User chose `SEEDS = range(1, 11)` (keeps the cache of seeds 1–9; `range(10)` would recompute everything). Set in `constants.py`. The re-runs are listed under "Waiting for user → Runs needed".
+- [x] Reduce to 3 seeds (user decision, 2026-11-02, after part 1 showed >3 h per 5000-point VR diagram). `seeds: [1, 2, 3]`; experiments may set their own `seeds` (`config.experiment_seeds`, applied in place by `config.use_seeds` in `main.py` and `export_archive.py`); `mice_spread` keeps 10 draws (45 pairs). Evidence: on the old 9-seed RS/SGT (MCAR) results the median standard error of a 3-seed mean is 3% (WS), 8% (BN), 12% (PL), 9% (PI) vs a between-dataset SD of log distance of 0.7–0.9; tests use the dataset as unit. Seed dispersion is reported as a range (the `*_iqr.tex` tables are across datasets and unaffected). Cache entries of seeds 1–3 are reused. Paper: setup, appendix Seeds paragraph, limitations, `grid.tex`. Test: `test_experiment_seeds_reach_every_module`.
 
 ---
 
@@ -218,7 +219,7 @@ Running list of every change the paper (`paper/robustness_tda`) needs, with the 
 - [ ] **3** (runs) RQ1 / Finding 1 against the same-cardinality references (jitter, fresh sample) and the 70/90% subsample sensitivity; `limitations.tex` "noise floor estimated from an 80% subsample".
 - [x] **6** `ph.tex`: Rips stability d_B ≤ 2e_∞ (diameter convention; 2e_∞/diam X in our units), space-dependent Wasserstein constants, W_p defined with a ground metric q, diagonal costs (d − b)/2 (q = ∞) and (d − b)/√2 (q = 2), \WS = W₁ with q = 2, landscape bound ‖λ − λ'‖_∞ ≤ d_B. `Chazal2014` added to `main.bib`. Paper compiles.
 - [ ] **6** (runs) Finding 3 in terms of e_∞ vs RMSE; e_∞ in Table `growth` and Figure `growth_by_family`; tightness τ = d_B/(2e_∞/diam X) (appendix or text).
-- [x] **0.3** `setup.tex`: the seeds sentence now says which settings are repeated over 10 seeds and that the MAR mask is shared (MNAR is stochastic since the 2.3 fix) (with a `% TODO(PLAN 0.3)` until the re-runs are in). Check `limitations.tex` ("10 seeds for each non-deterministic method") and the compute statement once the runs are done.
+- [x] **0.3** `setup.tex`: the seeds sentence now says which settings are repeated over 10 seeds and that the MAR mask is shared (MNAR is stochastic since the 2.3 fix) (with a `% TODO(PLAN 0.3)` until the re-runs are in). Check `limitations.tex` ("10 seeds for each non-deterministic method") and the compute statement once the runs are done. Updated to three seeds (2026-11-02), incl. appendix Seeds paragraph, limitations and `grid.tex`.
 - [x] **0.1** `results.tex` RQ3: "MAE naturally has a steeper growth rate than RMSE ($\beta = 1.18$ vs.\ 0.65)": explain it, since over all entries MAE scales with MR and RMSE with $\sqrt{\MR}$ for a fixed per-cell error.
 
 ### Paper changes from review round 2 (2026-11-02)
@@ -243,13 +244,13 @@ Items here are blocked on the user. Agents add to this section (see `CLAUDE.md`)
 
 ### Runs needed
 Exact `main.py` calls in the order they should run, with the result files they write. Set `runtime.workers` in `config/experiments.yaml` first. Because of 0.2 (shared PL/PI grid), 0.3 (10 seeds), the shared original cutoff (item 1) and the seeded MNAR (2.3), **every result file must be regenerated**; the original diagrams and the MCAR/MAR imputations stay cached. Since the observed-entry standardisation (2.3), all imputations are recomputed too.
-1. `python main.py -e comparison_metrics` → `results/comparison_metrics_results.csv` (RMSE, MAE, MAXDISP; kNN; 3 mechanisms × 13 rates; 10 seeds for MCAR/MNAR). Cheap; also caches the kNN imputations that `baseline_reference` needs.
+1. `python main.py -e comparison_metrics` → `results/comparison_metrics_results.csv` (RMSE, MAE, MAXDISP; kNN; 3 mechanisms × 13 rates; 3 seeds for MCAR/MNAR). Cheap; also caches the kNN imputations that `baseline_reference` needs.
 2. `python main.py -e topological_metrics_mr` → `results/topological_metrics_mr_results.csv`.
 3. `python main.py -e baseline` → `results/baseline_results.csv`.
 4. `python main.py -e baseline_reference` → `results/baseline_reference_results.csv` (RS 70/90%, matched jitter, fresh sample; MAR, 13 rates). Needs step 1.
 5. `python main.py -e topological_metrics_filtration` → `results/topological_metrics_filtration_results.csv` (VR, DTM with m = 0.05 + 3 smoothing scales, KDM + 4 bandwidth variants).
 6. `python main.py -e baseline_filtration` → `results/baseline_filtration_results.csv` (RS/SGT for DTM and KDM; MAR 5/10/25%).
-7. `python main.py -e topological_metrics` → `results/topological_metrics_results.csv` (all 9 imputers; RF/MICE/GAIN/TabCSDI/OT now 10 seeds; the most expensive run).
+7. `python main.py -e topological_metrics` → `results/topological_metrics_results.csv` (all 9 imputers; RF/MICE/GAIN/TabCSDI/OT now 3 seeds; the most expensive run).
 8. `python main.py -e topological_metrics_no_imputation` → `results/topological_metrics_no_imputation_*.csv` (imputation-free baseline, MAR, 13 rates; cheap).
 9. `python main.py -e topological_metrics_manifolds` → `results/topological_metrics_manifolds_*.csv` (Betti recovery; 3 manifolds × 10 methods × 3 mechanisms × 5/10/25%; the deep imputers take a few hours).
 10. `python main.py -e mice_spread` → `results/mice_spread_{pairs,results}.csv` (needs run 7; only pairwise distances are new, cheap).

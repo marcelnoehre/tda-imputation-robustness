@@ -9,7 +9,9 @@ runtime:
   progress_interval: 60   # seconds between progress lines of a stage
   slow_task: 60           # log every single task (e.g. one persistence diagram) that takes longer (seconds)
 
-seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+# every setting with a stochastic component runs once per seed; an experiment can override this with its own `seeds`
+# (3 seeds: the seed-to-seed error of a mean is small against the differences between datasets, the statistical unit)
+seeds: [1, 2, 3]
 
 data:
   manifolds:
@@ -199,6 +201,7 @@ experiments:
     baseline_methods: [RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH]
   mice_spread:                   # within-imputation spread of MICE (10 draws = 10 seeds on the same MAR mask), PLAN 19
     driver: spread
+    seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]   # 45 pairs of draws instead of 3; seeds 1-3 are shared with topological_metrics
     datasets: [-1, 4353, 42367, 43384]   # torus, Concrete Data, Treasury, Diabetes
     missingness_types: [MAR]
     missing_rates: main

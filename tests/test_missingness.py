@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import pandas as pd
 
 from src.constants import *
@@ -34,3 +35,21 @@ def test_repeated():
     assert repeated(SEEDS[0], MAR, det)
     assert not repeated(SEEDS[1], MAR, det)
     assert repeated(SEEDS[1], MAR, stoch) and repeated(SEEDS[1], MCAR, det) and repeated(SEEDS[1], MNAR, det)
+
+
+def test_experiment_seeds_reach_every_module():
+    """An experiment's own seed list replaces the global one in place, so modules that imported SEEDS see it."""
+    import src.config as config
+    import src.missingness as missingness
+    import src.pipeline as pipeline
+    default = config.experiment_seeds('topological_metrics')
+    assert default == list(config.CONFIG['seeds'])
+    spread = config.experiment_seeds('mice_spread')
+    try:
+        config.use_seeds(spread)
+        assert missingness.SEEDS == spread and pipeline.SEEDS == spread
+        with pytest.raises(ValueError):
+            config.use_seeds([2, 3])
+    finally:
+        config.use_seeds(default)
+    assert missingness.SEEDS == default
