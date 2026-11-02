@@ -257,6 +257,8 @@ Exact `main.py` calls in the order they should run, with the result files they w
 11. `python main.py -e synthetic_topological synthetic_baseline` → `results/synthetic_topological_results.csv`, `results/synthetic_baseline_results.csv` (27 synthetic variants, MAR, 13 rates; kNN and RS/SGT). Several hours.
 (`python main.py` without `-e` runs all of them in config order.)
 
+**Status (2026-11-02):** runs 1–4 are running as part 1 (`logs/part1.log`, 3 seeds, restarted 15:42); the queue `logs/run_queue.sh` then runs 7 (part 3) and 8–11 (part 4). Runs 5–6 (part 2: DTM/KD filtrations) were **removed from the queue at the user's request** and are still open; decide after part 1 whether and in which form to run them (risk: slow DTM/KD diagrams on the 5000-point datasets). Estimate: part 1 ~10–12 days, part 3 ~3–5 days, part 4 < 1 day.
+
 ## Order and dependencies
 
 1. **0.1, 0.2, 0.3**: they change the existing numbers, so do them before anything new is compared against them.
