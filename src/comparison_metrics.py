@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import t as t_dist, sem as scipy_sem
 from concurrent.futures import as_completed
-from src.utils import process_pool
+from src.utils import process_pool, rates_for
 from src.logger import log, timed, Progress
 from src.data import get_all_datasets
 from src.missingness import MISSINGNESS, repeated
@@ -30,7 +30,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
             for key, dataset in datasets.items():
                 for mt in missingness_types:
                     if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
-                        for mr in missing_rates:
+                        for mr in rates_for(missing_rates, mt):
                             yield seed, key, mt, mr, dataset
 
     res = {

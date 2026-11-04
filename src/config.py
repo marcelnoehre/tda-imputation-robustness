@@ -11,6 +11,12 @@ def resolve(names):
     """Map symbolic names from the config (e.g. 'MCAR') to the keys in src/constants.py."""
     return [getattr(constants, name) for name in names]
 
+def _rates(value):
+    """A rate set name or list, or a mapping mechanism -> set name or list (resolved to a dict keyed by mechanism)."""
+    if isinstance(value, dict):
+        return {getattr(constants, mt): _rates(rates) for mt, rates in value.items()}
+    return list(CONFIG['missing_rates'][value]) if isinstance(value, str) else list(value)
+
 def experiments():
     """
     Experiments in config order as (result name, driver, keyword arguments of the driver, dataset set).
@@ -23,7 +29,7 @@ def experiments():
             if arg in ('driver', 'datasets', 'seeds'):
                 continue
             if arg == 'missing_rates':
-                kwargs[arg] = CONFIG['missing_rates'][value] if isinstance(value, str) else value
+                kwargs[arg] = _rates(value)
             else:
                 kwargs[arg] = resolve(value)
         res.append((name, spec['driver'], kwargs, spec.get('datasets')))

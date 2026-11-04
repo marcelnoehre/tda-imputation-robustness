@@ -31,6 +31,8 @@ missingness:
 missing_rates:
   main: [5, 10, 25]
   sweep: [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40]
+# An experiment's missing_rates is a set name (the same rates for every mechanism) or a mapping mechanism -> set name.
+# The rate sweep runs for MAR only; MCAR and MNAR (RQ5, compared with MAR on the shared rates) use the main rates.
 
 imputation:
   knn:
@@ -123,7 +125,7 @@ experiments:
   comparison_metrics:
     driver: comparison_metrics
     missingness_types: [MCAR, MAR, MNAR]
-    missing_rates: sweep
+    missing_rates: {MCAR: main, MAR: sweep, MNAR: main}
     imputation_methods: [KNN]
     metrics: [RMSE, MAE, MAXDISP]
   topological_metrics:
@@ -136,7 +138,7 @@ experiments:
   topological_metrics_mr:
     driver: topological
     missingness_types: [MCAR, MAR, MNAR]
-    missing_rates: sweep
+    missing_rates: {MCAR: main, MAR: sweep, MNAR: main}
     imputation_methods: [KNN]
     tda_methods: [VR]
     metrics: [WS, BN, L2PL, L2PI]
@@ -150,7 +152,7 @@ experiments:
   baseline:
     driver: baseline
     missingness_types: [MCAR, MAR, MNAR]
-    missing_rates: sweep
+    missing_rates: {MCAR: main, MAR: sweep, MNAR: main}
     tda_methods: [VR]
     metrics: [WS, BN, L2PL, L2PI]
     baseline_methods: [COMPLETE_CASE, RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH]

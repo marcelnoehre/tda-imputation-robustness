@@ -25,11 +25,13 @@ Code and results for the paper *The Robustness of Topological Data Analysis Unde
 
 | Result file | Imputers | Mechanisms | Missing rates | Filtrations |
 |-------------|----------|------------|---------------|-------------|
-| `comparison_metrics` (RMSE, MAE) | kNN | MCAR, MAR, MNAR | 13 rates, 1–40% | – |
+| `comparison_metrics` (RMSE, MAE) | kNN | MCAR, MAR, MNAR | MAR: 13 rates, 1–40%; MCAR, MNAR: 5, 10, 25% | – |
 | `topological_metrics` | all 9 | MAR | 5, 10, 25% | VR |
-| `topological_metrics_mr` | kNN | MCAR, MAR, MNAR | 13 rates, 1–40% | VR |
+| `topological_metrics_mr` | kNN | MCAR, MAR, MNAR | MAR: 13 rates, 1–40%; MCAR, MNAR: 5, 10, 25% | VR |
 | `topological_metrics_filtration` | kNN | MAR | 5, 10, 25% | VR, DTM, KD |
-| `baseline` (SGT, RS, CCA) | – | MCAR, MAR, MNAR | 13 rates, 1–40% | VR |
+| `baseline` (SGT, RS, CCA) | – | MCAR, MAR, MNAR | MAR: 13 rates, 1–40%; MCAR, MNAR: 5, 10, 25% | VR |
+
+Per-mechanism rates are set in the config (`missing_rates: {MCAR: main, MAR: sweep, MNAR: main}`); the notebook compares the mechanisms on the rates they share and computes break-even rates only for mechanisms with the full sweep.
 
 Distances: Wasserstein, bottleneck, L² on persistence landscapes, L² on persistence images, each in H0–H2. Datasets: 3 synthetic manifolds and 15 OpenML datasets (18 in total).
 

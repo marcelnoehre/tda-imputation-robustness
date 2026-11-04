@@ -40,3 +40,7 @@ def process_pool(workers):
     """
     return ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context('spawn'),
                                initializer=_single_threaded_worker)
+
+def rates_for(missing_rates, mt):
+    """Missing rates of one mechanism: missing_rates is a list shared by all mechanisms or a dict mechanism -> list."""
+    return missing_rates[mt] if isinstance(missing_rates, dict) else missing_rates

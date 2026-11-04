@@ -53,3 +53,20 @@ def test_experiment_seeds_reach_every_module():
     finally:
         config.use_seeds(default)
     assert missingness.SEEDS == default
+
+
+def test_per_mechanism_rates(tmp_path, monkeypatch):
+    """A mapping mechanism -> rate set runs each mechanism at its own rates (the sweep only under MAR)."""
+    import src.cache as cache
+    import src.config as config
+    import src.pipeline as pipeline
+    monkeypatch.setattr(cache, '_CACHE_DIR', str(tmp_path / 'cache'))
+    monkeypatch.setattr(pipeline, 'WORKERS', 1)
+    from src.utils import rates_for
+    rates = config._rates({'MCAR': 'main', 'MAR': 'sweep', 'MNAR': [5, 25]})
+    assert rates == {MCAR: config.CONFIG['missing_rates']['main'], MAR: config.CONFIG['missing_rates']['sweep'], MNAR: [5, 25]}
+    assert rates_for([5, 10], MCAR) == [5, 10] and rates_for(rates, MNAR) == [5, 25]
+    data = {'toy': {DATA: pd.DataFrame(np.random.default_rng(0).normal(size=(40, 6)), columns=list('abcdef')), TARGET: np.zeros(40)}}
+    masks = pipeline.introduce_missingness(data, [MCAR, MAR, MNAR], rates)
+    for seed in masks:
+        assert {mt: sorted(v) for mt, v in masks[seed]['toy'].items()} == {mt: sorted(r) for mt, r in rates.items()}

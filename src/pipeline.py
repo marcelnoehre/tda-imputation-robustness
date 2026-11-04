@@ -16,7 +16,7 @@ from src.metrics import (
     persistence_image_l2_distance,
 )
 from src.tda import persistence_landscape, persistence_image, betti_numbers
-from src.utils import transform_pd, process_pool
+from src.utils import transform_pd, process_pool, rates_for
 from src.normalize import diameter
 from src.constants import *
 from src.config import SEEDS, WORKERS, DIMENSIONS
@@ -193,7 +193,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
             for key, dataset in datasets.items():
                 for mt in missingness_types:
                     if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
-                        for mr in missing_rates:
+                        for mr in rates_for(missing_rates, mt):
                             yield seed, key, mt, mr, dataset
 
     res = {
