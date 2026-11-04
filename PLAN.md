@@ -258,7 +258,7 @@ Exact `main.py` calls in the order they should run, with the result files they w
 11. `python main.py -e synthetic_topological synthetic_baseline` → `results/synthetic_topological_results.csv`, `results/synthetic_baseline_results.csv` (27 synthetic variants, MAR, 13 rates; kNN and RS/SGT). Several hours.
 (`python main.py` without `-e` runs all of them in config order.)
 
-**Status (2026-11-02):** runs 1–4 are running as part 1 (`logs/part1.log`, 3 seeds, restarted 15:42); the queue `logs/run_queue.sh` then runs 7 (part 3) and 8–11 (part 4). Runs 5–6 (part 2: DTM/KD filtrations) were **removed from the queue at the user's request** and are still open; decide after part 1 whether and in which form to run them (risk: slow DTM/KD diagrams on the 5000-point datasets). Estimate: part 1 ~10–12 days, part 3 ~3–5 days, part 4 < 1 day.
+**Status (2026-11-04):** runs 1–4 run as part 1 on zugspitze (`logs/part1c.log`; 3 seeds, MCAR/MNAR at 5/10/25%); the queue `logs/run_queue.sh` then runs 5–6 (part 2, `logs/part2c.log`), 7 (part 3) and 8–11 (part 4). Part 2 has 323/540 diagrams of `topological_metrics_filtration` in the cache from watzmann; its slowest diagrams are KD with h = 0.25 × median and Silverman on White Wine/Air Quality (7–13 h each).
 
 ## Order and dependencies
 
