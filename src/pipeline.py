@@ -16,7 +16,7 @@ from src.metrics import (
     persistence_image_l2_distance,
 )
 from src.tda import persistence_landscape, persistence_image
-from src.utils import transform_pd
+from src.utils import transform_pd, rates_for
 from src.constants import *
 from src.compute import (
     get_max_edge_length,
@@ -167,7 +167,7 @@ def introduce_missingness(datasets, missingness_types, missing_rates):
             for key, dataset in datasets.items():
                 for mt in missingness_types:
                     if not MISSINGNESS[mt][DETERMINISTIC] or seed == SEEDS[0]:
-                        for mr in missing_rates:
+                        for mr in rates_for(missing_rates, mt):
                             yield seed, key, mt, mr, dataset
 
     res = {

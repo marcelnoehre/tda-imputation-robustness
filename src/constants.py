@@ -76,6 +76,10 @@ SEEDS = list(range(1, 10))
 MCAR = 'missing_completely_at_random'
 MAR = 'missing_at_random'
 MNAR = 'missing_not_at_random'
+MAIN_RATES = [5, 10, 25]
+EXTENDED_RATES = [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40]
+# Extended rates only for MAR; MCAR and MNAR use the main rates
+MECHANISM_RATES = {MCAR: MAIN_RATES, MAR: EXTENDED_RATES, MNAR: MAIN_RATES}
 CONSTANT = 'constant_imputation'
 MEAN = 'mean_imputation'
 MEDIAN = 'median_imputation'

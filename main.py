@@ -27,7 +27,7 @@ def main():
     comparison_metrics(
         f'{prefix}comparison_metrics',
         [MCAR, MAR, MNAR],
-        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
+        MECHANISM_RATES,
         [KNN],
         [RMSE, MAE],
         datasets
@@ -35,7 +35,7 @@ def main():
     experiment(
         f'{prefix}topological_metrics',
         [MAR],
-        [5, 10, 25],
+        MAIN_RATES,
         [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE],
         [VR],
         [WS, BN, L2PL, L2PI],
@@ -44,7 +44,7 @@ def main():
     experiment(
         f'{prefix}topological_metrics_mr',
         [MCAR, MAR, MNAR],
-        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
+        MECHANISM_RATES,
         [KNN],
         [VR],
         [WS, BN, L2PL, L2PI],
@@ -53,7 +53,7 @@ def main():
     experiment(
         f'{prefix}topological_metrics_filtration',
         [MAR],
-        [5, 10, 25],
+        MAIN_RATES,
         [KNN],
         [VR, DTMC, KD],
         [WS, BN, L2PL, L2PI],
@@ -62,7 +62,7 @@ def main():
     experiment_baselines(
         f'{prefix}baseline',
         [MCAR, MAR, MNAR],
-        [1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40],
+        MECHANISM_RATES,
         [VR],
         [WS, BN, L2PL, L2PI],
         datasets
