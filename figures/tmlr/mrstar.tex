@@ -1,30 +1,30 @@
 \begin{table}[h]
     \centering
-    \caption{Break-even rate $\MR^*$ per dataset: smallest missing rate at which $d_{\SGT}$ exceeds the reference, with the log-ratio averaged over the 12 measures (VR, log-interpolated over 13 rates). $\leq$1\%: exceeded at the lowest rate; $>$40\%: never exceeded.}
+    \caption{Break-even rate $\MR^*$ per dataset: smallest missing rate at which $d_{\SGT}$ exceeds the reference, with the log-ratio averaged over the 12 measures (VR, MAR, log-interpolated over 13 rates; Jitter: RMSE-matched jitter, Fresh: fresh sample of the manifold). $\leq$1\%: exceeded at the lowest rate; $>$40\%: never exceeded.}
     \label{tab:mrstar}
     \small
-    \begin{tabular}{l l ccc}
+    \begin{tabular}{l l ccccc}
         \toprule
-        Dataset & Type & MCAR \RS\ 80\% & MAR \RS\ 80\% & MNAR \RS\ 80\% \\
+        Dataset & Type & \RS\ 80\% & \RS\ 70\% & \RS\ 90\% & Jitter & Fresh \\
         \midrule
-        Sphere                      & Synthetic Manifold & $\leq$1\% & 4.8\%     & 7.7\% \\
-        Swiss Roll                  & Synthetic Manifold & $\leq$1\% & 4.3\%     & 6.2\% \\
-        Torus                       & Synthetic Manifold & $\leq$1\% & 4.3\%     & 6.8\% \\
-        Boston Weather Data         & Time series        & 5.0\%     & 10.8\%    & 12.8\% \\
-        Hungarian Chickenpox        & Time series        & 2.1\%     & 20.1\%    & 16.9\% \\
-        Indian Stock Market         & Time series        & $\leq$1\% & 3.5\%     & 7.2\% \\
-        RMFTSA LA Data              & Time series        & 7.8\%     & 33.0\%    & 33.4\% \\
-        Stock                       & Time series        & $\leq$1\% & $\leq$1\% & 4.1\% \\
-        Treasury                    & Time series        & $\leq$1\% & 5.5\%     & 7.5\% \\
-        Weather Izmir               & Time series        & 8.0\%     & 14.4\%    & 27.6\% \\
-        Concrete Data               & Regression         & 2.6\%     & 6.9\%     & 15.6\% \\
-        Red Wine Quality            & Regression         & 5.0\%     & 12.9\%    & 25.1\% \\
-        White Wine Quality          & Regression         & 6.7\%     & 13.8\%    & 30.5\% \\
-        Air Quality and Pollution   & Classification     & 13.4\%    & $>$40\%   & 37.6\% \\
-        Debutanizer                 & Classification     & 1.3\%     & $\leq$1\% & 3.5\% \\
-        Diabetes                    & Classification     & 15.6\%    & 12.7\%    & 5.9\% \\
-        Football Player Position    & Classification     & 9.7\%     & 24.4\%    & $>$40\% \\
-        Gender Recognition by Voice & Classification     & 4.2\%     & 12.9\%    & 25.7\% \\
+        Sphere                      & Synthetic   & 4.6\%  & 5.0\%  & 2.5\%     & 25.8\%    & 4.8\% \\
+        Swiss Roll                  & Synthetic   & 2.8\%  & 3.6\%  & 2.0\%     & 21.5\%    & 2.4\% \\
+        Torus                       & Synthetic   & 4.9\%  & 5.6\%  & 2.9\%     & 26.2\%    & 3.7\% \\
+        Boston Weather Data         & Time series & 13.0\% & 14.6\% & 8.4\%     & $>$40\%   & -- \\
+        Hungarian Chickenpox        & Time series & 23.4\% & 28.9\% & 11.7\%    & 2.0\%     & -- \\
+        Indian Stock Market         & Time series & 4.0\%  & 6.7\%  & 3.3\%     & $>$40\%   & -- \\
+        RMFTSA LA Data              & Time series & 11.7\% & 16.6\% & 2.5\%     & 1.7\%     & -- \\
+        Stock                       & Time series & 3.5\%  & 4.1\%  & $\leq$1\% & $\leq$1\% & -- \\
+        Treasury                    & Time series & 4.6\%  & 6.2\%  & 3.4\%     & $>$40\%   & -- \\
+        Weather Izmir               & Time series & 3.8\%  & 21.4\% & 4.9\%     & $\leq$1\% & -- \\
+        Concrete Data               & Regression  & 3.2\%  & 5.4\%  & $\leq$1\% & $\leq$1\% & -- \\
+        Red Wine Quality            & Regression  & 9.7\%  & 13.4\% & 3.2\%     & $>$40\%   & -- \\
+        White Wine Quality          & Regression  & 14.0\% & 5.6\%  & 2.5\%     & 2.6\%     & -- \\
+        Air Quality and Pollution   & Classif.    & 32.7\% & 35.6\% & 13.6\%    & $>$40\%   & -- \\
+        Debutanizer                 & Classif.    & 3.2\%  & 5.6\%  & 1.8\%     & $>$40\%   & -- \\
+        Diabetes                    & Classif.    & 13.9\% & 27.4\% & 4.4\%     & 7.0\%     & -- \\
+        Football Player Position    & Classif.    & 11.4\% & 18.1\% & 4.8\%     & $\leq$1\% & -- \\
+        Gender Recognition by Voice & Classif.    & 6.8\%  & 10.1\% & 2.3\%     & $>$40\%   & -- \\
         \bottomrule
     \end{tabular}
 \end{table}

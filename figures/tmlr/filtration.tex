@@ -1,6 +1,6 @@
 \begin{table}[t]
     \centering
-    \caption{Filtration robustness ($k$NN, MAR, 5--25\%). Median elasticity $\beta$ of topological error. Stars (real-world): Wilcoxon signed-rank test vs.\ VR, Holm family = the 24 tests of the table. $^{*}$, $^{**}$, $^{***}$: Holm-corrected $p < .05$, $.01$, $.001$. Mean ranks: Friedman $p = .72$ (synthetic), $p < .001$ (real).}
+    \caption{Filtration robustness ($k$NN, MAR, 5--25\%). Median elasticity $\beta$ of topological error; KD uses the median-heuristic bandwidth. Stars (real-world): Wilcoxon signed-rank test vs.\ VR, Holm family = the 24 tests of the $\beta$ rows and the 2 tests of the $\rho$ row. $^{*}$, $^{**}$, $^{***}$: Holm-corrected $p < .05$, $.01$, $.001$. Mean ranks of $\beta$: Friedman $p = .76$ (synthetic), $p < .001$ (real). $\rho = d_{\TOPO} / d_{\SGT}$: relative topological error of the same filtration, geometric mean over rates and measures, median over datasets.}
     \label{tab:filtration}
     \small
     \setlength{\tabcolsep}{10pt}
@@ -10,20 +10,21 @@
         \cmidrule(lr){3-5}\cmidrule(lr){6-8}
         \multicolumn{2}{c}{Measure} & VR & DTM & KD & VR & DTM & KD \\
         \midrule
-        \WS & \Hd{0} & \textbf{0.35} & 0.63             & 0.37          & 1.18          & \textbf{0.40}\sig{**} & 1.35 \\
-        \WS & \Hd{1} & 0.65          & 0.81             & \textbf{0.63} & 0.71          & \textbf{0.11}\sig{**} & 0.83 \\
-        \WS & \Hd{2} & 0.32          & \textbf{$-$0.71} & 0.08          & 0.47          & \textbf{$-$0.19}      & 0.61 \\
-        \BN & \Hd{0} & 0.37          & 0.74             & \textbf{0.35} & 0.48          & 0.66                  & \textbf{0.46} \\
-        \BN & \Hd{1} & 0.65          & 0.77             & \textbf{0.42} & \textbf{0.11} & 0.17                  & 0.30 \\
-        \BN & \Hd{2} & 0.00          & \textbf{$-$0.46} & 0.02          & 0.15          & \textbf{$-$0.03}      & 0.51 \\
-        \PL & \Hd{0} & \textbf{0.40} & 0.70             & 0.47          & 1.39          & \textbf{1.30}         & 2.13 \\
-        \PL & \Hd{1} & 0.39          & \textbf{0.36}    & 0.71          & 0.17          & \textbf{0.03}         & 0.36 \\
-        \PL & \Hd{2} & 0.42          & \textbf{$-$0.02} & 0.02          & 0.08          & \textbf{$-$0.08}      & 0.28 \\
-        \PI & \Hd{0} & 1.10          & 0.50             & \textbf{0.36} & 0.54          & \textbf{0.30}         & 0.33 \\
-        \PI & \Hd{1} & 0.39          & \textbf{$-$0.11} & 0.73          & 0.89          & \textbf{0.51}         & 1.26 \\
-        \PI & \Hd{2} & 0.37          & \textbf{$-$0.25} & 0.32          & 1.31          & \textbf{0.38}         & 1.21 \\
+        \WS & \Hd{0} & \textbf{0.09} & 0.43          & 0.40          & 1.19 & 0.40\sig{**}             & \textbf{0.35}\sig{**} \\
+        \WS & \Hd{1} & 0.50          & \textbf{0.41} & 0.60          & 0.71 & 0.10\sig{**}             & \textbf{$-$0.02}\sig{**} \\
+        \WS & \Hd{2} & 0.87          & \textbf{0.45} & 1.45          & 0.47 & \textbf{$-$0.14}\sig{**} & 0.00 \\
+        \BN & \Hd{0} & 0.51          & 0.93          & \textbf{0.15} & 0.46 & \textbf{0.28}            & 0.64 \\
+        \BN & \Hd{1} & \textbf{0.53} & 0.67          & 0.75          & 0.11 & 0.17                     & \textbf{0.00} \\
+        \BN & \Hd{2} & 1.11          & \textbf{0.77} & 1.45          & 0.05 & \textbf{$-$0.01}         & 0.00 \\
+        \PL & \Hd{0} & 0.97          & 0.96          & \textbf{0.00} & 1.21 & \textbf{0.27}            & 0.75 \\
+        \PL & \Hd{1} & 1.27          & 0.69          & \textbf{0.61} & 0.31 & 0.14                     & \textbf{0.00}\sig{**} \\
+        \PL & \Hd{2} & 1.67          & 1.09          & \textbf{0.00} & 0.22 & \textbf{$-$0.04}         & 0.00 \\
+        \PI & \Hd{0} & \textbf{0.41} & 0.65          & 0.49          & 1.10 & 0.84\sig{*}              & \textbf{0.74}\sig{*} \\
+        \PI & \Hd{1} & 0.30          & 0.26          & \textbf{0.18} & 0.55 & 0.15\sig{**}             & \textbf{$-$0.03}\sig{**} \\
+        \PI & \Hd{2} & 0.33          & \textbf{0.11} & 3.29          & 0.39 & \textbf{$-$0.11}\sig{**} & 0.00 \\
         \midrule
-        \multicolumn{2}{l}{Mean rank $\downarrow$} & 2.00 & 2.33 & \textbf{1.67} & 2.10 & \textbf{1.23} & 2.67 \\
+        \multicolumn{2}{l}{Mean rank of $\beta$ $\downarrow$} & \textbf{1.83} & \textbf{1.83} & 2.33 & 2.93 & 1.60 & \textbf{1.47} \\
+        \multicolumn{2}{l}{$\rho$ $\downarrow$} & 0.18 & 0.57 & 0.99 & 0.75 & 0.73 & 0.84 \\
         \bottomrule
     \end{tabular}
 \end{table}
