@@ -1,0 +1,27 @@
+\begin{table}[h]
+    \centering
+    \caption{Main results for three choices of the offset $\varepsilon$ that keeps exact zeros finite before taking logarithms, as a fraction of the median positive value of each (dataset, filtration, distance, dimension) group; the paper uses 1\%. Every analysis is re-run with the other offsets.}
+    \label{tab:eps_sensitivity}
+    \footnotesize
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{l ccc}
+        \toprule
+        & $\varepsilon = 0.1\%$ & $1\%$ & $10\%$ \\
+        \midrule
+        Break-even rate $\MR^*$, median (synthetic / real-world, \%) & 4.6 / 9.8 & 4.6 / 9.7 & 4.4 / 9.6 \\
+        $k$NN / matched jitter, median ratio (datasets below) & 0.61 (18) & 0.63 (18) & 0.67 (18) \\
+        Mean consensus rank of RF / significant pairs of 36 & 1.75 / 12 & 1.75 / 12 & 1.75 / 12 \\
+        $\Delta\beta_{\RMSE}$, \BN\ and \PL\ on \Hd{1}--\Hd{2} (range) & \ensuremath{-0.48} to \ensuremath{-0.20} & \ensuremath{-0.48} to \ensuremath{-0.21} & \ensuremath{-0.49} to \ensuremath{-0.27} \\
+        \quad CIs of $\Delta\beta_{\RMSE}$ / $\Delta\beta_{e_\infty}$ containing zero (of 4) & 0 / 4 & 0 / 4 & 0 / 4 \\
+        Trade-off: per-dataset $r_s$ across measures, median & \ensuremath{-0.44} ($p = .009$) & \ensuremath{-0.38} ($p = .009$) & \ensuremath{-0.27} ($p = .02$) \\
+        Redundancy: $r_s$ (real-world) & \ensuremath{-0.66} ($p = .007$) & \ensuremath{-0.63} ($p = .01$) & \ensuremath{-0.60} ($p = .02$) \\
+        Redundancy: $r_s$ (sweep) & \ensuremath{-0.93} ($p < .001$) & \ensuremath{-0.93} ($p < .001$) & \ensuremath{-0.93} ($p < .001$) \\
+        Mechanism: $d_{\TOPO}$ under MAR relative to MCAR & 0.71 ($p < .001$) & 0.76 ($p < .001$) & 0.83 ($p < .001$) \\
+        Mechanism: $d_{\TOPO}$ under MNAR relative to MCAR & 0.94 ($p = .56$) & 0.97 ($p = .68$) & 1.06 ($p = .85$) \\
+        Filtration: $\Delta\beta$ of DTM / KD vs.\ VR & \ensuremath{-0.36} / \ensuremath{-0.39} & \ensuremath{-0.30} / \ensuremath{-0.39} & \ensuremath{-0.26} / \ensuremath{-0.35} \\
+        \quad upper CI bounds of $\Delta\beta$ (DTM / KD) & \ensuremath{-0.17} / \ensuremath{-0.13} & \ensuremath{-0.17} / \ensuremath{-0.13} & \ensuremath{-0.13} / \ensuremath{-0.11} \\
+        Filtration: $\rho$ of DTM relative to VR & 1.07 ($p = .45$) & 1.07 ($p = .49$) & 1.04 ($p = .56$) \\
+        Filtration: $\rho$ of KD relative to VR & 1.35 (Holm $p = .10$) & 1.43 (Holm $p = .02$) & 1.37 (Holm $p = .01$) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
