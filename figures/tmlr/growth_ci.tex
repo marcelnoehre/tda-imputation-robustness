@@ -1,0 +1,26 @@
+\begin{table}[h]
+    \centering
+    \caption{Growth of the topological error relative to RMSE and $e_\infty$ on the real-world datasets ($k$NN, VR, MAR): median $\Delta\beta$ over the 15 datasets with a distribution-free 95\% confidence interval of the median (order statistics; coverage 96.5\%). Log--log fit: elasticity fitted over the 13 missing rates (Table~\ref{tab:growth}); two-point: $\log(d(40\%) / d(5\%)) / \log 8$, which does not assume a constant elasticity.}
+    \label{tab:growth_ci}
+    \small
+    \begin{tabular}{r@{\,}l cc cc}
+        \toprule
+        \multicolumn{2}{c}{} & \multicolumn{2}{c}{Log--log fit (1--40\%)} & \multicolumn{2}{c}{Two-point (5\% $\to$ 40\%)} \\
+        \cmidrule(lr){3-4}\cmidrule(lr){5-6}
+        \multicolumn{2}{c}{Measure} & $\Delta\beta_{\RMSE}$ & $\Delta\beta_{e_\infty}$ & $\Delta\beta_{\RMSE}$ & $\Delta\beta_{e_\infty}$ \\
+        \midrule
+        \WS & \Hd{0} & $+0.48$ {\footnotesize [$+0.24$, $+0.63$]} & $+0.83$ {\footnotesize [$+0.60$, $+0.98$]} & $+0.48$ {\footnotesize [$+0.27$, $+0.65$]} & $+0.89$ {\footnotesize [$+0.68$, $+1.12$]} \\
+        \WS & \Hd{1} & $+0.03$ {\footnotesize [$-0.07$, $+0.22$]} & $+0.46$ {\footnotesize [$+0.23$, $+0.55$]} & $-0.03$ {\footnotesize [$-0.31$, $+0.19$]} & $+0.45$ {\footnotesize [$+0.10$, $+0.70$]} \\
+        \WS & \Hd{2} & $-0.03$ {\footnotesize [$-0.21$, $+0.20$]} & $+0.33$ {\footnotesize [$+0.10$, $+0.58$]} & $-0.27$ {\footnotesize [$-0.52$, $0.00$]}  & $+0.23$ {\footnotesize [$-0.06$, $+0.42$]} \\
+        \BN & \Hd{0} & $-0.20$ {\footnotesize [$-0.41$, $-0.09$]} & $+0.16$ {\footnotesize [$-0.03$, $+0.33$]} & $-0.23$ {\footnotesize [$-0.48$, $-0.10$]} & $+0.20$ {\footnotesize [$+0.06$, $+0.41$]} \\
+        \BN & \Hd{1} & $-0.41$ {\footnotesize [$-0.64$, $-0.33$]} & $-0.10$ {\footnotesize [$-0.22$, $+0.03$]} & $-0.61$ {\footnotesize [$-0.77$, $-0.40$]} & $-0.22$ {\footnotesize [$-0.34$, $+0.08$]} \\
+        \BN & \Hd{2} & $-0.48$ {\footnotesize [$-0.59$, $-0.36$]} & $-0.10$ {\footnotesize [$-0.24$, $+0.06$]} & $-0.64$ {\footnotesize [$-0.90$, $-0.38$]} & $-0.19$ {\footnotesize [$-0.56$, $+0.10$]} \\
+        \PL & \Hd{0} & $+0.36$ {\footnotesize [$+0.01$, $+0.88$]} & $+0.76$ {\footnotesize [$+0.19$, $+1.25$]} & $+0.66$ {\footnotesize [$+0.27$, $+1.38$]} & $+1.06$ {\footnotesize [$+0.58$, $+1.88$]} \\
+        \PL & \Hd{1} & $-0.21$ {\footnotesize [$-0.47$, $-0.15$]} & $+0.12$ {\footnotesize [$-0.05$, $+0.26$]} & $-0.40$ {\footnotesize [$-0.56$, $-0.23$]} & $+0.05$ {\footnotesize [$-0.16$, $+0.28$]} \\
+        \PL & \Hd{2} & $-0.25$ {\footnotesize [$-0.44$, $-0.08$]} & $+0.11$ {\footnotesize [$-0.11$, $+0.26$]} & $-0.53$ {\footnotesize [$-0.81$, $-0.29$]} & $-0.06$ {\footnotesize [$-0.42$, $+0.20$]} \\
+        \PI & \Hd{0} & $+0.47$ {\footnotesize [$+0.04$, $+0.63$]} & $+0.88$ {\footnotesize [$+0.55$, $+0.96$]} & $+0.52$ {\footnotesize [$+0.10$, $+0.71$]} & $+0.75$ {\footnotesize [$+0.63$, $+1.11$]} \\
+        \PI & \Hd{1} & $+0.05$ {\footnotesize [$-0.35$, $+0.21$]} & $+0.36$ {\footnotesize [$+0.08$, $+0.61$]} & $+0.13$ {\footnotesize [$-0.34$, $+0.19$]} & $+0.46$ {\footnotesize [$+0.19$, $+0.70$]} \\
+        \PI & \Hd{2} & $-0.15$ {\footnotesize [$-0.44$, $+0.02$]} & $+0.15$ {\footnotesize [$-0.10$, $+0.42$]} & $-0.22$ {\footnotesize [$-0.58$, $-0.06$]} & $+0.10$ {\footnotesize [$-0.17$, $+0.40$]} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
