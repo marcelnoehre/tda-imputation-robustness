@@ -62,7 +62,7 @@ cd notebooks
 uvx --from nbconvert jupyter-nbconvert --to notebook --execute --inplace tmlr_figures.ipynb
 ```
 
-The kernel must be the project's `.venv` interpreter. If uvx's own Python is picked up instead, point `JUPYTER_PATH` at a kernel spec whose `argv` uses the absolute path `.venv/bin/python`.
+The kernel must be the project's environment. If uvx's own Python is picked up instead (`No module named 'pandas'`), point `JUPYTER_PATH` at a directory with `kernels/python3/kernel.json` whose `argv` is `["uv", "run", "--project", "<repo>", "--with", "ipykernel", "python", "-m", "ipykernel_launcher", "-f", "{connection_file}"]` (the `.venv` itself has no ipykernel).
 
 ## Analysis conventions (notebook)
 
@@ -70,9 +70,11 @@ The kernel must be the project's `.venv` interpreter. If uvx's own Python is pic
 - Exact zeros are kept finite by adding ε = 1% of the median positive value of each (dataset, filtration, distance, dimension) group. Never drop zeros instead, because that changes the ratios.
 - **Growth** is measured by the elasticity β, the log–log slope of error against missing rate. Compare it with RMSE **within each dataset** (Δβ = β_topo − β_RMSE). RMSE/MAE are only a reference and are never used to rank imputers.
 - **Relative topological error** is ρ = d_topo / d_SGT (called retention in earlier versions).
+- A non-significant test is never read as "the same": claims that two quantities agree (e.g. a growth rate close to $e_\infty$, a filtration as sensitive as VR) are backed by a distribution-free 95% CI of the median over datasets (`median_ci`, order statistics). Growth comparisons are checked with the fit-free two-point elasticity log(d(40%)/d(5%))/log 8, because many BN/PL curves saturate (R² < 0.8).
+- In the filtration comparison (RQ6), (dataset, measure, dimension) cells in which a filtration has no features (kNN distance 0 at every rate; mostly KD in H2) are left out for all three filtrations: they give β = 0 by construction and a ρ set by ε (user decision 2026-11-19). Partial zeros keep the ε rule above.
 - Tables are written as LaTeX using the paper's macros (`\WS`, `\BN`, `\PL`, `\PI`, `\Hd{}`, `\SGT`, `\RS`, `\CCA`, `\TOPO`, `\IMP`, `\sig{}`, `\MR`). All generated tables must stay byte-identical to the paper's copies, so port wording changes made in the paper back into the notebook.
 - **Numbers in the text** are never typed by hand: each section stores them with `val(name, text)` (helpers `tnum`, `tp`), and the last cell writes them as `\newcommand{\v<Name>}{…}` to `values.tex`, which the paper inputs from `macros.tex`. To update the paper after new runs: run the notebook, copy `figures/tmlr/*` into the paper, then check the `% CHECK` comments in `results.tex`/`appendix.tex` (qualitative claims that depend on the values).
-- The main text shows results as **figures**; the result tables are in the appendix.
+- The main text shows results as **figures**; the result tables are in the appendix. The main content (through the conclusion) stays within **12 pages** (TMLR); new material goes to the appendix.
 - **Revision marks** in the paper (`macros.tex`): `\added{}` (blue, new), `\changed{}` (red, changed), unmarked = as submitted (the October 2026 version, `main.pdf` of 2026-10-12). `\revisionmarksfalse` prints the clean version.
 - Figures are drawn at print size in Latin Modern, with no titles (captions live in LaTeX). Widths are listed in the notebook's first cell (`\linewidth` unless stated; `filtration`, `filtration_sweep` at `0.75\linewidth`, `tightness` at `0.62\linewidth`, `pairwise_imputers` at `0.6\linewidth`). The pairwise figure is drawn on a 0.75\linewidth canvas, and its tight bounding box makes it about that size.
 
