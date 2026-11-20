@@ -26,6 +26,7 @@ Code and results for the paper *The Robustness of Topological Data Analysis Unde
 | Result file | Imputers | Mechanisms | Missing rates | Filtrations |
 |-------------|----------|------------|---------------|-------------|
 | `comparison_metrics` (RMSE, MAE) | kNN | MCAR, MAR, MNAR | MAR: 13 rates, 1–40%; MCAR, MNAR: 5, 10, 25% | – |
+| `comparison_metrics_imputers` (RMSE, MAE, e∞) | all 9 | MAR | 5, 10, 25% | – |
 | `topological_metrics` | all 9 | MAR | 5, 10, 25% | VR |
 | `topological_metrics_mr` | kNN | MCAR, MAR, MNAR | MAR: 13 rates, 1–40%; MCAR, MNAR: 5, 10, 25% | VR |
 | `topological_metrics_filtration` | kNN | MAR | 5, 10, 25% | VR, DTM, KD |
@@ -68,7 +69,7 @@ The kernel must be the project's environment. If uvx's own Python is picked up i
 
 - The **dataset is the statistical unit**. Compute per-dataset log-ratios, then report medians over datasets. Use Wilcoxon signed-rank tests (Holm-corrected within a table or comparison family), Friedman mean ranks, and Mann–Whitney for synthetic vs. real-world data.
 - Exact zeros are kept finite by adding ε = 1% of the median positive value of each (dataset, filtration, distance, dimension) group. Never drop zeros instead, because that changes the ratios.
-- **Growth** is measured by the elasticity β, the log–log slope of error against missing rate. Compare it with RMSE **within each dataset** (Δβ = β_topo − β_RMSE). RMSE/MAE are only a reference and are never used to rank imputers.
+- **Growth** is measured by the elasticity β, the log–log slope of error against missing rate. Compare it with RMSE **within each dataset** (Δβ = β_topo − β_RMSE). RMSE/MAE are only a reference and are never used to rank imputers (the imputation table shows the RMSE rank as a reference column).
 - **Relative topological error** is ρ = d_topo / d_SGT (called retention in earlier versions).
 - A non-significant test is never read as "the same": claims that two quantities agree (e.g. a growth rate close to $e_\infty$, a filtration as sensitive as VR) are backed by a distribution-free 95% CI of the median over datasets (`median_ci`, order statistics). Growth comparisons are checked with the fit-free two-point elasticity log(d(40%)/d(5%))/log 8, because many BN/PL curves saturate (R² < 0.8).
 - In the filtration comparison (RQ6), (dataset, measure, dimension) cells in which a filtration has no features (kNN distance 0 at every rate; mostly KD in H2) are left out for all three filtrations: they give β = 0 by construction and a ρ set by ε (user decision 2026-11-19). Partial zeros keep the ε rule above.

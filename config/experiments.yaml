@@ -128,6 +128,12 @@ experiments:
     missing_rates: {MCAR: main, MAR: sweep, MNAR: main}
     imputation_methods: [KNN]
     metrics: [RMSE, MAE, MAXDISP]
+  comparison_metrics_imputers:   # raw error of every imputer on the masks of topological_metrics (reference column of RQ2, PLAN R12)
+    driver: comparison_metrics
+    missingness_types: [MAR]
+    missing_rates: main
+    imputation_methods: [CONSTANT, MEAN, MEDIAN, KNN, RF, MICE, GAIN, TABCSDI, OTIMPUTE]
+    metrics: [RMSE, MAE, MAXDISP]
   topological_metrics:
     driver: topological
     missingness_types: [MAR]
