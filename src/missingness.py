@@ -11,7 +11,7 @@ from mdatagen.multivariate.mMCAR import mMCAR
 from mdatagen.multivariate.mMAR import mMAR
 from mdatagen.multivariate.mMNAR import mMNAR
 from src.constants import *
-from src.config import SEEDS, N_JOBS, MISSING_FEATURE_FRACTION
+from src.config import SEEDS, N_JOBS, MISSING_FEATURE_FRACTION, NEW_SEEDS_ONLY
 import random
 import numpy as np
 
@@ -54,8 +54,12 @@ def multivariat_mnar(df, target, missing_rate, seed):
 
 def repeated(seed, mt, method_deterministic):
     """A (mechanism, method) pair runs for every seed as soon as either of them is stochastic.
-    Deterministic masks are computed once and shared by all seeds (see introduce_missingness)."""
-    return seed == SEEDS[0] or not MISSINGNESS[mt][DETERMINISTIC] or not method_deterministic
+    Deterministic masks are computed once and shared by all seeds (see introduce_missingness).
+    With main.py --new-seeds-only the first seed runs only the deterministic pairs."""
+    deterministic = MISSINGNESS[mt][DETERMINISTIC] and method_deterministic
+    if seed == SEEDS[0]:
+        return deterministic or not NEW_SEEDS_ONLY
+    return not deterministic
 
 MISSINGNESS = {
     MCAR: {FUNCTION: lambda df, target, missing_rate, seed: multivariat_mcar(df, target, missing_rate, seed), DETERMINISTIC: False},

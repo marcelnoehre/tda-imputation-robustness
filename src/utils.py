@@ -10,7 +10,9 @@ def numeric_target_mapping(target):
 
     :return np.ndarray: Numeric mapping of class labels.
     """
-    return np.array([{cls: id for id, cls in enumerate(target)}[cls] for cls in target])
+    # each class maps to the index of its last occurrence (as before); the lookup is built once, not once per row
+    mapping = {cls: id for id, cls in enumerate(target)}
+    return np.array([mapping[cls] for cls in target])
 
 def as_batch(data):
     return np.array(data)[None, :, :]

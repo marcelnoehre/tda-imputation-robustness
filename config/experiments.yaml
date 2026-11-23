@@ -10,8 +10,8 @@ runtime:
   slow_task: 60           # log every single task (e.g. one persistence diagram) that takes longer (seconds)
 
 # every setting with a stochastic component runs once per seed; an experiment can override this with its own `seeds`
-# (3 seeds: the seed-to-seed error of a mean is small against the differences between datasets, the statistical unit)
-seeds: [1, 2, 3]
+# (5 seeds: the seed-to-seed error of a mean is small against the differences between datasets, the statistical unit)
+seeds: [1, 2, 3, 4, 5]
 
 data:
   manifolds:

@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import yaml
 from src import constants
@@ -49,7 +50,13 @@ def use_seeds(seeds):
     if seeds[0] != CONFIG['seeds'][0]:
         raise ValueError(f'the first seed must be {CONFIG["seeds"][0]}: deterministic settings run under it only')
     SEEDS[:] = seeds
-WORKERS = CONFIG['runtime']['workers']
+# pool size of this run: main.py --workers sets TDA_WORKERS before src is imported (spawned workers inherit it)
+WORKERS = int(os.environ.get('TDA_WORKERS', CONFIG['runtime']['workers']))
+# main.py --new-seeds-only: the first seed runs only the deterministic settings, so `--seeds 1 4 5` computes seeds 4 and 5
+# of the stochastic settings without repeating seed 1 (which another run computes)
+NEW_SEEDS_ONLY = os.environ.get('TDA_NEW_SEEDS_ONLY') == '1'
+# main.py --cached-only: skip every diagram that is not in the cache yet; the result files then lack those settings
+CACHED_ONLY = os.environ.get('TDA_CACHED_ONLY') == '1'
 N_JOBS = CONFIG['runtime']['n_jobs']
 PROGRESS_INTERVAL = CONFIG['runtime']['progress_interval']
 SLOW_TASK = CONFIG['runtime']['slow_task']

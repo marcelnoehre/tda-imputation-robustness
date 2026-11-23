@@ -1,3 +1,4 @@
+import copy
 import os
 import time
 import numpy as np
@@ -19,7 +20,8 @@ from src.tda import persistence_landscape, persistence_image, betti_numbers
 from src.utils import transform_pd, process_pool, rates_for
 from src.normalize import diameter
 from src.constants import *
-from src.config import SEEDS, WORKERS, DIMENSIONS
+from src.config import SEEDS, WORKERS, DIMENSIONS, CACHED_ONLY
+from src.cache import _entry_dir as _cache_entry, is_cached
 from src.compute import (
     get_filtration_cutoff,
     get_filtration_params,
@@ -302,7 +304,21 @@ def compute_persistence_intervals(data, tda_methods, filtration_params, determin
         } for seed, key_dict in data.items()
     }
 
-    tasks = list(_iter(data, tda_methods))
+    tasks, shared = _unique_ph_tasks(list(_iter(data, tda_methods)), filtration_params)
+    if shared:
+        log(f'Persistent homology: {sum(map(len, shared.values()))} task(s) share the point cloud of another task')
+    if CACHED_ONLY:
+        tasks, skipped = _cached_ph_tasks(tasks, filtration_params)
+        for seed, key, mt, mr, imp, tda, _ in skipped:
+            log(f'Persistent homology: SKIPPED (not cached, --cached-only): {key} | {mt} | {mr}% | {imp} | {tda} | seed {seed}'
+                f' and {len(shared.get((seed, key, mt, mr, imp, tda), []))} task(s) sharing its cloud')
+        if skipped:
+            log(f'Persistent homology: WARNING {len(skipped)} diagram(s) skipped; the result files lack these settings')
+
+    def _store(task, value):
+        res[task[0]][task[1]][task[2]][task[3]][task[4]][task[5]] = value
+        for seed, key, mt, mr, imp, tda in shared.get(task, []):
+            res[seed][key][mt][mr][imp][tda] = copy.deepcopy(value)
 
     progress = Progress('Persistent homology', len(tasks))
     if WORKERS > 1:
@@ -313,12 +329,45 @@ def compute_persistence_intervals(data, tda_methods, filtration_params, determin
             }
             for fut in as_completed(futures):
                 seed, key, mt, mr, imp, tda = futures[fut]
-                res[seed][key][mt][mr][imp][tda] = progress(fut.result(), key, mt, f'{mr}%', imp, tda, f'seed {seed}')
+                _store(futures[fut], progress(fut.result(), key, mt, f'{mr}%', imp, tda, f'seed {seed}'))
     else:
         for seed, key, mt, mr, imp, tda, tda_dict in tasks:
-            res[seed][key][mt][mr][imp][tda] = progress(timed(_ph_worker, tda_dict, tda, *filtration_params[key][tda]), key, mt, f'{mr}%', imp, tda, f'seed {seed}')
+            _store((seed, key, mt, mr, imp, tda), progress(timed(_ph_worker, tda_dict, tda, *filtration_params[key][tda]), key, mt, f'{mr}%', imp, tda, f'seed {seed}'))
 
     return res
+
+def _unique_ph_tasks(tasks, filtration_params):
+    """
+    Drop tasks whose diagram another task already computes: same point cloud, filtration and parameters, i.e. the
+    same cache entry (e.g. RS 70%/90% and fresh samples do not depend on the missing rate, so all rates share one
+    cloud). The cache alone does not catch them, because their tasks run at the same time in different workers.
+
+    :return tuple: (unique tasks in order, {label of a unique task: labels of the tasks that share its diagram})
+    """
+    first, unique, shared = {}, [], {}
+    for task in tasks:
+        seed, key, mt, mr, imp, tda, cloud = task
+        max_edge_length, params = filtration_params[key][tda]
+        entry = _cache_entry(apply_persistent_homology, (cloud, tda, max_edge_length), params)
+        if entry in first:
+            shared.setdefault(first[entry], []).append(task[:6])
+        else:
+            first[entry] = task[:6]
+            unique.append(task)
+    return unique, shared
+
+def _cached_ph_tasks(tasks, filtration_params):
+    """
+    Split tasks into those whose diagram is in the cache and those whose diagram is not (main.py --cached-only).
+
+    :return tuple: (cached tasks, skipped tasks), each in order
+    """
+    cached, skipped = [], []
+    for task in tasks:
+        seed, key, mt, mr, imp, tda, cloud = task
+        max_edge_length, params = filtration_params[key][tda]
+        (cached if is_cached(apply_persistent_homology, cloud, tda, max_edge_length, **params) else skipped).append(task)
+    return cached, skipped
 
 def normalize_persistence_intervals(data, datasets, determinism=IMPUTATION):
     def _iter(data):

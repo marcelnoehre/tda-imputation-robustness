@@ -107,6 +107,12 @@ def _load(entry_dir):
     return _MISS
 
 
+def is_cached(func, *args, **kwargs):
+    """Whether the cache holds the result of the cached function `func` (the undecorated one) for these arguments."""
+    entry_dir = _entry_dir(func, args, kwargs)
+    return any(os.path.exists(os.path.join(entry_dir, f'output.{ext}')) for ext in ('npy', 'npz', 'h5'))
+
+
 def _cached(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
