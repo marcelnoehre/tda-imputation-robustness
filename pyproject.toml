@@ -1,7 +1,7 @@
 [project]
 name = "tda-imputation-robustness"
 version = "0.1.0"
-description = "Empirical study to evaluate \"The Robustness of Topological Data Analysis under Imputation-Induced Perturbations\""
+description = "Empirical study to evaluate \"The Robustness of Persistent Homology Under Imputation-Induced Perturbations\""
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

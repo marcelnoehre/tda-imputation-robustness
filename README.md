@@ -1,5 +1,5 @@
 # TDA Imputation Robustness
-Empirical study to evaluate "The Robustness of Topological Data Analysis under Imputation-Induced Perturbations"
+Empirical study to evaluate "The Robustness of Persistent Homology Under Imputation-Induced Perturbations"
 
 Archived version (code, results and all persistence diagrams): [doi:10.5281/zenodo.24467119](https://doi.org/10.5281/zenodo.24467119)
 
