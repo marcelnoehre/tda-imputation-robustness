@@ -90,9 +90,12 @@ def export(out, names=None, datasets=None):
     study = datasets
     with h5py.File(os.path.join(out, 'diagrams.h5'), 'a') as f:
         for name, driver, kwargs, dataset_set in experiments():
-            # comparison metrics have no diagrams; the spread experiment reuses those of topological_metrics
-            if driver in ('comparison_metrics', 'spread') or (names is not None and name not in names):
+            # comparison metrics have no diagrams
+            if driver == 'comparison_metrics' or (names is not None and name not in names):
                 continue
+            # the spread experiment computes its MICE draws like a topological experiment: draws 1-5 are those of
+            # topological_metrics (already written), the later seeds are its own
+            driver = 'topological' if driver == 'spread' else driver
             log(f'Exporting the diagrams of {name}...')
             use_seeds(experiment_seeds(name))
             if dataset_set is not None:
