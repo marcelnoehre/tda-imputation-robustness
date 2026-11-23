@@ -13,7 +13,7 @@ Code and results for the paper *The Robustness of Topological Data Analysis Unde
 | `config/experiments.yaml` | Single source of truth for the experimental grid, seeds, worker count and every hyperparameter (read by `src/config.py`) |
 | `src/constants.py` | Dataset IDs, method keys and labels |
 | `results/*_results.csv` | Experiment output aggregated over seeds, one file per experiment (see below) |
-| `results/*_distances.csv` | Per-seed values behind each `*_results.csv` (archived on Zenodo; the notebook reads only `*_results.csv`) |
+| `results/*_distances.csv` | Per-seed values behind each `*_results.csv` (also archived on Zenodo; the notebook reads them for the seed noise, the Betti-number recovery and the per-seed displacement check) |
 | `notebooks/tmlr_figures.ipynb` | Reads `results/`, writes every results table and figure of the paper to `figures/tmlr/`, and writes every number quoted in the text to `figures/tmlr/values.tex` |
 | `figures/tmlr/` | Generated output; copy `*.tex` into the paper's `tables/`, `*.pdf` into `figures/`, and `values.tex` into the paper's root |
 | `sort_results.py` | Sorts a results CSV into canonical order |
