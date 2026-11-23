@@ -1,6 +1,8 @@
 # TDA Imputation Robustness
 Empirical study to evaluate "The Robustness of Topological Data Analysis under Imputation-Induced Perturbations"
 
+Archived version (code, results and all persistence diagrams): [doi:10.5281/zenodo.24467119](https://doi.org/10.5281/zenodo.24467119)
+
 ## Setup Instructions
 
 The environment is pinned in `uv.lock` (Python >= 3.11):
@@ -88,7 +90,7 @@ python main.py --cached-only -e baseline                      # skip diagrams th
 
 `python scripts/select_datasets.py` reproduces the selection of the 15 OpenML datasets (automatic filters plus the manual exclusion lists) and checks it against `src/constants.py`.
 
-After the experiments, `python scripts/export_archive.py archive/` writes every original and reconstructed persistence diagram to `archive/diagrams.h5` (layout in the script's docstring), together with `results/*.csv` and the configuration. The diagrams are read through the cache; set `TDA_CACHED_ONLY=1` to skip (and log) any diagram that is not cached instead of computing it. This archive and a snapshot of this repository are published on Zenodo.
+After the experiments, `python scripts/export_archive.py archive/` writes every original and reconstructed persistence diagram to `archive/diagrams.h5` (layout in the script's docstring), together with `results/*.csv` and the configuration. The diagrams are read through the cache; set `TDA_CACHED_ONLY=1` to skip (and log) any diagram that is not cached instead of computing it. This archive and a snapshot of this repository are published on Zenodo: [doi:10.5281/zenodo.24467119](https://doi.org/10.5281/zenodo.24467119).
 
 ## Reproduce the Paper
 
