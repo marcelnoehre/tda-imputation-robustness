@@ -18,7 +18,7 @@ data:
     samples: 1000
     ambient: 20        # 3-d sample padded to 20 columns and rotated by a seeded random orthogonal matrix
     seed: 42           # sampling and rotation
-  synthetic_sweep:             # controlled redundancy / noise test (PLAN 5), src/data.py::synthetic
+  synthetic_sweep:             # controlled redundancy / noise test, src/data.py::synthetic
     manifolds: [TORUS, SWISS_ROLL, SPHERE]
     noise_columns: [0, 4, 8, 12, 16]   # pure N(0, 1) columns replacing linear mixtures (0 = the study manifold)
     ambient_noise: [0.05, 0.1, 0.2]    # sigma relative to the manifold diameter, added to all 20 columns
@@ -105,7 +105,7 @@ vectorization:
     sigma_pixels: 2            # Gaussian width = 2 pixels of the persistence axis of each original diagram's grid
     n_bins: 100
 
-betti:                         # Betti-number recovery on the manifolds (metric BETTI, PLAN 10)
+betti:                         # Betti-number recovery on the manifolds (metric BETTI)
   subsamples: 30               # bottleneck bootstrap (Chazal et al. 2018) on the clean cloud
   fraction: 0.5                # subsample size relative to n
   quantile: 0.95               # threshold c per dimension; a feature counts if alive at the cutoff or persistence > 2c
@@ -128,7 +128,7 @@ experiments:
     missing_rates: {MCAR: main, MAR: sweep, MNAR: main}
     imputation_methods: [KNN]
     metrics: [RMSE, MAE, MAXDISP]
-  comparison_metrics_imputers:   # raw error of every imputer on the masks of topological_metrics (reference column of RQ2, PLAN R12)
+  comparison_metrics_imputers:   # raw error of every imputer on the masks of topological_metrics (reference column of RQ2)
     driver: comparison_metrics
     missingness_types: [MAR]
     missing_rates: main
@@ -207,9 +207,9 @@ experiments:
     tda_methods: [VR]
     metrics: [WS, BN, L2PL, L2PI]
     baseline_methods: [RANDOM_SUBSAMPLE, SHUFFLED_GROUND_TRUTH]
-  mice_spread:                   # within-imputation spread of MICE (10 draws = 10 seeds on the same MAR mask), PLAN 19
+  mice_spread:                   # within-imputation spread of MICE (10 draws = 10 seeds on the same MAR mask)
     driver: spread
-    seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]   # 45 pairs of draws instead of 3; seeds 1-3 are shared with topological_metrics
+    seeds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]   # 45 pairs of draws instead of 10; seeds 1-5 are shared with topological_metrics
     datasets: [-1, 4353, 42367, 43384]   # torus, Concrete Data, Treasury, Diabetes
     missingness_types: [MAR]
     missing_rates: main

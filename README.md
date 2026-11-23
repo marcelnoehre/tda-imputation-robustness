@@ -50,6 +50,17 @@ To run only some of the experiments of `config/experiments.yaml`, name them:
 python main.py -e baseline topological_metrics_mr
 ```
 
+Further options of `main.py`:
+
+```bash
+python main.py --workers 30 -e baseline                       # pool size of this run instead of runtime.workers
+python main.py --seeds 1 4 5 -e baseline                      # these seeds instead of the config list; writes seeds1-4-5_<name> files
+python main.py --seeds 1 4 5 --new-seeds-only -e baseline     # stochastic settings only for seeds 4 and 5 (seed 1 left to another run)
+python main.py --cached-only -e baseline                      # skip diagrams that are not in the cache yet (logged as SKIPPED)
+```
+
+`--seeds` must start with the first seed of the config (deterministic settings run under it only). Machines that share `.cache/` can split the seeds this way without repeating work; the final result files come from a run with the full seed list of the config, which reads everything from the cache.
+
 ### Datasets
 
 | Dataset ID | String Key                  | Dataset Name                |
@@ -77,20 +88,40 @@ python main.py -e baseline topological_metrics_mr
 
 `python scripts/select_datasets.py` reproduces the selection of the 15 OpenML datasets (automatic filters plus the manual exclusion lists) and checks it against `src/constants.py`.
 
-After the experiments, `python scripts/export_archive.py archive/` writes every original and reconstructed persistence diagram to `archive/diagrams.h5` (layout in the script's docstring), together with `results/*.csv` and the configuration, for the Zenodo archive.
+After the experiments, `python scripts/export_archive.py archive/` writes every original and reconstructed persistence diagram to `archive/diagrams.h5` (layout in the script's docstring), together with `results/*.csv` and the configuration. The diagrams are read through the cache; set `TDA_CACHED_ONLY=1` to skip (and log) any diagram that is not cached instead of computing it. This archive and a snapshot of this repository are published on Zenodo.
 
 ## Reproduce the Paper
 
-`main.py` runs every experiment used in the paper and writes one file per experiment to `results/`:
+`main.py` runs every experiment of `config/experiments.yaml` and writes `results/<experiment>_results.csv` (aggregated over seeds: mean, standard deviation, quartiles and 95% CI per setting) and `results/<experiment>_distances.csv` (one row per dataset, mechanism, rate, method, filtration, dimension and seed). All 18 datasets unless stated; rates "1–40%" are the 13 rates 1, 2, 3, 4, 5, 6, 8, 10, 15, 20, 25, 30, 40%.
 
-| File | Experiment |
-|------|------------|
-| `comparison_metrics_results.csv` | Raw imputation error (RMSE, MAE) |
-| `topological_metrics_results.csv` | All imputers, VR, MAR, 5/10/25% |
-| `topological_metrics_mr_results.csv` | kNN, VR, all mechanisms, 1-40% |
-| `topological_metrics_filtration_results.csv` | kNN, VR/DTM/KD, MAR, 5/10/25% |
-| `baseline_results.csv` | Shuffled ground truth, random subsample, complete-case analysis |
+| Experiment | Methods | Mechanisms and missing rates | Filtrations |
+|------------|---------|------------------------------|-------------|
+| `comparison_metrics` | kNN; RMSE, MAE, largest point displacement $e_\infty$ | MAR 1–40%; MCAR, MNAR 5/10/25% | – |
+| `comparison_metrics_imputers` | all 9 imputers; RMSE, MAE, $e_\infty$ | MAR 5/10/25% | – |
+| `topological_metrics` | all 9 imputers | MAR 5/10/25% | VR |
+| `topological_metrics_mr` | kNN | MAR 1–40%; MCAR, MNAR 5/10/25% | VR |
+| `topological_metrics_filtration` | kNN | MAR 5/10/25% | VR, DTM, KD (with smoothing-scale and bandwidth variants) |
+| `baseline` | shuffled ground truth (SGT), random subsample (RS, 80%), complete-case analysis | MAR 1–40%; MCAR, MNAR 5/10/25% | VR |
+| `baseline_reference` | RS 70%/90%, matched jitter, fresh sample (manifolds only) | MAR 1–40% | VR |
+| `topological_metrics_no_imputation` | no imputation (NaN-Euclidean distances) | MAR 1–40% | VR |
+| `topological_metrics_manifolds` | all 9 imputers and no imputation; Betti-number recovery (torus, Swiss roll, sphere) | MCAR, MAR, MNAR 5/10/25% | VR |
+| `baseline_filtration` | SGT, RS | MAR 5/10/25% | DTM, KD |
+| `synthetic_topological` | kNN (synthetic redundancy/noise sweep) | MAR 1–40% | VR |
+| `synthetic_baseline` | SGT, RS (synthetic sweep) | MAR 1–40% | VR |
+| `mice_spread` | MICE, 10 draws on the same mask (torus, Concrete Data, Treasury, Diabetes); writes `mice_spread_{results,pairs}.csv` | MAR 5/10/25% | VR |
 
-Each experiment also writes `<experiment>_distances.csv` with the per-seed values before aggregation (one row per dataset, mechanism, rate, method, filtration, dimension and seed), so the results can be re-analysed without recomputation.
+Distances: Wasserstein, bottleneck, $L^2$ on persistence landscapes and on persistence images, each in $H_0$–$H_2$. Every setting with a stochastic part runs for the seeds 1–5 (`mice_spread`: 1–10). `sort_results.py` sorts a results file into canonical order.
 
-`notebooks/tmlr_figures.ipynb` reads these files and writes all results tables and figures of the paper to `figures/tmlr/`, and prints the statistics quoted in the text.
+`notebooks/tmlr_figures.ipynb` reads these files and writes all results tables and figures of the paper to `figures/tmlr/`, and every number quoted in the text to `figures/tmlr/values.tex` (about 2 minutes):
+
+```bash
+cd notebooks
+uvx --from nbconvert jupyter-nbconvert --to notebook --execute --inplace tmlr_figures.ipynb
+```
+
+## Reproducibility Notes
+
+- The experiments took about 18,000 CPU core-hours, 94% of them for persistent homology. Intermediate results are cached on disk, so interrupted runs continue where they stopped.
+- The generated data (manifolds and the synthetic sweep) differ in the last bits between CPU types (`np.linalg.qr` in `src/data.py::embed`), so their cache entries and, slightly, their diagrams depend on the machine. Real-world datasets are unaffected.
+- Worker processes are started with `spawn` and run single-threaded (`src/utils.py::process_pool`); with `fork` they inherit OpenMP thread pools of the main process and can deadlock.
+- OpenML ID 43000 (`cnn_stock_pred_dji`) is excluded: it returned the same matrix as Hungarian Chickenpox.

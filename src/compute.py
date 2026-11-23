@@ -8,7 +8,7 @@ from src.data import fresh_sample
 from src.constants import FUNCTION, DATA, TARGET
 
 
-# Renamed from get_max_edge_length when the cutoff rule of the weighted filtrations changed (PLAN 1), so that
+# Renamed from get_max_edge_length when the cutoff rule of the weighted filtrations changed, so that
 # stale cache entries are not reused.
 @memory.cache
 def get_filtration_cutoff(data, tda):
@@ -31,7 +31,7 @@ def apply_mask(dataset, mt, mr, seed):
     return MISSINGNESS[mt][FUNCTION](dataset[DATA], dataset[TARGET], mr, seed)
 
 
-# Renamed from apply_imputation when imputation moved to the scale of the observed entries (PLAN 2.3), so that
+# Renamed from apply_imputation when imputation moved to the scale of the observed entries, so that
 # imputations of the leaky complete-data scaling in the cache are not reused.
 @memory.cache
 def apply_imputation_observed_scale(dataset, imp, seed):
